@@ -1,0 +1,61 @@
+name: Validate
+on:
+  push:
+    branches: [main, master, "codex/**"]
+  pull_request:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16.10-alpine
+        env:
+          POSTGRES_USER: finance
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: finance
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd 'pg_isready -U finance'
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://finance:isolated-ci-only@127.0.0.1:5432/finance
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.34.6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.21.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils tesseract-ocr
+      - run: pnpm ci:prepare
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - run: pnpm ci:validate
+      - name: Build candidate image
+        run: docker build --build-arg BUILD_COMMIT="$GITHUB_SHA" --build-arg APP_VERSION=0.1.0 -t personal-finance:verification .
+      - run: pnpm ci:smoke
+      - uses: aquasecurity/trivy-action@c03d123cb480c08c69b054af418ea5e69fe6e57e
+        with:
+          image-ref: personal-finance:verification
+          format: table
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: failure()
+        with:
+          name: validation-failure
+          path: playwright-report/
+          retention-days: 3

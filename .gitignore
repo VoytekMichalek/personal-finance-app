@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+!.env.local.example
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+artifacts/
+.tools/
+*.log
+release-notes.md

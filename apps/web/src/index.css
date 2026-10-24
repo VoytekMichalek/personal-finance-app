@@ -1,0 +1,71 @@
+@import "tailwindcss";
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-background: #f7f7f5;
+  --color-foreground: #20242a;
+  --color-primary: #006edb;
+  --color-primary-foreground: #ffffff;
+  --color-muted: #f0f1f2;
+  --color-muted-foreground: #646c76;
+  --color-border: #e8e9ec;
+  --color-destructive: #c63845;
+  --radius-lg: 1rem;
+}
+@layer base {
+  body {
+    @apply m-0 bg-background text-foreground antialiased;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    @apply font-[inherit];
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    @apply focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary;
+  }
+  button:not(:disabled),
+  select {
+    @apply cursor-pointer;
+  }
+  input,
+  select,
+  textarea {
+    @apply text-base;
+  }
+  * {
+    @apply border-border;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes select-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.select-popup {
+  animation: select-appear 140ms ease-out;
+  transform-origin: var(--radix-select-content-transform-origin);
+}
+@media (prefers-reduced-motion: reduce) {
+  .select-popup {
+    animation: none;
+  }
+}

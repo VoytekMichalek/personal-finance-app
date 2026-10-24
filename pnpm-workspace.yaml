@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+minimumReleaseAge: 2880
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - prisma
+  - esbuild
+overrides:
+  "@prisma/config>deepmerge-ts": 8.0.2

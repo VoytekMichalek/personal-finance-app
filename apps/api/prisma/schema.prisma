@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id
+  name String
+  email String @unique
+  emailVerified Boolean @default(false)
+  image String?
+  role String @default("member")
+  state String @default("invited")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions Session[]
+  authAccounts AuthAccount[]
+  passkeys Passkey[]
+  grants RegistrationGrant[]
+}
+model Session {
+  id String @id
+  expiresAt DateTime
+  token String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId String
+  user User @relation(fields:[userId], references:[id],onDelete:Cascade)
+  @@index([userId])
+}
+model AuthAccount {
+  id String @id
+  accountId String
+  providerId String
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  accessToken String?
+  refreshToken String?
+  idToken String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope String?
+  password String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId])
+}
+model Verification {
+  id String @id
+  identifier String
+  value String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([identifier])
+}
+model Passkey {
+  id String @id
+  name String?
+  publicKey String
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  credentialID String @unique
+  counter Int
+  deviceType String
+  backedUp Boolean
+  transports String?
+  createdAt DateTime @default(now())
+  aaguid String?
+  @@index([userId])
+}
+model Setup {
+  id Int @id @default(1)
+  completedAt DateTime?
+  modelId String?
+  openrouterKeyEncrypted String?
+}
+model RegistrationGrant {
+  id String @id @default(uuid())
+  tokenHash String @unique
+  userId String
+  user User @relation(fields:[userId],references:[id])
+  kind String
+  expiresAt DateTime
+  usedAt DateTime?
+  revokedAt DateTime?
+}
+model AuditEvent {
+  id String @id @default(uuid())
+  actorId String
+  action String
+  subjectId String
+  createdAt DateTime @default(now())
+}
+model Account {
+  id String @id @default(uuid())
+  name String
+  type String
+  institution String @default("")
+  owner String @default("household")
+  openingDate String
+  openingBalanceCents BigInt
+  archived Boolean @default(false)
+  transactions Transaction[]
+  schedules Schedule[]
+  imports ImportBatch[]
+  statements Statement[]
+}
+model Category {
+  parentId String?
+  parent Category? @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: Restrict)
+  children Category[] @relation("CategoryChildren")
+  id String @id @default(uuid())
+  name String
+  kind String
+  color String
+  archived Boolean @default(false)
+  transactions Transaction[]
+  schedules Schedule[]
+  rules Rule[]
+  budgets Budget[]
+}
+model Transaction {
+  id String @id @default(uuid())
+  accountId String
+  account Account @relation(fields:[accountId],references:[id])
+  kind String
+  amountCents BigInt
+  date String
+  description String
+  categoryId String?
+  category Category? @relation(fields:[categoryId],references:[id])
+  owner String @default("household")
+  notes String @default("")
+  version Int @default(1)
+  transferGroupId String?
+  scheduleId String?
+  schedule Schedule? @relation(fields:[scheduleId],references:[id])
+  occurrenceDate String?
+  importBatchId String?
+  importBatch ImportBatch? @relation(fields:[importBatchId],references:[id])
+  sourceRow Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  receipts Receipt[]
+  @@unique([scheduleId,occurrenceDate])
+  @@unique([importBatchId,sourceRow])
+  @@index([accountId,date])
+  @@index([date,categoryId])
+}
+model Rule {
+  id String @id @default(uuid())
+  pattern String
+  categoryId String
+  category Category @relation(fields:[categoryId],references:[id])
+  priority Int @default(100)
+  enabled Boolean @default(true)
+}
+model Budget {
+  id String @id @default(uuid())
+  categoryId String
+  category Category @relation(fields:[categoryId],references:[id])
+  month String
+  amountCents BigInt
+  @@unique([categoryId,month])
+}
+model Schedule {
+  id String @id @default(uuid())
+  name String
+  accountId String
+  account Account @relation(fields:[accountId],references:[id])
+  kind String
+  amountCents BigInt
+  categoryId String?
+  category Category? @relation(fields:[categoryId],references:[id])
+  owner String @default("household")
+  startDate String
+  endDate String?
+  frequency String
+  subscription Boolean @default(false)
+  provider String @default("")
+  cancelled Boolean @default(false)
+  transactions Transaction[]
+}
+model Asset {
+  id String @id @default(uuid())
+  name String
+  kind String
+  classification String
+  owner String @default("household")
+  archived Boolean @default(false)
+  valuations Valuation[]
+}
+model Valuation {
+  id String @id @default(uuid())
+  assetId String
+  asset Asset @relation(fields:[assetId],references:[id])
+  date String
+  amountCents BigInt
+  @@unique([assetId,date])
+}
+model ImportMapping {
+  id String @id @default(uuid())
+  accountId String @unique
+  mapping Json
+}
+model ImportBatch {
+  id String @id @default(uuid())
+  accountId String
+  account Account @relation(fields:[accountId],references:[id])
+  fileHash String
+  mapping Json
+  preview Json
+  expiresAt DateTime
+  committedAt DateTime?
+  transactions Transaction[]
+  statement Statement?
+  @@index([accountId,fileHash])
+}
+model Receipt {
+  id String @id @default(uuid())
+  transactionId String
+  transaction Transaction @relation(fields:[transactionId],references:[id])
+  objectKey String @unique
+  filename String
+  mimeType String
+  size Int
+  createdAt DateTime @default(now())
+}
+
+model Statement {
+  status String @default("ready")
+  stage String @default("ready")
+  processingError String?
+  processingOptions Json @default("{}")
+  leaseToken String?
+  leaseUntil DateTime?
+  id String @id @default(uuid())
+  accountId String
+  account Account @relation(fields: [accountId], references: [id])
+  importBatchId String @unique
+  importBatch ImportBatch @relation(fields: [importBatchId], references: [id])
+  filename String
+  content Bytes
+  pages Int
+  details Json
+  createdAt DateTime @default(now())
+  @@index([accountId])
+  @@index([status, leaseUntil])
+}

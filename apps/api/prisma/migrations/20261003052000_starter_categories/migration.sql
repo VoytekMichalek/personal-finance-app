@@ -1,0 +1,13 @@
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('8fbafd9f-a42b-5d70-b5c2-f5078a9ed815','Salary','income','#22a06b');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('177ea04e-abae-52fd-a81c-c8d768cf217d','Other income','income','#22a06b');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('0428b6a0-6300-5d34-b839-dc872357f5a1','Groceries','expense','#e7a856');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('6830c34a-96e5-5ef9-8fa9-250df0724fdf','Dining','expense','#d97373');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('a9af5eb6-6ff9-5ff0-b41a-babc576c3b92','Home','expense','#8b82cc');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('df14149d-5055-5314-9466-043d009f90b2','Transport','expense','#6d9fc3');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('d212dafe-78f0-5326-92b4-427dfc678bfe','Utilities','expense','#72aea2');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('ea9f19d6-3c56-5b3d-aa9d-52ceaa9b50dc','Health','expense','#cf8db5');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('3b73a91e-aa35-5dfa-af88-1a23c9610816','Shopping','expense','#6b91d2');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('476fcdd9-3edd-5441-a020-c2c79ada6456','Entertainment','expense','#ab87d2');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('aaffb477-e587-5909-aaed-a15ecc46d918','Subscriptions','expense','#87939f');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('955beefa-b46f-5a45-8edb-436d0bb953ee','Travel','expense','#679e83');
+INSERT INTO "Category" ("id","name","kind","color") VALUES ('0ddf79bd-d1d1-55a3-8c47-4296c27e3542','Other expenses','expense','#8c9299');

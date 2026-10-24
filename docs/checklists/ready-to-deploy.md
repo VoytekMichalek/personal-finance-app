@@ -1,0 +1,48 @@
+# Ready-to-deploy checklist
+
+This is the **single authoritative list of assessment checks**, with stable IDs **R01–R19**. The explicitly approved scope is concrete application capabilities and configuration verified before production deployment. Consuming skills reference this list rather than maintaining another copy. Follow the [assessment SOP](../sops/ready-to-deploy.md) and use the [report template](https://github.com/codename-systems/codename-project-sops/blob/9335fad26de93124a891f6c6544bb388aa366084/templates/project/docs/ready-to-deploy.md.tmpl).
+
+The linked standards remain authoritative for implementation details of each listed capability. Their links do not import the entire instantiation checklist or unrelated standard requirements into this decision. Full project instantiation, CI/release, operational preparation and public-site acceptance retain their own policies outside this scoped assessment.
+
+## Authoritative checks
+
+| ID | Check | Requirement and verification |
+| --- | --- | --- |
+| R01 | Passkey sign-in | A registered user can sign in with a passkey and reach the webapp. Verify the real sign-in journey in isolation under the [authentication standard](../standards/authentication.md#standard-implementation). |
+| R02 | First-admin setup | A fresh isolated installation accepts name, email and `FIRST_USER_TOKEN`, registers a passkey and creates the first administrator under the [bootstrap SOP](../standards/authentication.md#first-user-bootstrap). Verify cancelled registration remains retryable, concurrent attempts cannot complete twice, completed setup stays disabled across restarts/redeployments/user deletions, and startup succeeds without the token after completion. Production bootstrap happens later. |
+| R03 | Users table | Administrators can see each user's name, email, role and account state. Verify the [Users view](../standards/application-ui.md#users) with representative isolated accounts. |
+| R04 | Add user | Administrators can invite a user and copy the invitation link. Verify the [invitation flow](../standards/authentication.md#invitations), including the copy action, with safe fixtures. |
+| R05 | Accept invitation | The recipient can register a passkey and access the application. Verify the [invitation enrolment flow](../standards/authentication.md#invitations) in isolation. |
+| R06 | Invitation safeguards | Expired, previously used and replaced invitations are rejected. Verify each case using controlled records/time under the [invitation policy](../standards/authentication.md#invitations). |
+| R07 | Change role | Administrators can change roles and the change affects the user's access. Verify subsequent protected operations under the [Users action policy](../standards/authentication.md#settings--users-actions). |
+| R08 | Delete user | Deleted users lose access while required historical records remain intact. Verify revoked access and retained records using isolated data under the [Users action policy](../standards/authentication.md#settings--users-actions). |
+| R09 | Protect the last administrator | The final administrator cannot be deleted or demoted. Verify both rejected operations under the [last-admin protections](../standards/authentication.md#settings--users-actions). |
+| R10 | Lost-passkey recovery | An administrator can reset access and issue a replacement invitation, revoking previous credentials and sessions. Verify recovery and revocation under the [Users action policy](../standards/authentication.md#settings--users-actions). |
+| R11 | Manage own passkeys | Users can add and remove their own passkeys, with protection against removing their final usable passkey. Verify the [account actions](../standards/application-ui.md#user-coin-and-account-actions) with supported WebAuthn fixtures. |
+| R12 | Logout | Logout ends the session; protected pages and API requests require authentication again. Verify both surfaces under the [account action policy](../standards/application-ui.md#user-coin-and-account-actions). |
+| R13 | Confirm destructive actions | Important deletions and access resets explain their consequences and require deliberate confirmation. Exercise applicable application actions in isolation under the [Users UI](../standards/application-ui.md#users) and [account action policy](../standards/application-ui.md#user-coin-and-account-actions). |
+| R14 | Build identity | Settings → System exposes Version, Release Tag, Build Commit and Build Time from the built application. Compare displayed values with the built metadata artefact under the [System policy](../standards/application-ui.md#system). Publication of a release is not required for this check. |
+| R15 | Automatic database setup | Where a database is used, committed migrations run before the application accepts requests; migration failure prevents startup. Inspect the entrypoint and verify successful apply and failure-before-serving with an isolated database under the [migration policy](../standards/environment-and-deployment.md#prisma-migrations-are-automatic-on-deployment). |
+| R16 | No production Compose | Production configuration and deployment instructions use individual Dokploy services without Compose. Inspect repository configuration/instructions under the [deployment policy](../standards/environment-and-deployment.md#manual-production-deployment); local development Compose is permitted. Provisioning a live target is not part of this check. |
+| R17 | Minimal environment examples | Every key has a real consumer and represents a necessary secret or deployment-specific input. Fixed timeout policies, invitation/session lifetimes, retry counts and other stable defaults remain in code; remove unused/speculative keys. Trace consumers under the [minimal configuration policy](../standards/environment-and-deployment.md#minimal-application-configuration). |
+| R18 | Environment examples per deployed service | Each independently deployed application service has a clearly identified example with only consumed inputs labelled build time, runtime or both. Database/authentication/bootstrap secrets belong to the owning API service; configuration-free services have comments-only examples. Verify the [service environment policy and paths](../standards/environment-and-deployment.md#environment-examples-per-deployed-service), including one root local `.env` populated from separately labelled `.env.local.example` with documented loading when local inputs are needed. One combined API/webapp service needs only one deployment example. |
+| R19 | Quiet, meaningful logs | Follow the [logging standard](../standards/application-logging.md): routine authentication denials, bot requests, expected validation failures and ordinary missing routes produce no warning/error noise or denial stack traces; health/readiness polling avoids repetitive logs. Verify meaningful unexpected-failure/actionable-condition output, available diagnostics and secret redaction using [isolated logging checks](../standards/application-logging.md#pre-deployment-verification). |
+
+## Applicability and evidence
+
+- R01–R13 apply to authenticated webapps; R14 applies to authenticated applications.
+- R15 applies only where the corresponding database capability exists.
+- R16–R19 apply to enabled application services. For combined projects, include each relevant service in the evidence for the same ID; do not add service-specific decision IDs.
+- Every **Not applicable** result requires a concrete scope reason. A missing implementation or missing evidence for an applicable check is not an applicability reason.
+- Verify before production deployment through repository inspection, isolated environments and safe fixtures. Local production builds/images can supply runtime evidence; registry publication and a live production target are not prerequisites.
+- Reuse passing CI or verification evidence only when it covers the same candidate and listed requirement. Run targeted checks only for missing, stale or affected evidence. CI success alone cannot prove an uncovered capability.
+
+## Results, reporting and decision
+
+Use only **Passed**, **Blocked**, **Unverified** and **Not applicable**. Passed means the listed capability has inspectable evidence; Blocked means a known failure; Unverified means evidence is missing, stale or insufficient. Keep every ID in the report, in the order above.
+
+For every Blocked or Unverified item, report its ID and plain-language requirement, expected versus observed behaviour (or precisely what evidence is missing), an inspectable file/command diagnostic/CI run/verification record, the exact corrective action or verification needed, and a responsible owner where known. Keep known failures distinct from missing evidence. Explain outstanding items directly in the returned summary; a report link alone is insufficient.
+
+**Ready to deploy** requires every applicable R01–R19 check to be **Passed** and every inapplicable item to be **Not applicable** with a concrete reason. Any Blocked or Unverified item, or unjustified Not applicable result, means **Not ready**. **The overall decision depends only on R01–R19.**
+
+Release publication, registry image availability, production target provisioning, backup/restore verification, public-site/SEO checks, general product acceptance and live post-deployment actions are outside this assessment decision. Preserve their CI/release/operational/deployment policies; do not reintroduce them through blanket baseline alignment, the entire instantiation checklist or broad compliance requirements. This scoped result does not certify those areas or authorise deployment.
