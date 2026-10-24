@@ -61,4 +61,10 @@ Financial logic and schemas live in `packages/shared`; API domains in `apps/api/
 
 Read the [user guide](docs/user-guide/index.md), [testing guide](docs/testing.md), [deployment and backup guide](docs/deployment.md), [SOP adoption and exceptions](docs/sop-adoption.md) and [initial verification record](docs/verification.md) and [statement/account verification](docs/verification-statements.md). Initial R01–R19 assessment is intentionally **Unverified / Not ready** in [ready-to-deploy](docs/ready-to-deploy.md); implementation verification is separate from that scoped assessment.
 
-Owner: Voytek Michalek. Personal repository and GHCR ownership, and standalone CI/release workflows, are approved exceptions. Nothing has been published or deployed by this implementation.
+## GitHub Actions ownership
+
+This personal repository owns its CI and release workflows. [Validate](.github/workflows/ci.yml) runs the local validation scripts, image smoke tests and vulnerability scan on pushes and pull requests. [Release](.github/workflows/release.yml) reuses that same local workflow, then verifies, builds, smoke-tests and scans the tagged image before publishing to `ghcr.io/voytekmichalek/personal-finance-app` and creating GitHub release notes.
+
+Neither workflow calls a Codename CI wrapper, reusable workflow or action. Release uses GitHub's repository-scoped `GITHUB_TOKEN`; no Codename organisation credentials are required. Keep this ownership permanent even if shared Codename workflows become accessible. The `ci:*` package scripts run code in this repository. Deployment remains manual.
+
+Owner: Voytek Michalek. Personal repository, GHCR and CI/release ownership are permanent project decisions; see the [adoption record](docs/sop-adoption.md). Nothing has been published or deployed by this implementation.

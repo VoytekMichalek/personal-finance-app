@@ -1,3 +1,4 @@
+# Personal repository CI; keep execution independent of Codename wrappers/actions.
 name: Validate
 on:
   push:

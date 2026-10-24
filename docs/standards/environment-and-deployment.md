@@ -71,7 +71,7 @@ Use project-scoped named volumes, health checks and loopback-only published port
 
 Avoid global `container_name` values that collide between projects. If concurrent projects need different ports, document a local override rather than adding production environment knobs. Developers using an existing PostgreSQL instance may supply `DATABASE_URL` and skip the local service, while preserving documented version compatibility.
 
-CI should use the shared workflow's isolated service support. Do not start a second database or Compose stack when the job already provides it. See [Docker's Compose model](https://docs.docker.com/compose/intro/compose-application-model/) for service and volume behaviour.
+CI uses the isolated PostgreSQL service declared in this repository's `.github/workflows/ci.yml`. Do not start a second database or Compose stack when the job already provides it. See [Docker's Compose model](https://docs.docker.com/compose/intro/compose-application-model/) for service and volume behaviour.
 
 ## Prisma migrations are automatic on deployment
 
@@ -93,21 +93,21 @@ Verify the actual built image against an isolated fresh database, an existing da
 
 ## Build metadata
 
-Every Docker build accepts `RELEASE_VERSION`, `RELEASE_TAG`, `GIT_SHA` and `BUILD_TIME` from CI. Embed a validated metadata artefact used by Settings → System in authenticated apps and available to smoke/operational checks in site images. Site-only does not require a System screen. Both combined-project images must identify the same release/commit. Do not require operators to type these values in Dokploy. An OCI label alone is insufficient if the running application cannot read the data it displays.
+This repository's Dockerfile accepts `APP_VERSION`, `RELEASE_TAG` and `BUILD_COMMIT` from its local workflows; `scripts/build-metadata.mjs` writes those values and the build time into the metadata artefact used by Settings → System and smoke checks. Validation builds use the Dockerfile's `unreleased` tag default. Do not require operators to type these values in Dokploy. An OCI label alone is insufficient if the running application cannot read the data it displays.
 
 Dockerfiles should be multi-stage, reproducible and run the application as a non-root user. Preserve the signal behaviour of the server (`exec` in the entrypoint), include a meaningful health/readiness check and exclude secrets/local files from the build context. Keep uploads outside the container in authorised object storage.
 
-## Shared CI and release wrappers
+## Repository-local CI and release
 
-Use the [CI template](https://github.com/codename-systems/codename-project-sops/blob/9335fad26de93124a891f6c6544bb388aa366084/templates/project/.github/workflows/ci.yml.tmpl) for all tracks, setting database support only when needed. Private webapps and site-only projects use the [single-image release template](https://github.com/codename-systems/codename-project-sops/blob/9335fad26de93124a891f6c6544bb388aa366084/templates/project/.github/workflows/release.yml.tmpl), selecting the appropriate Dockerfile. Combined projects use the [hybrid release template](https://github.com/codename-systems/codename-project-sops/blob/9335fad26de93124a891f6c6544bb388aa366084/templates/profiles/hybrid/release.yml.tmpl), calling `node-hybrid-docker-release.yml` once for the `site` and `api-admin` images. Do not run two independent single-image release workflows that duplicate full validation or race to create the same release.
+The [permanent personal CI decision](../sop-adoption.md#personal-ci-ownership--25-october-2026) supersedes the upstream shared-wrapper requirement. Maintain validation in `.github/workflows/ci.yml` and release publication in `.github/workflows/release.yml`. Release calls the local CI workflow before publishing the single API/webapp image. Do not introduce Codename CI wrappers, reusable workflows, actions or organisation credentials, even if they become accessible.
 
-The three reusable interfaces were checked against shared workflow revision `3796eb299ba6447c55e667d1545115e24dfddf8f` (v1.10.0). Select an approved immutable revision during instantiation and recheck its declared inputs; this recorded reference does not automatically approve all future revisions. Both hybrid smoke commands receive their respective image as `IMAGE_TAG`; implement separate site/API checks. Validate both images and all enabled scans before publication. GHCR publication is not atomic across images: record both digests, and never treat a partially published pair as deployable.
+Pin third-party actions directly to immutable commits. Validation uses read-only repository permissions; only the publish job receives content/package write permissions and the repository-scoped `GITHUB_TOKEN`. No organisation token, inherited secret set or shared workflow checkout is required.
 
 The validation command is the single owner of the repository's quality gate. The install step installs the lockfile and only required browser engines, including native dependencies on fresh runners. Do not also install browsers in `test:e2e`, global setup or web-server startup. Build once per job where the same artefact can be reused; a separate Docker packaging build or isolated job is a distinct build context and must not be removed at the expense of release verification.
 
-Keep guardrails, lint, typecheck, unit/integration tests, E2E, audit and build in both push and release validation. Release additionally generates structured notes, runs configured AI review, smoke-tests/scans images and publishes only after enabled gates pass. Provide and verify any project scripts referenced by shared workflow defaults, especially release notes and smoke tests; do not leave nonexistent commands in a wrapper.
+Keep guardrails, lint, typecheck, unit/integration tests, E2E, audit and build in both push and release validation. Release additionally generates structured notes, runs configured AI review, smoke-tests/scans images and publishes only after enabled gates pass. Maintain the referenced validation, release-note and smoke scripts here; all workflow commands must resolve to real tools or local scripts.
 
-Set `deploy-provider: none`. Do not configure Dokploy webhooks or automatic deploy triggers. Secrets for optional AI review are added only when that gate is enabled. A wrapper must not silently turn off an existing required review or scan to pass validation.
+Do not configure Dokploy webhooks or automatic deploy triggers. Secrets for optional AI review are added only when that gate is enabled. Workflow changes must not silently turn off an existing required review or scan to pass validation.
 
 ## Manual production deployment
 

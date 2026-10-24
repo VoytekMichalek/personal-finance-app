@@ -28,7 +28,7 @@ Show exactly these baseline fields in a read-only details table:
 | Build Commit | Source commit used to build the artefact | Full SHA, optionally shortened visually with copy support |
 | Build Time | Time the artefact was built | ISO timestamp in UTC, optionally with a labelled local display |
 
-Generate these values during the build and embed them in the image/application. The shared workflow supplies `RELEASE_VERSION`, `RELEASE_TAG`, `GIT_SHA` and `BUILD_TIME` as build arguments; map them to the four fields. They are not runtime settings and do not belong in the manually maintained `.env` file.
+Generate these values during the build and embed them in the image/application. This repository's workflows pass `APP_VERSION`, `RELEASE_TAG` (for releases) and `BUILD_COMMIT` to the Dockerfile; `scripts/build-metadata.mjs` records those values and the build time. No shared workflow is required. These are not runtime settings and do not belong in the manually maintained `.env` file.
 
 Use one authoritative metadata artefact so API and UI agree. Production release builds must validate version/tag consistency, a full commit SHA and a valid timestamp. Local builds may show `development`, `unreleased` or `unknown` honestly; never invent a release tag or use process start time as build time. Redeploying the same image must preserve its build information.
 

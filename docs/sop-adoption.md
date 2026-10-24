@@ -14,9 +14,9 @@ The accepted full scope is the twelve household finance features in README, with
 | Departure | Reason and trade-off | Scope / owner | Path back |
 | --- | --- | --- | --- |
 | Personal repository `VoytekMichalek/personal-finance-app` and `ghcr.io/voytekmichalek/personal-finance-app` | User explicitly requested personal ownership; organisation access controls do not apply | Repository and registry / Voytek | Transfer repository and registry ownership if requested |
-| Repository-local CI/release workflows | Codename's private reusable workflow repository cannot be called from this personal repository; user approved retaining equivalent local gates | GitHub Actions / Voytek | Adopt accessible, approved shared workflows while preserving the validation/smoke/scan contracts |
+| Repository-local CI/release workflows | User explicitly requires this personal repository to remain independent of Codename CI wrappers, reusable workflows, actions and organisation credentials; retain local validation/smoke/scan gates | GitHub Actions / Voytek | No migration to Codename CI is planned; changing this decision requires an explicit owner instruction |
 
-No package-age bypass, auth bypass, disabled audit, production Compose or automatic deployment exception. AI review is optional and unconfigured; required correctness/security gates stay enabled. Shared workflow revision assessed for contract reference: `3796eb299ba6447c55e667d1545115e24dfddf8f` (v1.10.0); local workflows do not claim to execute that private workflow.
+No package-age bypass, auth bypass, disabled audit, production Compose or automatic deployment exception. AI review is optional and unconfigured; required correctness/security gates stay enabled. Shared workflow revision `3796eb299ba6447c55e667d1545115e24dfddf8f` (v1.10.0) was assessed during initial setup for historical reference only; it is not a CI dependency or a future migration target.
 
 ## Toolchain and implementation choices
 
@@ -37,3 +37,13 @@ Current policy retrieved once at `2026-10-10T00:30:19.768Z`, source SHA `b26c3b1
 At the user’s explicit request, attribution/card treatment and compact icon are copied from `codename-systems/douglas-chemists-reporting` at `018d2ac575486185c3e258a3a7a2304a4dbb5a96`, with animated sidebar collapse adapted to this UI and reduced-motion support. This scoped user-directed visual treatment supersedes the older attribution example.
 
 On 10 October 2026 the user explicitly requested, “Also get rid of documentation for now.” Documentation navigation is temporarily hidden from the desktop sidebar and mobile Settings. This is a scoped exception to the Documentation navigation requirement; the maintained guide and existing documentation page remain available for restoration. No guide instructions refer to the removed links, so this navigation-only change needs no user-guide rewrite. Other documentation maintenance requirements remain applicable.
+
+## Personal CI ownership — 25 October 2026
+
+The owner explicitly requested that this personal repository not use the Codename CI wrapper for GitHub Actions. Inspection of both workflows and their local scripts at `9275e87` found no Codename execution dependency: validation runs here, and release calls `./.github/workflows/ci.yml`. Third-party actions are pinned directly; the only release credential is the repository's `GITHUB_TOKEN`.
+
+The former access-based exception and proposed path back to shared workflows are replaced by permanent repository-owned CI. The agent instructions, copied CI guidance, acceptance checklist and README now reflect that decision. Workflow comments clarify local ownership; executable workflow definitions and all existing gates are unchanged. Application behaviour is unchanged, so there is no user-guide impact.
+
+Current SOP retrieval was attempted with the installed read-only helper on 25 October 2026 but failed to retrieve/materialise the repository. No new source revision or current-policy adoption is claimed. This scoped change follows the owner's explicit instruction and the existing local baseline; unrelated standards remain at their recorded revisions.
+
+Verification: source/file-size guardrails and `git diff --check` passed. Both workflow YAML files parsed and matched their pre-change definitions semantically; all external action references remained immutable SHA pins, and release's local CI reference resolved. Application tests and a remote CI result are not claimed for this documentation/comment-only change.

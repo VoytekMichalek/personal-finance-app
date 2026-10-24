@@ -22,13 +22,13 @@ Use a reduced first build or a different path **only when the user explicitly re
 
 Record any such exception in `docs/sop-adoption.md`: the user's specific instruction, affected requirements, omissions, reason/trade-off, owner and path back to the baseline. Apply it only to the requested departure and retain the remaining requirements. If external access or another dependency blocks completion, record the blocker and unfinished work; an agent-created deferral is not a user-requested exception. A reduced deliverable may complete the user's limited task but must be labelled as reduced scope, without claiming full instantiation is complete.
 
-## 2. Ownership and shared workflows
+## 2. Personal ownership and repository-local workflows
 
-Repositories belong under `github.com/codename-systems/<repo-name>` and production images under `ghcr.io/codename-systems/`. Single-image projects use `<repo-name>:vMAJOR.MINOR.PATCH`; combined projects use `<repo-name>-site` and `<repo-name>-api` with the same tag. Personal ownership is permitted only for a documented emergency, with transfer to the organisation as soon as practical.
+This section is adapted for the permanent personal ownership decision in [SOP adoption](../sop-adoption.md). This repository is `VoytekMichalek/personal-finance-app`, with images published as `ghcr.io/voytekmichalek/personal-finance-app:vMAJOR.MINOR.PATCH`. Organisation ownership and transfer requirements from the upstream template do not apply.
 
-Every application must include thin `.github/workflows/ci.yml` and `.github/workflows/release.yml` wrappers calling approved reusable workflows in `codename-systems/.github/.github/workflows/`. Pin an approved immutable commit, recording its release label. Verify inputs and permissions at that revision. Do not duplicate long installation, validation, release-note, AI-review or image-publication workflows locally.
+Maintain `.github/workflows/ci.yml`, `.github/workflows/release.yml` and their scripts in this repository. Do not call Codename CI wrappers, reusable workflows or actions, or require Codename organisation credentials. Release reuses `./.github/workflows/ci.yml` to preserve one validation definition. Pin third-party actions to immutable commits and review their permissions.
 
-Pass only relevant project inputs: runtime and package-manager versions, validation/install commands, database requirements, Dockerfile/context, image name, smoke checks and enabled review/scan options. Use explicit secret mappings where possible; `secrets: inherit` is acceptable only when needed. Production deployment remains manual: release wrappers must disable deployment triggers.
+Keep runtime/package-manager pins, installation, isolated database services, validation, release notes, image smoke tests and scans explicit in these local workflows and scripts. Use the repository-scoped `GITHUB_TOKEN` for release publication. Production deployment remains manual; do not add deployment triggers.
 
 ## 3. Standard stack
 

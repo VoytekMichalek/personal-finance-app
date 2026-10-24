@@ -90,7 +90,7 @@ Record evidence in the consuming project's `docs/sop-adoption.md` or handover re
 
 ## CI, release and handover
 
-- [ ] Thin CI/release wrappers call a verified approved shared workflow revision.
+- [ ] CI/release workflows and scripts are maintained in this personal repository, with no Codename wrapper, workflow, action or organisation-credential dependency; release may reuse local CI. Third-party actions are pinned to immutable commits. See the [permanent ownership decision](../sop-adoption.md#personal-ci-ownership--25-october-2026).
 - [ ] Push/PR CI validates without publishing; observed initial push CI is green when a push is in scope.
 - [ ] Release validation retains all required gates before publishing versioned GHCR images.
 - [ ] Release notes, configured AI review, smoke tests and scans have real commands and required secrets.

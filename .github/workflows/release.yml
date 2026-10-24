@@ -9,6 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   validate:
+    # Reuse this repository's validation; no external CI wrapper is involved.
     uses: ./.github/workflows/ci.yml
   publish:
     needs: validate
