@@ -153,3 +153,9 @@ browser. The owner subsequently authorised committing and releasing v0.0.2. All
 four workspace/root version manifests are aligned to 0.0.2; the exact release
 commit must pass GitHub Validate before its annotated tag is created. The existing
 release workflow repeats validation and verifies automatic production rollout.
+
+Release verification completed: full Validate `40178038924` passed on
+`2a6024ba33e4b84757194bb1b46e55ca05aaed0c` before tagging; Release `40178724145`
+passed every validation, publication and deployment job. Live trusted HTTPS
+reported v0.0.2 and that exact commit, with the approved title/favicon and durable
+completed setup. See [hosting.md](hosting.md) for image identity and rollout evidence.

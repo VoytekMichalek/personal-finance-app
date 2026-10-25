@@ -5,6 +5,25 @@ Linode `personal-apps-01`, managed by Dokploy Cloud. PostgreSQL is a separate
 Dokploy service. Builds run in GitHub Actions, not on the 1 GB Linode. Other
 personal projects can have separate Dokploy projects on this server.
 
+## Verified v0.0.2 rollout — 25 October 2026
+
+[v0.0.2](https://github.com/VoytekMichalek/personal-finance-app/releases/tag/v0.0.2)
+introduces the Michalek Finance name and Blue Dollar favicon. Release commit
+`2a6024ba33e4b84757194bb1b46e55ca05aaed0c` passed the complete
+[Validate run 40178038924](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/40178038924)
+before its annotated tag was pushed. The complete
+[Release run 40178724145](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/40178724145)
+also passed validation, publication and automatic Dokploy deployment.
+
+The version image and promoted `latest` share digest
+`sha256:9809b99136d1bf3152a6fb39e280f4156f68409c29c253f087e2acd70278b5ca`.
+At 09:11 UTC, trusted HTTPS `/ready` returned HTTP 200, `{"ok":true}`, the exact
+commit above and `x-release-tag: v0.0.2`. The public HTML had the new app title
+and favicon link; `/favicon.svg` returned the exact committed SVG with the correct
+content type. Completed first-admin setup remained closed. No database migration,
+auth origin, credential-encryption context or infrastructure identity changed.
+The previously assessed moderate dependency advisory below remains a follow-up.
+
 ## Verified first release — 25 October 2026
 
 Production is live at [finance.michalek.app](https://finance.michalek.app).
