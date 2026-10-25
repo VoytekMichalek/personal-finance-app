@@ -105,6 +105,10 @@ try {
       metadata.buildCommit &&
       metadata.releaseTag,
   );
+  const readiness = await fetch(base + "/ready");
+  assert.equal(readiness.headers.get("x-release-tag"), metadata.releaseTag);
+  assert.equal(readiness.headers.get("x-build-commit"), metadata.buildCommit);
+  assert.equal(readiness.headers.get("cache-control"), "no-store");
   const migrations = docker([
     "exec",
     postgres,

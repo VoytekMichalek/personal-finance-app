@@ -39,7 +39,7 @@ Track: private-webapp. Monorepo with `apps/web` (Vite), `apps/api` (Express/auth
 - Preserve `minimumReleaseAge: 2880`; exclusions or bypasses need explicit maintainer approval and documentation.
 - Commit Prisma migration files with schema changes. Production startup applies committed migrations automatically and fails before serving if they fail.
 - Never run destructive schema changes or Git commands without explicit approval. Preserve historical business records and unrelated changes.
-- Compose is for local supporting services only. Production services and deployments are managed manually in Dokploy; release workflows publish images with deployment triggers disabled.
+- Compose is for local supporting services only. Production uses individual personal Dokploy Cloud services on Linode. The owner explicitly authorised automatic deployment after successful releases on 25 October 2026; preserve the release webhook and rollout verification. See `docs/hosting.md` and the adoption exception.
 
 ## Application delivery
 

@@ -16,7 +16,7 @@ The accepted full scope is the twelve household finance features in README, with
 | Personal repository `VoytekMichalek/personal-finance-app` and `ghcr.io/voytekmichalek/personal-finance-app` | User explicitly requested personal ownership; organisation access controls do not apply | Repository and registry / Voytek | Transfer repository and registry ownership if requested |
 | Repository-local CI/release workflows | User explicitly requires this personal repository to remain independent of Codename CI wrappers, reusable workflows, actions and organisation credentials; retain local validation/smoke/scan gates | GitHub Actions / Voytek | No migration to Codename CI is planned; changing this decision requires an explicit owner instruction |
 
-No package-age bypass, auth bypass, disabled audit, production Compose or automatic deployment exception. AI review is optional and unconfigured; required correctness/security gates stay enabled. Shared workflow revision `3796eb299ba6447c55e667d1545115e24dfddf8f` (v1.10.0) was assessed during initial setup for historical reference only; it is not a CI dependency or a future migration target.
+No package-age bypass, auth bypass, disabled audit or production Compose exception. Automatic deployment is explicitly approved below. AI review is optional and unconfigured; required correctness/security gates stay enabled. Shared workflow revision `3796eb299ba6447c55e667d1545115e24dfddf8f` (v1.10.0) was assessed during initial setup for historical reference only; it is not a CI dependency or a future migration target.
 
 ## Toolchain and implementation choices
 
@@ -47,3 +47,38 @@ The former access-based exception and proposed path back to shared workflows are
 Current SOP retrieval was attempted with the installed read-only helper on 25 October 2026 but failed to retrieve/materialise the repository. No new source revision or current-policy adoption is claimed. This scoped change follows the owner's explicit instruction and the existing local baseline; unrelated standards remain at their recorded revisions.
 
 Verification: source/file-size guardrails and `git diff --check` passed. Both workflow YAML files parsed and matched their pre-change definitions semantically; all external action references remained immutable SHA pins, and release's local CI reference resolved. Application tests and a remote CI result are not claimed for this documentation/comment-only change.
+
+## Personal automatic releases — 25 October 2026
+
+The owner explicitly requested: “once a release goes in, it build the GHCR image
+or whatever, and auto deploys everything in Dokploy / Linode”. This authorises
+release-triggered deployment to the personal account and supersedes the copied
+manual-deployment/no-webhook default. The standalone CI ownership exception stays
+in force. Codename's checked reference (`32f8d09013f1ab5f8ca336598659718f45c32b73`)
+publishes version/latest images and invokes Dokploy after publication; this repo
+implements that sequence locally without importing its workflow or credentials.
+
+Current SOP main was retrieved through authenticated read-only SSH Git to a
+separate snapshot at `2026-10-25T01:18:39Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`. Policy loading, environment/deployment,
+testing and the local R01–R19 procedure were read. Relevant current execution
+policy applies: focused local checks, full GitHub CI on the final commit before
+an annotated tag. Existing repository-local release validation remains intact;
+no unrelated shared-runner/workflow migration is adopted.
+
+The owner explicitly selected `db` for the database name, user and password.
+This scoped credential-strength exception does not authorise public database
+exposure; keep the service on Dokploy's private network with no published port.
+Authentication and bootstrap secrets remain independently generated strong values.
+
+CI run `40169148974` proved the PostgreSQL health-check correction and passed
+lint, typechecks, unit and database integration tests, then blocked on four high
+advisories. Patch versions Vite 8.3.3, Zod 4.6.6, Multer 2.5.0 and the targeted
+`express>body-parser: 2.4.0` override remediate them. Official npm publication
+metadata places every patch before the 48-hour cutoff; no age-gate exemption or
+audit suppression is added. Complete final CI and image evidence remain required.
+
+The new hosting guide documents the actual personal deployment path. There is no
+product UI change requiring a user-guide rewrite; readiness headers expose only
+immutable release identity so automation cannot confuse an old healthy image with
+the intended new release. Full Settings → System remains authenticated.

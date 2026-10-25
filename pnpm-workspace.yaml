@@ -9,3 +9,4 @@ onlyBuiltDependencies:
   - esbuild
 overrides:
   "@prisma/config>deepmerge-ts": 8.0.2
+  "express>body-parser": 2.4.0

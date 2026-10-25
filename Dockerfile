@@ -19,6 +19,7 @@ RUN pnpm --filter @finance/api deploy --prod --legacy /runtime/api
 RUN cd /runtime/api && ./node_modules/.bin/prisma generate
 
 FROM node:24.21.0-alpine3.24 AS production
+LABEL org.opencontainers.image.source="https://github.com/VoytekMichalek/personal-finance-app"
 RUN apk upgrade --no-cache && apk add --no-cache openssl ca-certificates poppler-utils tesseract-ocr tesseract-ocr-data-eng
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 WORKDIR /app

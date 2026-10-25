@@ -4,6 +4,7 @@ const gates = [
   ["lint"],
   ["typecheck"],
   ["test"],
+  ["test:release"],
   ["test:integration"],
   ["audit", "--audit-level=high"],
   ["build"],

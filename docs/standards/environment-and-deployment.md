@@ -107,7 +107,7 @@ The validation command is the single owner of the repository's quality gate. The
 
 Keep guardrails, lint, typecheck, unit/integration tests, E2E, audit and build in both push and release validation. Release additionally generates structured notes, runs configured AI review, smoke-tests/scans images and publishes only after enabled gates pass. Maintain the referenced validation, release-note and smoke scripts here; all workflow commands must resolve to real tools or local scripts.
 
-Do not configure Dokploy webhooks or automatic deploy triggers. Secrets for optional AI review are added only when that gate is enabled. Workflow changes must not silently turn off an existing required review or scan to pass validation.
+Project exception approved on 25 October 2026: configure the personal Dokploy application webhook and deploy automatically only after successful release publication. See [hosting.md](../hosting.md) and [sop-adoption.md](../sop-adoption.md). This overrides the manual deployment steps below for normal releases; provisioning, persistence and recovery duties still apply. Secrets for optional AI review are added only when that gate is enabled. Workflow changes must not silently turn off an existing required review or scan to pass validation.
 
 ## Manual production deployment
 

@@ -1,14 +1,14 @@
 {
   "name": "@finance/shared",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {},
   "exports": {

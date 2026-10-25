@@ -5,7 +5,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: release-${{ github.ref }}
+  # Serialize releases because they share the latest image and production app.
+  group: release-production
   cancel-in-progress: false
 jobs:
   validate:
@@ -27,6 +28,10 @@ jobs:
         with:
           node-version: 24.21.0
       - run: node scripts/release-check.mjs
+      - name: Check deployment configuration before publication
+        env:
+          DOKPLOY_DEPLOY_WEBHOOKS: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOKS }}
+        run: node scripts/deploy-dokploy.mjs --check
       - name: Build immutable release candidate
         env:
           RELEASE_TAG: ${{ github.ref_name }}
@@ -53,3 +58,27 @@ jobs:
           docker tag personal-finance:verification "$image"
           docker push "$image"
           gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --notes-file artifacts/release-notes.md
+          docker tag personal-finance:verification ghcr.io/voytekmichalek/personal-finance-app:latest
+          docker push ghcr.io/voytekmichalek/personal-finance-app:latest
+          docker inspect --format '{{join .RepoDigests "\n"}}' personal-finance:verification >> "$GITHUB_STEP_SUMMARY"
+  deploy:
+    name: Deploy to personal Dokploy
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    environment:
+      name: production
+      url: https://finance.michalek.app
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.21.0
+      - name: Request rollout and verify the running release
+        env:
+          DOKPLOY_DEPLOY_WEBHOOKS: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOKS }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          BUILD_COMMIT: ${{ github.sha }}
+        run: node scripts/deploy-dokploy.mjs

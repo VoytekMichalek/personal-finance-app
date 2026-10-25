@@ -39,6 +39,9 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.get("/ready", async (_req, res) => {
   try {
     await prisma.$queryRawUnsafe("SELECT 1");
+    res.set("Cache-Control", "no-store");
+    res.set("X-Release-Tag", metadata.releaseTag);
+    res.set("X-Build-Commit", metadata.buildCommit);
     res.json({ ok: true });
   } catch {
     res.status(503).json({ ok: false });

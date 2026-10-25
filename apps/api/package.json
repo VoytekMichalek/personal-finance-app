@@ -1,7 +1,7 @@
 {
   "name": "@finance/api",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -31,10 +31,10 @@
     "helmet": "8.3.0",
     "jose": "6.2.12",
     "kysely": "0.29.6",
-    "multer": "2.4.0",
+    "multer": "2.5.0",
     "nanostores": "1.5.4",
     "prisma": "6.19.3",
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
