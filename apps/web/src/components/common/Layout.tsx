@@ -120,11 +120,11 @@ export function Layout({ user }: { user: Person }) {
       </header>
       <main
         data-sidebar-collapsed={collapsed}
-        className={cn(
-          "finance-main mx-auto max-w-[1600px] px-5 py-8 pb-28 sm:px-8 lg:px-12 lg:py-12",
-        )}
+        className="finance-main"
       >
-        <Outlet />
+        <div className="mx-auto max-w-[1600px] px-5 py-8 pb-28 sm:px-8 lg:px-12 lg:py-12">
+          <Outlet />
+        </div>
       </main>
       <nav
         aria-label="Mobile navigation"

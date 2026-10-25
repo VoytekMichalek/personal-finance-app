@@ -159,3 +159,24 @@ Release verification completed: full Validate `40178038924` passed on
 passed every validation, publication and deployment job. Live trusted HTTPS
 reported v0.0.2 and that exact commit, with the approved title/favicon and durable
 completed setup. See [hosting.md](hosting.md) for image identity and rollout evidence.
+
+## Wide-screen content alignment — 26 October 2026
+
+Current SOP main was retrieved at `2026-10-25T21:43:02.068Z` through the installed
+read-only helper, revision `b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`.
+Policy loading, application UI, testing and user-documentation guidance were read.
+Focused local checks and full GitHub validation apply; the adopted baseline and
+personal CI exceptions remain unchanged.
+
+The content width cap now sits inside the sidebar-offset area, so wide-screen
+pages centre in the available space with either sidebar state. Existing spacing,
+mobile navigation and sidebar animation are retained. This visual correction
+does not change a workflow or any user-guide instructions.
+
+Local web typecheck, changed-file lint, guardrails and production frontend build
+passed. The existing sidebar motion test passed ten consecutive runs at
+2560 × 1440 with one worker and no retries; its screenshot was visually inspected.
+All three existing sidebar/settings checks also passed at the normal desktop size.
+The isolated browser harness uses port 3107 because another app occupies 3000.
+Full desktop/mobile coverage remains in GitHub Validate; no release is requested
+as part of this change.
