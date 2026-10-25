@@ -117,3 +117,21 @@ the isolated local harness with only origin/listening port changed to 3107.
 No application behaviour or user guide changed. Full affected desktop/mobile
 coverage remains in the normal GitHub validation suite; release still waits for
 a complete passing run. R01–R19 application evidence is unchanged by this test fix.
+
+## First release and operational handover — 25 October 2026
+
+Full Validate `40172824479` passed on the final release commit
+`845cb7e75ee71a71e4af96eabf5bf47761bfadfe`: unit/integration tests, desktop/mobile
+browser coverage, timing repeats, audit threshold, build, image smoke and scanning.
+Only then was annotated tag `v0.0.1` pushed. Release `40173441861` repeated its
+validation gates, published matching version/latest GHCR digests and automatically
+deployed through the personal Dokploy webhook. Trusted live HTTPS readiness
+reported the exact tag and commit. No Codename execution wrapper or organisation
+credential was introduced.
+
+Production private R2 put/get/delete verification and an isolated restore of the
+post-migration PostgreSQL backup passed. The owner confirmed signing in and the
+public status endpoint confirmed completed bootstrap. [hosting.md](hosting.md)
+records image identity, backup evidence, optional AI configuration, the billing
+handover and the assessed moderate dependency advisory. These final documentation
+updates do not change application behaviour or require a user-guide rewrite.

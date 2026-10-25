@@ -53,6 +53,16 @@ passed on `c55f108`; it is supporting history, not proof for subsequent changes.
 Full Validate CI must pass on the final release commit before tagging, separately
 from this scoped assessment. Release then repeats validation, image smoke and scan.
 
+Final release evidence: the corrected source above is included in
+`845cb7e75ee71a71e4af96eabf5bf47761bfadfe`. Its full
+[Validate run 40172824479](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/40172824479)
+passed before tagging v0.0.1, and
+[Release run 40173441861](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/40173441861)
+repeated validation, image smoke and scanning successfully. This supplies full
+final-candidate evidence in addition to A–E; earlier failed runs remain history.
+Live rollout, private storage and isolated backup restore results are recorded
+separately in [hosting.md](hosting.md).
+
 ## Results
 
 | ID | Result | Evidence and observed behaviour |

@@ -5,6 +5,33 @@ Linode `personal-apps-01`, managed by Dokploy Cloud. PostgreSQL is a separate
 Dokploy service. Builds run in GitHub Actions, not on the 1 GB Linode. Other
 personal projects can have separate Dokploy projects on this server.
 
+## Verified first release — 25 October 2026
+
+Production is live at [finance.michalek.app](https://finance.michalek.app).
+[v0.0.1](https://github.com/VoytekMichalek/personal-finance-app/releases/tag/v0.0.1)
+was published from `845cb7e75ee71a71e4af96eabf5bf47761bfadfe` after the complete
+[Validate run 40172824479](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/40172824479)
+passed. The [Release run 40173441861](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/40173441861)
+then passed validation, image smoke/scan, publication and automatic deployment.
+The `v0.0.1` and initial `latest` images share digest
+`sha256:1fd9402f540a018bf89febbfb81e4d9a8d04fb392fbd5764537db5ea1570e8b5`.
+
+Dokploy authenticated to GHCR and completed the release webhook deployment.
+Trusted HTTPS `/ready` returned HTTP 200 with `{"ok":true}`,
+`x-release-tag: v0.0.1` and the exact commit above, confirmed again at 07:57 UTC. The owner
+confirmed signing in; `/api/access/status` reported `bootstrapAvailable: false`
+and the first-admin button disappeared. The bootstrap token remains configured
+but cannot reopen completed setup. Do not rotate the authentication secret.
+
+Inside the running production container,
+`node /app/apps/api/dist/integrations/verify.js` passed a private R2 synthetic
+put/get/delete round trip. OpenRouter was not configured, so the combined command
+returned its documented missing-integration exit code; no AI verification pass
+is claimed. AI can be enabled later through Settings → AI.
+
+Dokploy still displayed a seven-day trial and requested a payment method at
+handover. Billing completion belongs to the owner; no payment was submitted.
+
 ## Release flow
 
 1. Commit the version in the root and workspace manifests, push main, and wait
@@ -97,13 +124,46 @@ database `db`, prefix `finance-db`, keeping the latest 14 archives. Destination
 `personal-finance-app-backups`, region `auto`, and its own bucket-scoped
 object read/write credential. The initial pre-migration backup completed on
 25 October 2026 at 07:08 UTC and its `.sql.gz` archive was visible in R2 under
-`finance-app-mplmq4/finance-db/`. This proves backup connectivity only; a
-post-migration backup and isolated restore check remain to be recorded.
+`finance-app-mplmq4/finance-db/`.
+
+The post-migration archive
+`finance-app-mplmq4/finance-db/2026-10-25T07-50-45-226Z.sql.gz` (6.89 kB)
+was downloaded from that private bucket and restored successfully into a fresh
+PostgreSQL 16 container. The check used no network, no published ports and a
+temporary in-memory database volume. All five completed Prisma migrations, one
+setup record and 13 categories were restored. The temporary container was removed;
+production was not modified. This archive predates the owner's first-admin
+completion, so it does not establish that the owner's passkey was backed up.
+A further manual backup after confirmed first-admin completion finished with
+Dokploy status **Done** in two seconds. That later archive was not separately
+restored; the isolated restore evidence above applies to the named earlier archive.
+
+For a recovery, first download the selected archive from the private backup bucket
+and restore it into a separate PostgreSQL 16 service using `psql` with
+`ON_ERROR_STOP=1` for the decompressed SQL. Verify migration history and expected
+records before arranging a controlled application cutover. Preserve the original
+volume and take a current backup before changing production. Retain the same
+canonical auth hostname and authentication secret. A database archive does not
+contain R2 receipt objects.
+
 Preserve the database volume `finance-app-mplmq4-data` when recreating app
 containers. Original statement PDFs live in PostgreSQL; receipt objects live in
 R2 and require their own retention/backup strategy. Keep database backups and the
 authentication secret available outside this Linode. Record actual backup and
 restore results separately; these instructions are not evidence that backups ran.
+
+## Dependency follow-up
+
+Release gates passed, including HIGH/CRITICAL image scanning. The dependency audit
+still reports one moderate advisory,
+[GHSA-rxp7-6hxx-x8q5](https://github.com/advisories/GHSA-rxp7-6hxx-x8q5), in
+`express-rate-limit`'s indirect `ip-address@10.7.2` dependency. The inspected
+`ipKeyGenerator` calls Node's `isIPv6` before `Address6`; the advisory's malformed
+input was rejected by that validation. This is a scoped call-path assessment,
+not a claim of an advisory-free dependency tree. Update to a compatible patched
+version (10.7.4 or later), preserve the 48-hour dependency age policy and rerun
+affected checks in a future release. No audit suppression was introduced and
+v0.0.1 must not be retagged.
 
 ## Troubleshooting logs
 
