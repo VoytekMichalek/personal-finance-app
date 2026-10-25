@@ -37,3 +37,8 @@ Expense drill-down coverage: shared unit cases verify that exact-category/accoun
 Release-readiness coverage now explicitly exercises used invitations, demotion and session revocation, preserved financial history after user deletion, and both last-admin operations. `e2e/access.spec.ts` extends the existing real WebAuthn journey with concurrent bootstrap completion, invitation copying and own-passkey replacement/removal. `e2e/readiness.spec.ts` covers representative user details, deliberate reset/delete confirmation and System values compared with the generated build artefact on desktop/mobile. Existing financial journeys remain in `journeys.spec.ts`.
 
 The image smoke test also checks bootstrap stays closed after container replacement without FIRST_USER_TOKEN and after user deletion/restart, and verifies retained account data. Default and signal-enabled diagnostic logging are exercised with secret markers, denied/invalid/missing requests, quiet polls and a controlled missing-table fault in the disposable database. No production data or credentials are used.
+
+The statement-review confirmation check names its final acknowledgement checkbox.
+Step navigation uses a React transition, so a generic checkbox selector can still
+find the preceding review screen's already-checked Include box. Waiting for the
+labelled confirmation control proves the new screen is ready without sleeps.

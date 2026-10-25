@@ -87,7 +87,11 @@ test("readable review defaults to account owner, creates categories and preserve
     fullPage: true,
   });
   await page.getByRole("button", { name: "4. Confirm", exact: true }).click();
-  await page.getByRole("checkbox").check();
+  // The step changes in a React transition. Wait for the confirmation control;
+  // a generic checkbox can still match the previous step's checked include box.
+  await page.getByRole("checkbox", {
+    name: "I have checked all statement pages, amounts, opening balance, categorisations and recurring items. I accept the selected entries.",
+  }).check();
   await page.getByRole("button", { name: "Accept & import statement" }).click();
   await expect(
     page.getByRole("heading", { name: "Statement imported" }),

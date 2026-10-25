@@ -107,3 +107,13 @@ and evidence identity. Full GitHub CI on the final release commit is still a
 separate requirement before tagging. The configured private R2 buckets and tested
 initial backup are documented in hosting; live deployment and post-migration
 restore evidence are still pending.
+
+CI `40172183827` passed the corrected passkey journey and all other access/readiness
+cases but exposed a pre-existing statement-review selector race. The test used a
+generic checkbox while a React transition still displayed the previous step's
+checked Include box. It now waits for the explicitly labelled final acknowledgement.
+Ten consecutive desktop runs passed with retries disabled (44.3 seconds), using
+the isolated local harness with only origin/listening port changed to 3107.
+No application behaviour or user guide changed. Full affected desktop/mobile
+coverage remains in the normal GitHub validation suite; release still waits for
+a complete passing run. R01–R19 application evidence is unchanged by this test fix.
