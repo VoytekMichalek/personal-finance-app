@@ -42,7 +42,7 @@ export function makeAuth(db: DB) {
     plugins: [
       passkey({
         rpID: new URL(config.BETTER_AUTH_URL).hostname,
-        rpName: "Personal Finance",
+        rpName: "Michalek Finance",
         origin: config.BETTER_AUTH_URL,
         registration: {
           requireSession: false,

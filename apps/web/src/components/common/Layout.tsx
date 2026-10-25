@@ -44,7 +44,7 @@ export function Layout({ user }: { user: Person }) {
             aria-hidden={collapsed}
             className="sidebar-label absolute left-2.5 top-1/2 -translate-y-1/2 whitespace-nowrap text-sm font-semibold"
           >
-            Personal Finance
+            Michalek Finance
           </NavLink>
           <button
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -112,7 +112,7 @@ export function Layout({ user }: { user: Person }) {
       </aside>
       <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/95 px-5 py-3 backdrop-blur lg:hidden">
         <NavLink to="/" className="text-sm font-semibold">
-          Personal Finance
+          Michalek Finance
         </NavLink>
         <div className="max-w-48">
           <AccountMenu user={user} />

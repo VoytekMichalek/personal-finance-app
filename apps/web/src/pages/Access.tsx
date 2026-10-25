@@ -6,7 +6,6 @@ import { z } from "zod";
 import {
   Fingerprint,
   ArrowRight,
-  ArrowUpRight,
   LockKeyhole,
 } from "lucide-react";
 import { api, send } from "../lib/api";
@@ -92,10 +91,8 @@ export function Access() {
     <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
       <section className="relative hidden flex-col justify-between overflow-hidden bg-[#eef1ee] p-14 lg:flex">
         <div className="flex items-center gap-3 text-sm font-semibold">
-          <span className="flex size-8 items-center justify-center rounded-xl bg-foreground text-white">
-            <ArrowUpRight size={18} />
-          </span>
-          Personal Finance
+          <img src="/favicon.svg" alt="" className="size-8" />
+          Michalek Finance
         </div>
         <div className="relative z-10 max-w-lg">
           <p className="mb-5 text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
@@ -125,7 +122,7 @@ export function Access() {
       <main className="flex min-h-dvh flex-col items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-sm">
           <p className="mb-10 text-sm font-semibold lg:hidden">
-            Personal Finance
+            Michalek Finance
           </p>
           <div className="mb-7 flex size-14 items-center justify-center rounded-2xl border bg-white text-primary shadow-sm">
             <Fingerprint size={28} />

@@ -1,4 +1,4 @@
-# Personal Finance
+# Michalek Finance
 
 A private, shared household finance app for Voytek and his wife. AUD only; calendar dates and monthly reporting follow Brisbane time. Both members can manage every financial record. Ownership labels filter reports; administrators manage access.
 

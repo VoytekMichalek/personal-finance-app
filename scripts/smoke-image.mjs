@@ -107,7 +107,7 @@ try {
   assert.equal((await fetch(base + "/api/missing")).status, 401);
   assert.equal((await fetch(base + "/")).status, 200);
   const frontend = await (await fetch(base + "/")).text();
-  assert(frontend.includes("Personal Finance"));
+  assert(frontend.includes("Michalek Finance"));
   assert(!frontend.includes(secret));
   const metadata = JSON.parse(
     docker(["exec", app, "cat", "/app/build-metadata.json"]),

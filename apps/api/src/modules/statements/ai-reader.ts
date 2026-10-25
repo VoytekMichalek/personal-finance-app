@@ -81,7 +81,7 @@ export async function readWithAi(
         headers: {
           Authorization: "Bearer " + apiKey,
           "Content-Type": "application/json",
-          "X-OpenRouter-Title": "Personal Finance",
+          "X-OpenRouter-Title": "Michalek Finance",
         },
         signal: AbortSignal.timeout(120000),
         body: JSON.stringify({

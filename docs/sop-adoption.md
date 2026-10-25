@@ -135,3 +135,21 @@ public status endpoint confirmed completed bootstrap. [hosting.md](hosting.md)
 records image identity, backup evidence, optional AI configuration, the billing
 handover and the assessed moderate dependency advisory. These final documentation
 updates do not change application behaviour or require a user-guide rewrite.
+
+## Michalek Finance branding — 25 October 2026
+
+The owner selected the Blue Dollar favicon preview and named the app Michalek
+Finance. The browser title, sign-in branding, desktop/mobile navigation, passkey
+display name and OpenRouter attribution now use that name. The SVG favicon uses
+the approved blue dollar on a pale rounded tile; its glyph licence is retained.
+The user-guide introduction and existing image smoke expectation are updated.
+The task continues against the policy snapshot recorded above; no infrastructure
+identity, authentication origin or credential-encryption context is renamed.
+
+Focused verification passed: web/API typechecks, changed-file ESLint, source/file
+guardrails, the production frontend build, SVG parsing and whitespace checks.
+The built frontend's title and loaded 32-pixel sign-in mark were inspected in the
+browser. The owner subsequently authorised committing and releasing v0.0.2. All
+four workspace/root version manifests are aligned to 0.0.2; the exact release
+commit must pass GitHub Validate before its annotated tag is created. The existing
+release workflow repeats validation and verifies automatic production rollout.

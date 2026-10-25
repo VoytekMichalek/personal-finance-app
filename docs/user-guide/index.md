@@ -1,6 +1,6 @@
 # Your household, in balance
 
-A private place to keep your shared finances clear. All amounts are Australian dollars. Dates and schedules use Brisbane time.
+Michalek Finance is a private place to keep your shared finances clear. Look for the blue dollar sign in your browser tabs. All amounts are Australian dollars. Dates and schedules use Brisbane time.
 
 ## Getting started
 Create your first administrator with your name, email and the setup token supplied by the app owner. Create a passkey when your device prompts you. Setup completes only after that passkey is verified.

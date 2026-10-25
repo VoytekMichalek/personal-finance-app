@@ -77,7 +77,7 @@ export async function suggest(modelId: string, payload: unknown) {
       headers: {
         Authorization: "Bearer " + apiKey,
         "Content-Type": "application/json",
-        "X-OpenRouter-Title": "Personal Finance",
+        "X-OpenRouter-Title": "Michalek Finance",
       },
       signal: AbortSignal.timeout(30000),
       body: JSON.stringify({
