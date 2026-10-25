@@ -11,16 +11,15 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
   );
   const cdp = await context.newCDPSession(page);
   await cdp.send("WebAuthn.enable");
-  await cdp.send("WebAuthn.addVirtualAuthenticator", {
-    options: {
-      protocol: "ctap2",
-      transport: "internal",
-      hasResidentKey: true,
-      hasUserVerification: true,
-      isUserVerified: true,
-      automaticPresenceSimulation: true,
-    },
-  });
+  const options = {
+    protocol: "ctap2" as const,
+    transport: "internal" as const,
+    hasResidentKey: true,
+    hasUserVerification: true,
+    isUserVerified: true,
+    automaticPresenceSimulation: true,
+  };
+  const primary = await cdp.send("WebAuthn.addVirtualAuthenticator", { options });
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   // Two simultaneous completion requests must create exactly one first admin.
   await page.route(
@@ -55,8 +54,16 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
   await db.$disconnect();
   await page.getByRole("button", { name: "Account menu" }).click();
   await page.getByRole("menuitem", { name: "Manage passkeys" }).click();
+  // Use a different device: WebAuthn excludes credentials already registered
+  // for this user, so the primary authenticator cannot register itself again.
+  await cdp.send("WebAuthn.removeVirtualAuthenticator", primary);
+  const backup = await cdp.send("WebAuthn.addVirtualAuthenticator", { options });
   await page.getByLabel("New passkey name").fill("Backup device");
+  const registered = page.waitForResponse(
+    (response) => response.url().endsWith("/passkey/verify-registration"),
+  );
   await page.getByRole("button", { name: "Add passkey", exact: true }).click();
+  expect((await registered).status()).toBe(200);
   await expect(
     page.getByRole("button", { name: "Remove Backup device" }),
   ).toBeVisible();
@@ -95,6 +102,9 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe(link);
   await context.clearCookies();
+  // The invited person uses their own device, without the removed backup key.
+  await cdp.send("WebAuthn.removeVirtualAuthenticator", backup);
+  await cdp.send("WebAuthn.addVirtualAuthenticator", { options });
   await page.goto(link);
   await page.getByRole("button", { name: "Create passkey" }).click();
   await expect(
@@ -110,7 +120,15 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
   await expect(
     page.getByRole("button", { name: "Sign in with a passkey" }),
   ).toBeVisible();
+  const signedIn = page.waitForResponse(
+    (response) => response.url().endsWith("/passkey/verify-authentication"),
+  );
   await page.getByRole("button", { name: "Sign in with a passkey" }).click();
+  expect((await signedIn).status()).toBe(200);
+  expect((await (await page.request.get("/api/access/me")).json()).email).toBe(
+    "anna@example.test",
+  );
+  await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "Everything, in balance." }),
   ).toBeVisible();

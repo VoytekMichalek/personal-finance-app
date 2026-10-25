@@ -295,9 +295,11 @@ describe("database-backed authorization and lifecycle", () => {
         backedUp: false,
       },
     });
-    expect(
-      (await post("/auth/passkey/delete-passkey", { id: key.id })).status,
-    ).toBe(400);
+    const rejected = await post("/auth/passkey/delete-passkey", { id: key.id });
+    expect(rejected.status).toBe(400);
+    expect(rejected.body.message).toBe(
+      "Add a replacement passkey before removing your last one.",
+    );
     expect(
       (await post("/auth/passkey/delete-passkey", { id: key.id }, adminCookie))
         .status,

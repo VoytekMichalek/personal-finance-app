@@ -88,3 +88,22 @@ the intended new release. Full Settings → System remains authenticated.
 CI `40169530139` passed all existing gates for `c55f10894ed09b28fcb1ba8a8c691bdf08cbd371`, including image smoke and HIGH/CRITICAL scanning. Mapping that evidence to R01–R19 identified missing account-lifecycle/UI/restart cases and no supported optional request diagnostic mode. The focused follow-up adds those checks and a SIGUSR2 diagnostic toggle with allowlisted fields; no new runtime configuration or credential is introduced. The hosting guide documents enable/disable behaviour. There is no product workflow or user-guide change.
 
 Focused API verification passed 19 tests in access, receipts and diagnostics integration files, with real isolated local PostgreSQL. API typecheck, changed-file lint, guardrails and a development build passed. Local browser execution could not start because localhost:3000 is already occupied; no other app was stopped and no passing browser result is claimed. The new browser and image assertions must pass in GitHub before release. The readiness report remains pending those results.
+
+
+The expanded browser test in CI `40171229037` found a fixture problem (attempting
+registration twice on one authenticator) and a real feedback defect: the custom
+auth guard returned `error`, while Better Auth reads `message`. The guard now
+returns the expected envelope, with API and real-browser regression coverage.
+The user guide explains backup devices and the final-key safeguard.
+
+After correction, all 14 access API cases and the complete real WebAuthn journey
+passed locally. The browser harness used localhost:3107 without disturbing the
+other application on port 3000; original CI configuration is unchanged. The final
+local production image passed the extended disposable-database smoke checks,
+including migrations, durable setup, data persistence and diagnostic redaction.
+Its build marker is `pre-release-working-tree`, not an already published commit.
+The scoped R01–R19 report now records a Ready to deploy decision with exact source
+and evidence identity. Full GitHub CI on the final release commit is still a
+separate requirement before tagging. The configured private R2 buckets and tested
+initial backup are documented in hosting; live deployment and post-migration
+restore evidence are still pending.

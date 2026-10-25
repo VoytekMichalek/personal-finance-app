@@ -163,7 +163,9 @@ export async function authHandler(request: Request, response: Response) {
   } catch (error) {
     if (error instanceof AuthRollback) result = error.response;
     else if (error instanceof APIError) {
-      response.status(error.statusCode).json({ error: error.message });
+      // Better Auth's client reads `message`; using the application's generic
+      // `error` envelope hides safeguards such as the last-passkey explanation.
+      response.status(error.statusCode).json({ message: error.message });
       return;
     } else throw error;
   }

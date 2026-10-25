@@ -9,7 +9,7 @@ Invite your wife through Settings → Users. Share the private invitation link d
 
 ## Passkeys and signing in
 Use Sign in with a passkey and follow your device’s fingerprint, face or screen-lock prompt.
-Open your account menu to add and remove passkeys. Give them recognisable names. Add a replacement before removing your last passkey.
+Open your account menu to add and remove passkeys. Give them recognisable names. Register a different device or authenticator for your backup passkey. Removing your final passkey is blocked with a reminder to add a replacement first.
 Log out ends your current server session. You can sign back in with any registered passkey.
 If you lose every passkey, another administrator can reset your access and give you a replacement invitation. If the only administrator loses access, contact the app owner.
 

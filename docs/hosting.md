@@ -59,6 +59,10 @@ that origin; bootstrap cannot reopen once completed. The bootstrap token may the
 be removed. Optional AI credentials can be entered later in Settings → AI.
 R2 receipt storage requires all four R2 inputs from the example, with a private
 production bucket and bucket-scoped object read/write credentials.
+The configured receipt bucket is `personal-finance-app-prod` (Standard storage,
+Automatic location, public access disabled). Its account endpoint is
+`https://f6682e2cf584efd6be8cc169fa84cc7b.r2.cloudflarestorage.com`.
+The app credential is scoped to object read/write in that bucket only.
 
 Build identity comes from CI's `APP_VERSION`, `RELEASE_TAG` and `BUILD_COMMIT`
 Docker build arguments and the generated build timestamp. These are not runtime
@@ -86,9 +90,16 @@ it only after checking schema compatibility. Restore `latest` selection before
 resuming automatic releases. Reverting an image does not undo migrations. The
 first deployment has no previous working production image to fall back to.
 
-Voytek owns database backup and restore. Configure scheduled Dokploy PostgreSQL
-backups to a separate private R2 bucket and test a restore into a disposable
-database before relying on it. Preserve the database volume when recreating app
+Voytek owns database backup and restore. Dokploy now has an enabled daily
+PostgreSQL backup (`0 17 * * *`, scheduler timezone not yet independently verified),
+database `db`, prefix `finance-db`, keeping the latest 14 archives. Destination
+`personal-finance-backups` uses the separate private R2 bucket
+`personal-finance-app-backups`, region `auto`, and its own bucket-scoped
+object read/write credential. The initial pre-migration backup completed on
+25 October 2026 at 07:08 UTC and its `.sql.gz` archive was visible in R2 under
+`finance-app-mplmq4/finance-db/`. This proves backup connectivity only; a
+post-migration backup and isolated restore check remain to be recorded.
+Preserve the database volume `finance-app-mplmq4-data` when recreating app
 containers. Original statement PDFs live in PostgreSQL; receipt objects live in
 R2 and require their own retention/backup strategy. Keep database backups and the
 authentication secret available outside this Linode. Record actual backup and

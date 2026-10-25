@@ -11,3 +11,4 @@ artifacts/
 .tools/
 *.log
 release-notes.md
+build-metadata.json
