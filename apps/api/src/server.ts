@@ -1,6 +1,7 @@
 import { app } from "./app.js";
 import { prisma } from "./lib/db.js";
 import { config } from "./lib/config.js";
+import { toggleDiagnostics } from "./lib/diagnostics.js";
 import { startStatementWorker } from "./modules/statements/worker.js";
 await prisma.$connect();
 const setup = await prisma.setup.upsert({
@@ -16,6 +17,7 @@ const server = app.listen(3000, "0.0.0.0", () =>
   ),
 );
 const stopWorker = startStatementWorker();
+process.on("SIGUSR2", toggleDiagnostics);
 for (const signal of ["SIGTERM", "SIGINT"])
   process.on(signal, () => {
     server.close(() => {

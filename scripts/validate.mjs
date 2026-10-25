@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 const gates = [
   ["guardrails"],
   ["lint"],
@@ -8,6 +9,14 @@ const gates = [
   ["test:integration"],
   ["audit", "--audit-level=high"],
   ["build"],
+  [
+    "exec",
+    "node",
+    "scripts/build-metadata.mjs",
+    JSON.parse(readFileSync("package.json", "utf8")).version,
+    process.env.RELEASE_TAG ?? "unreleased",
+    process.env.GITHUB_SHA ?? "working-tree",
+  ],
   [
     "exec",
     "playwright",

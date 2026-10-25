@@ -9,6 +9,7 @@ import { hash, newGrant } from "../modules/access/grants.js";
 import {
   adminCookie,
   adminId,
+  account,
   agent,
   identity,
   memberCookie,
@@ -128,6 +129,124 @@ describe("database-backed authorization and lifecycle", () => {
     expect(
       (await post("/access/exchange", { token: grant.token }, "")).status,
     ).toBe(401);
+    const consumed = await newGrant(prisma, memberId, "invite", 1);
+    await prisma.registrationGrant.update({
+      where: { tokenHash: hash(consumed.token) },
+      data: { usedAt: new Date() },
+    });
+    expect(
+      (await post("/access/exchange", { token: consumed.token }, "")).status,
+    ).toBe(401);
+  });
+  it("allows only one live bootstrap grant under concurrent attempts", async () => {
+    await prisma.setup.update({
+      where: { id: 1 },
+      data: { completedAt: null },
+    });
+    const attempts = await Promise.all(
+      ["First", "Second"].map((name) =>
+        post(
+          "/access/bootstrap",
+          {
+            name,
+            email: name.toLowerCase() + "@example.test",
+            token: config.FIRST_USER_TOKEN,
+          },
+          "",
+        ),
+      ),
+    );
+    expect(attempts.map((r) => r.status)).toEqual([200, 200]);
+    expect(
+      await prisma.registrationGrant.count({
+        where: { kind: "bootstrap", revokedAt: null, usedAt: null },
+      }),
+    ).toBe(1);
+  });
+  it("revokes a demoted administrator's session and enforces the new role", async () => {
+    const other = await identity("admin");
+    expect(
+      (
+        await post(
+          "/access/users/" + other.id + "/role",
+          { role: "member" },
+          adminCookie,
+        )
+      ).status,
+    ).toBe(200);
+    expect((await agent(other.cookie)).status).toBe(401);
+    expect(
+      (await prisma.user.findUniqueOrThrow({ where: { id: other.id } })).role,
+    ).toBe("member");
+    // Restore the existing signed session as a fresh-session fixture: access must
+    // use the stored role, not an old role carried in client state.
+    const { makeSignature } = await import("better-auth/crypto");
+    const token = randomUUID();
+    await prisma.session.create({
+      data: {
+        id: randomUUID(),
+        token,
+        userId: other.id,
+        expiresAt: new Date(Date.now() + 60000),
+      },
+    });
+    const cookie =
+      "better-auth.session_token=" +
+      encodeURIComponent(
+        token + "." + (await makeSignature(token, config.BETTER_AUTH_SECRET)),
+      );
+    expect((await agent(cookie)).status).toBe(200);
+    expect(
+      (await request(app).get("/api/access/users").set("Cookie", cookie))
+        .status,
+    ).toBe(403);
+  });
+  it("deletes access while retaining household transactions and audit history", async () => {
+    const accountId = await account();
+    const transaction = await prisma.transaction.create({
+      data: {
+        accountId,
+        kind: "expense",
+        amountCents: -1234n,
+        date: "2026-10-01",
+        description: "Retained history",
+        owner: memberId,
+      },
+    });
+    expect(
+      (await post("/access/users/" + memberId + "/delete", {}, adminCookie))
+        .status,
+    ).toBe(200);
+    expect((await agent(memberCookie)).status).toBe(401);
+    expect(
+      (await prisma.user.findUniqueOrThrow({ where: { id: memberId } })).state,
+    ).toBe("deleted");
+    expect(
+      await prisma.transaction.findUnique({ where: { id: transaction.id } }),
+    ).toEqual(transaction);
+    expect(
+      await prisma.auditEvent.count({
+        where: { subjectId: memberId, action: "user.delete" },
+      }),
+    ).toBe(1);
+  });
+  it("rejects deleting and demoting the final active administrator", async () => {
+    expect(
+      (await post("/access/users/" + adminId + "/delete", {}, adminCookie))
+        .status,
+    ).toBe(409);
+    expect(
+      (
+        await post(
+          "/access/users/" + adminId + "/role",
+          { role: "member" },
+          adminCookie,
+        )
+      ).status,
+    ).toBe(409);
+    expect(
+      await prisma.user.findUniqueOrThrow({ where: { id: adminId } }),
+    ).toMatchObject({ role: "admin", state: "active" });
   });
   it("revokes sessions and passkeys on lost-passkey reset without changing identity", async () => {
     await prisma.passkey.create({

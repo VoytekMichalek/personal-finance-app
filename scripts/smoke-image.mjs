@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import { readdirSync } from "node:fs";
 const migrationCount = String(
@@ -58,6 +58,19 @@ function start(name, db = "finance", overrides = []) {
 function url(name) {
   const port = docker(["port", name, "3000/tcp"]).split(":").at(-1);
   return "http://127.0.0.1:" + port;
+}
+function sql(query) {
+  return docker([
+    "exec",
+    postgres,
+    "psql",
+    "-U",
+    "finance",
+    "-d",
+    "finance",
+    "-Atc",
+    query,
+  ]);
 }
 try {
   docker(["network", "create", network]);
@@ -140,7 +153,100 @@ try {
   assert.equal(docker(["logs", app]), before);
   assert(!before.includes(secret));
   assert(!before.includes(dbPassword));
-  docker(["restart", app]);
+  const memberId = randomUUID();
+  const sessionToken = randomBytes(32).toString("hex");
+  sql(`INSERT INTO "User" (id,name,email,role,state,"updatedAt") VALUES ('${memberId}','Smoke member','smoke@example.test','member','active',NOW());
+    INSERT INTO "Session" (id,token,"userId","expiresAt","updatedAt") VALUES ('${randomUUID()}','${sessionToken}','${memberId}',NOW()+INTERVAL '1 hour',NOW());
+    INSERT INTO "Account" (id,name,type,"openingDate","openingBalanceCents") VALUES ('${randomUUID()}','Persisted smoke account','bank','2026-10-01',12345);
+    UPDATE "Setup" SET "completedAt"=NOW() WHERE id=1;`);
+  const cookie = docker([
+    "exec",
+    "-w",
+    "/app/apps/api",
+    app,
+    "node",
+    "--input-type=module",
+    "-e",
+    `import { makeSignature } from 'better-auth/crypto'; console.log('__Secure-better-auth.session_token='+encodeURIComponent('${sessionToken}.'+await makeSignature('${sessionToken}',process.env.BETTER_AUTH_SECRET)));`,
+  ]);
+  async function deniedRequests(address) {
+    assert.equal(
+      (
+        await fetch(address + "/api/snapshot?token=PRIVATE_QUERY", {
+          headers: { Authorization: "Bearer PRIVATE_HEADER" },
+        })
+      ).status,
+      401,
+    );
+    assert.equal(
+      (
+        await fetch(address + "/api/access/users", {
+          headers: { Cookie: cookie },
+        })
+      ).status,
+      403,
+    );
+    assert.equal(
+      (
+        await fetch(address + "/api/accounts", {
+          method: "POST",
+          headers: {
+            Cookie: cookie,
+            Origin: "https://finance.example.test",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ secret: "PRIVATE_BODY" }),
+        })
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await fetch(address + "/api/PRIVATE_PATH", {
+          headers: { Cookie: cookie, "User-Agent": "PRIVATE_BOT" },
+        })
+      ).status,
+      404,
+    );
+  }
+  await deniedRequests(base);
+  assert.equal(docker(["logs", app]), before);
+  docker(["kill", "--signal=USR2", app]);
+  await waitUntil(() => docker(["logs", app]).includes('"enabled":true'));
+  await deniedRequests(base);
+  const diagnostics = docker(["logs", app]);
+  assert(diagnostics.includes('"event":"request_completed"'));
+  assert(!diagnostics.includes("PRIVATE_"));
+  assert(!diagnostics.includes(cookie));
+  assert(!diagnostics.includes(sessionToken));
+  for (const route of ["/health", "/ready", "/ready"])
+    await fetch(base + route);
+  assert.equal(docker(["logs", app]), diagnostics);
+  docker(["kill", "--signal=USR2", app]);
+  await waitUntil(() => docker(["logs", app]).includes('"enabled":false'));
+  const quiet = docker(["logs", app]);
+  await deniedRequests(base);
+  assert.equal(docker(["logs", app]), quiet);
+  // Deliberately break a table only inside this disposable smoke database.
+  sql('ALTER TABLE "Account" RENAME TO "Account_unavailable"');
+  try {
+    const failed = await fetch(base + "/api/snapshot?secret=PRIVATE_FAULT", {
+      headers: { Cookie: cookie },
+    });
+    assert.equal(failed.status, 500);
+    assert(
+      !JSON.stringify(await failed.json()).includes("Account_unavailable"),
+    );
+    const failureLog = docker(["logs", app]);
+    assert(failureLog.includes('"event":"request_failed"'));
+    assert(!failureLog.includes("PRIVATE_"));
+    assert(!failureLog.includes(secret));
+    assert(!failureLog.includes(dbPassword));
+  } finally {
+    sql('ALTER TABLE "Account_unavailable" RENAME TO "Account"');
+  }
+  docker(["rm", "-f", app]);
+  start(app, "finance", ["-e", "FIRST_USER_TOKEN="]);
   const restartedBase = url(app);
   await waitUntil(async () => {
     try {
@@ -149,6 +255,31 @@ try {
       return false;
     }
   });
+  assert.equal(
+    (await (await fetch(restartedBase + "/api/access/status")).json())
+      .bootstrapAvailable,
+    false,
+  );
+  assert.equal(
+    sql(
+      'SELECT "openingBalanceCents" FROM "Account" WHERE name=\'Persisted smoke account\'',
+    ),
+    "12345",
+  );
+  sql('DELETE FROM "Session"; DELETE FROM "User";');
+  docker(["restart", app]);
+  await waitUntil(async () => {
+    try {
+      return (await fetch(url(app) + "/ready")).ok;
+    } catch {
+      return false;
+    }
+  });
+  assert.equal(
+    (await (await fetch(url(app) + "/api/access/status")).json())
+      .bootstrapAvailable,
+    false,
+  );
   assert.equal(
     docker([
       "exec",
@@ -211,7 +342,7 @@ try {
     "0",
   );
   console.log(
-    "Production image passed: fresh/current migrations, migration failure, non-root, readiness, frontend, auth, configuration ownership, secret redaction and quiet polls.",
+    "Production image passed: migrations, preserved data, durable bootstrap without token, non-root, readiness, frontend, auth, quiet defaults, optional safe diagnostics and redacted unexpected failures.",
   );
 } catch (error) {
   const logs = docker(["logs", app], true)

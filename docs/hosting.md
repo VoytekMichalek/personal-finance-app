@@ -93,3 +93,18 @@ containers. Original statement PDFs live in PostgreSQL; receipt objects live in
 R2 and require their own retention/backup strategy. Keep database backups and the
 authentication secret available outside this Linode. Record actual backup and
 restore results separately; these instructions are not evidence that backups ran.
+
+## Troubleshooting logs
+
+Normal requests, authentication denials and health polls are quiet. Unexpected
+failures emit a structured error event with a safe error type. For temporary
+request diagnostics, identify this app's current container in Dokploy and run
+`docker kill --signal=USR2 <finance-app-container>` on the server. This toggles
+diagnostics without restarting the app; the `diagnostics_changed` event confirms
+the new state. Send the same signal again to disable them. Every restart defaults
+to disabled.
+
+Diagnostic events contain a generated request ID, HTTP method, registered route
+pattern, status and duration. They never include raw paths, query strings, bodies,
+headers, cookies or credential values. Health/readiness requests remain omitted.
+This mode is for active investigation; it is not a new configuration requirement.

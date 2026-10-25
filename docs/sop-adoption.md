@@ -82,3 +82,9 @@ The new hosting guide documents the actual personal deployment path. There is no
 product UI change requiring a user-guide rewrite; readiness headers expose only
 immutable release identity so automation cannot confuse an old healthy image with
 the intended new release. Full Settings → System remains authenticated.
+
+## First-release readiness verification — 25 October 2026
+
+CI `40169530139` passed all existing gates for `c55f10894ed09b28fcb1ba8a8c691bdf08cbd371`, including image smoke and HIGH/CRITICAL scanning. Mapping that evidence to R01–R19 identified missing account-lifecycle/UI/restart cases and no supported optional request diagnostic mode. The focused follow-up adds those checks and a SIGUSR2 diagnostic toggle with allowlisted fields; no new runtime configuration or credential is introduced. The hosting guide documents enable/disable behaviour. There is no product workflow or user-guide change.
+
+Focused API verification passed 19 tests in access, receipts and diagnostics integration files, with real isolated local PostgreSQL. API typecheck, changed-file lint, guardrails and a development build passed. Local browser execution could not start because localhost:3000 is already occupied; no other app was stopped and no passing browser result is claimed. The new browser and image assertions must pass in GitHub before release. The readiness report remains pending those results.

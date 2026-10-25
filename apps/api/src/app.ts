@@ -7,6 +7,7 @@ import { config, projectRoot } from "./lib/config.js";
 import { prisma } from "./lib/db.js";
 import { HttpError, errorHandler } from "./lib/errors.js";
 import { metadata } from "./lib/metadata.js";
+import { requestDiagnostics } from "./lib/diagnostics.js";
 import { authHandler } from "./modules/access/auth.js";
 import { accessRouter } from "./modules/access/routes.js";
 import { requireUser } from "./modules/access/middleware.js";
@@ -17,6 +18,7 @@ import { integrationRouter } from "./modules/integrations/routes.js";
 import { statementRouter } from "./modules/statements/routes.js";
 export const app = express();
 app.disable("x-powered-by");
+app.use(requestDiagnostics);
 app.use(
   helmet({
     contentSecurityPolicy: {
