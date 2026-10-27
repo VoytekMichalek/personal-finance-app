@@ -8,6 +8,7 @@ import {
 } from "@finance/shared";
 import { toast } from "sonner";
 import { api, send } from "../lib/api";
+import { suggestCsvBatch } from "./csv-suggestions";
 
 const emptyMapping: Mapping = {
   dateColumn: "",
@@ -40,6 +41,12 @@ export function useCsvImport(initialAccountId: string) {
   const [preview, setPreview] = useState<ImportPreview>();
   const [completed, setCompleted] = useState<number>();
   const [page, setPage] = useState(0);
+  const suggested = useRef(new Set<number>());
+  const [aiProgress, setAiProgress] = useState<{
+    done: number;
+    total: number;
+    failed: boolean;
+  }>();
   const chosen = useRef(new Set<keyof Mapping>());
   const running = useRef(false);
   const mutation = useMutation({
@@ -136,11 +143,14 @@ export function useCsvImport(initialAccountId: string) {
         hasHeaders,
         mapping: checked.data,
       });
+      suggested.current.clear();
+      setAiProgress(undefined);
       setPreview(result);
       setPage(0);
     });
   const updateRow = useCallback(
     (rowNumber: number, patch: Partial<ImportRow>) => {
+      suggested.current.delete(rowNumber);
       setPreview((current) =>
         current
           ? {
@@ -165,45 +175,48 @@ export function useCsvImport(initialAccountId: string) {
   const suggestCategories = () =>
     task("Suggesting categories…", async () => {
       if (!preview) return;
-      for (let offset = 0; offset < preview.rows.length; offset += 100) {
-        const rows = preview.rows
-          .slice(offset, offset + 100)
-          .filter(
-            (r) =>
-              !r.error &&
-              !r.categoryId &&
-              !r.categoryChosen &&
-              r.kind !== "transfer",
+      const pending = preview.rows.filter(
+        (row) =>
+          !row.error &&
+          !row.categoryId &&
+          !row.categoryChosen &&
+          row.kind !== "transfer" &&
+          !suggested.current.has(row.rowNumber),
+      );
+      let done = 0;
+      setAiProgress({ done, total: pending.length, failed: false });
+      for (let offset = 0; offset < pending.length; offset += 25) {
+        const rows = pending.slice(offset, offset + 25);
+        try {
+          const categories = await suggestCsvBatch(csv, hasHeaders, rows);
+          for (const row of rows) suggested.current.add(row.rowNumber);
+          setPreview((current) =>
+            current
+              ? {
+                  ...current,
+                  rows: current.rows.map((row) => {
+                    const category = categories.find(
+                      (item) => item.rowNumber === row.rowNumber,
+                    );
+                    return category &&
+                      !row.categoryId &&
+                      !row.categoryChosen &&
+                      row.kind !== "transfer"
+                      ? { ...row, categoryId: category.categoryId }
+                      : row;
+                  }),
+                }
+              : current,
           );
-        if (!rows.length) continue;
-        const suggestion = await send<Suggestion>("/imports/suggest", {
-          csv,
-          hasHeaders,
-          rows: rows.map(({ rowNumber, description, amountCents, kind }) => ({
-            rowNumber,
-            description,
-            amountCents,
-            kind,
-          })),
-        });
-        setPreview((current) =>
-          current
-            ? {
-                ...current,
-                rows: current.rows.map((row) => {
-                  const category = suggestion.categories.find(
-                    (s) => s.rowNumber === row.rowNumber,
-                  );
-                  return category &&
-                    !row.categoryId &&
-                    !row.categoryChosen &&
-                    row.kind !== "transfer"
-                    ? { ...row, categoryId: category.categoryId }
-                    : row;
-                }),
-              }
-            : current,
-        );
+          done += rows.length;
+          setAiProgress({ done, total: pending.length, failed: false });
+        } catch (error) {
+          setAiProgress({ done, total: pending.length, failed: true });
+          throw new Error(
+            `AI checked ${done} of ${pending.length} remaining transactions. All ${preview.rows.length} source rows are still in the review. Retry suggestions to continue, or review the uncategorised rows manually. ${error instanceof Error ? error.message : ""}`,
+            { cause: error },
+          );
+        }
       }
     });
   const approve = () =>
@@ -225,6 +238,8 @@ export function useCsvImport(initialAccountId: string) {
     });
   function reset() {
     setCompleted(undefined);
+    suggested.current.clear();
+    setAiProgress(undefined);
     setCsv("");
     setFilename("");
     setColumns(undefined);
@@ -247,6 +262,7 @@ export function useCsvImport(initialAccountId: string) {
     busy,
     error: mutation.error?.message,
     aiAvailable,
+    aiProgress,
     fileSelected,
     changeHeaders,
     changeAccount,

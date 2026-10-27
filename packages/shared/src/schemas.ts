@@ -122,6 +122,7 @@ export const mappingSchema = z
     creditColumn: z.string().default(""),
     dateFormat: z.enum(["DMY", "MDY", "ISO"]).default("DMY"),
     invertAmounts: z.boolean().optional(),
+    balanceColumn: z.string().optional(),
   })
   .refine(
     (v) => !!v.amountColumn || (!!v.debitColumn && !!v.creditColumn),
@@ -132,6 +133,7 @@ export const mappingSchema = z
       v.dateColumn,
       v.descriptionColumn,
       ...(v.amountColumn ? [v.amountColumn] : [v.debitColumn, v.creditColumn]),
+      ...(v.balanceColumn ? [v.balanceColumn] : []),
     ];
     return new Set(columns).size === columns.length;
   }, "Choose a different column for each field");
@@ -172,6 +174,20 @@ export const bootstrapSchema = z.object({
   email: z.email(),
   token: z.string().min(1),
 });
+export const csvSuggestionRequestSchema = csvUploadSchema.extend({
+  rows: z
+    .array(
+      z.object({
+        rowNumber: z.number().int().positive(),
+        description: z.string().max(250),
+        amountCents: z.number().int().safe(),
+        kind: z.enum(["income", "expense", "refund", "transfer"]).optional(),
+      }),
+    )
+    .min(1)
+    .max(25)
+    .optional(),
+});
 export const aiSuggestionSchema = z.object({
   mapping: z
     .object({
@@ -187,7 +203,8 @@ export const aiSuggestionSchema = z.object({
     .array(
       z.object({
         rowNumber: z.number().int().positive(),
-        categoryId: id.nullable(),
+        // Untrusted provider output; the API resolves only eligible stored IDs.
+        categoryId: z.string().max(150).nullable(),
       }),
     )
     .max(10000)
@@ -197,3 +214,18 @@ export type AccountInput = z.input<typeof accountSchema>;
 export type TransactionInput = z.input<typeof transactionSchema>;
 export type ScheduleInput = z.input<typeof scheduleSchema>;
 export type Mapping = z.infer<typeof mappingSchema>;
+
+export const bulkDeleteSchema = z.object({
+  records: z
+    .array(z.object({ id: z.uuid(), version: z.number().int().positive() }))
+    .min(1)
+    .max(10000)
+    .refine(
+      (records) =>
+        new Set(records.map((record) => record.id)).size === records.length,
+      "Select each transaction only once.",
+    ),
+});
+export const bulkCategorySchema = bulkDeleteSchema.extend({
+  categoryId: z.uuid().nullable(),
+});

@@ -65,3 +65,33 @@ For this checkout's 27 October verification, missing WebKit native libraries wer
 extracted into `/tmp/finance-csv-libs`; the temporary launcher
 `FINANCE_WEBKIT_EXECUTABLE=/tmp/finance-csv-webkit.sh` preserves that library path.
 This local workaround does not change CI's browser/native-dependency installation.
+
+Account history and large CSV coverage (28 October): pure tests own exact daily
+closing balances, opening boundaries, quiet days, refunds/transfers, identity
+colours and running-balance reconciliation in both source orders. API tests own
+complete AI row coverage, safe handling of unknown/archived/wrong-kind categories,
+the 25-row limit, independent AI/approval rate limits, a real 620-row atomic CSV
+commit, and multi-chunk bulk category rollback after a stale version. The browser
+journeys in account-insights.spec.ts cover all-page selection under account/search/
+category filters, hidden-row preservation, history ranges and category drill-down.
+The csv-ai.spec.ts response barrier proves pending state before an interrupted
+batch, then resumes only unfinished suggestions and commits all 620 source rows.
+Run this timing journey ten times without retries on both browser projects,
+followed by the affected CSV/account/transaction/expense/statement suites. These
+checks reuse the existing production build and one E2E worker; API tests use the
+separate finance_test database. No real household CSV is used in fixtures.
+
+For this local verification, the host lacked Tesseract. A temporary executable in
+/tmp/finance-ocr-bin runs Tesseract from the existing personal-finance:verification
+image with no network and /tmp mounted for scratch images. This preserves the
+real OCR regression assertion without installing system packages. CI and the
+production image continue to install the native tools normally.
+
+Bulk deletion coverage: real PostgreSQL tests verify authenticated, unique and bounded
+selections; 619-row deletion; rollback of earlier chunks on a stale version; and
+confirmed transfer counterparts with receipt protection. Desktop/mobile journeys
+exercise cancellation, filtered multi-page deletion, preserved hidden rows, refreshed
+balances, global-page deletion, and recovery after receipt/version conflicts. These
+use real isolated database/API completion, with response waits registered before
+actions and no added timers. Expense report journeys retain refund-adjusted totals
+after removing the separate Refunds summary card.

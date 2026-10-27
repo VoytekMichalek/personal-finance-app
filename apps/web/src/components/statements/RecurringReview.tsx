@@ -1,3 +1,4 @@
+import { identityColour } from "@finance/shared";
 import { SelectItem } from "../ui/select";
 import { CategoryPicker } from "../categories/CategoryPicker";
 import { DatePicker } from "../ui/date-picker";
@@ -65,7 +66,15 @@ export function RecurringReview({
                   {item.reason} Source rows: {item.evidence.join(", ")}
                 </span>
               </span>
-              <Pill>
+              <Pill
+                colour={identityColour(
+                  schedule.kind === "income"
+                    ? "type:income"
+                    : schedule.subscription
+                      ? "type:subscription"
+                      : "type:bill",
+                )}
+              >
                 {schedule.kind === "income"
                   ? "Income"
                   : schedule.subscription

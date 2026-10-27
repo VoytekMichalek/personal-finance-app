@@ -100,12 +100,13 @@ export function MappingStage({
                 ["amountColumn", "Signed amount"],
                 ["debitColumn", "Debit (if separate)"],
                 ["creditColumn", "Credit (if separate)"],
+                ["balanceColumn", "Running balance (optional)"],
               ] as const
             ).map(([key, label]) => (
               <Field key={key} label={label}>
                 <Select
                   disabled={Boolean(busy)}
-                  value={mapping[key]}
+                  value={mapping[key] ?? ""}
                   onValueChange={(value) => flow.changeMapping(key, value)}
                 >
                   <SelectItem value="">Choose column</SelectItem>

@@ -1,3 +1,4 @@
+import { PersonChip } from "./EntityChip";
 import { SelectItem } from "../ui/select";
 import { z } from "zod";
 import { parseMoney, type Person } from "@finance/shared";
@@ -13,11 +14,12 @@ export const moneyField = z.string().transform((value, context) => {
 export function OwnerOptions({ people }: { people: Person[] }) {
   return (
     <>
-      <SelectItem value="household">Household</SelectItem>
+      <SelectItem value="household">
+        <PersonChip owner="household" people={people} />
+      </SelectItem>
       {people.map((person) => (
         <SelectItem key={person.id} value={person.id}>
-          {person.name}
-          {person.state === "deleted" ? " (former member)" : ""}
+          <PersonChip owner={person.id} people={people} />
         </SelectItem>
       ))}
     </>

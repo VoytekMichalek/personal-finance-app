@@ -10,3 +10,7 @@ export * from "./integrations.js";
 export * from "./expenses.js";
 
 export * from "./categorisation.js";
+
+export * from "./colours.js";
+
+export * from "./account-history.js";

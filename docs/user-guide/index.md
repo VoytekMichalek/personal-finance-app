@@ -21,8 +21,10 @@ Click a summary to see the accounts, transactions or budgets behind it. Forecast
 
 ## Accounts and balances
 
-Open an account card to see its own page: Transactions, Upcoming & forecast, and Statements. Edit account changes its details and archive status. Upload statement adds another PDF to that account. The account forecast includes accepted scheduled bills/income; household budget allowances remain on the household forecast.
-Opening balances establish the starting point; later transactions update them.
+Open an account card to see its own page: Transactions, Balance & spending, Upcoming & forecast, and Statements. Edit account changes its details and archive status. Upload statement adds another PDF to that account. The account forecast includes accepted scheduled bills/income; household budget allowances remain on the household forecast.
+Opening balances establish the starting point immediately before activity on the opening date; transactions on that date are included. A 31 December closing balance can be used as the 1 January opening balance, provided all activity from 1 January onwards is recorded. A later export alone cannot fill an earlier gap.
+
+**Balance & spending** shows daily closing balances for the selected dates, the balance before that period, money in, money out, net change and closing balance. Money in/out includes transfers and refunds as cash movements. Use **View balance values** for the exact numbers. The category breakdown shows expenses less refunds, excluding income and transfers; select a category to see its spending trend and underlying transactions. Missing history affects the balance chart too.
 Record a transfer when moving money between tracked accounts or paying a credit card. The app records both sides together.
 Archive an unused account through its details. History and its remaining balance stay available; settle its balance before retiring it.
 
@@ -30,8 +32,12 @@ Archive an unused account through its details. History and its remaining balance
 Add income, expenses or refunds. Enter a positive amount and let the selected type determine its direction.
 Use the correct expense category for a refund so it reduces that category’s spending.
 Choose the account, date, category and owner. Notes are optional.
-Filter activity by description, date, account, category, type or owner. Select several non-transfer records to change their category together.
+Filter activity by description, date, account, category, type or owner. These filters are also available inside each account’s Transactions tab. **Select all matching transactions** selects every matching row across all pages, not just the 50 shown. Changing a filter clears selection. Individual checkboxes and **Clear selection** refine or reset it.
+Use **Bulk category → Apply category** for selected income, expenses and refunds (up to 10,000 at once). Transfers stay selected but retain their linked transfer classification and are excluded from category edits. For a mixed income/expense selection, filter by type to assign a compatible category; Uncategorised can clear either kind. A concurrent edit rejects the whole bulk change so you can refresh and review.
+Category, person, account and type chips use consistent colours with text labels. Category colours follow your chosen colour; categories sharing a colour get distinct automatic accents.
 Open a transaction to edit it, inspect receipts or delete it. Deleting a transfer removes both linked entries. Remove receipts before deleting a transaction.
+
+Use **Delete selected** in the selection bar to remove multiple transactions in the current filters, including across pages. Review the confirmation count: linked transfer entries outside the selection or in other accounts are included and removed together. Deletion cannot be undone. At most 10,000 entries, including transfer counterparts, can be deleted at once. If any entry has an attached receipt or has changed since the confirmation opened, nothing is deleted. Remove receipts first, or refresh and review the selection before trying again.
 If someone edits the same record while you are editing, refresh and review their changes before saving again.
 
 ## Credit cards
@@ -61,8 +67,10 @@ Uploaded PDFs are private to signed-in household members. Find the original down
 Export your transactions as a CSV from your bank and add the account first. Open the account and choose **Upload CSV**, beside **Upload statement**. The account is already selected. You can also use **Import CSV** on Transactions and choose the account there.
 
 1. **Upload:** choose a file up to 5 MB and 10,000 transaction rows. Comma, semicolon and tab-separated exports are supported. The app detects whether the first row contains column names. Check **First row contains column names** and change it if needed; headerless files use Column 1, Column 2 and so on, preserving the first transaction. Check the sample includes your first transaction. Files with headers need a unique, non-empty name for each column.
-2. **Map columns:** date, description and amount columns are prefilled where possible without requiring AI. Check every suggestion against the sample. Choose a signed amount column, or clear it and choose separate positive debit and credit columns. Negative amounts normally mean money out. If your bank uses positive amounts for spending, select **Reverse amount signs**. Select the exact date format; ambiguous dates default to Australian day/month/year. A wrong format can change dates even when they look valid.
+2. **Map columns:** date, description and amount columns are prefilled where possible without requiring AI. Check every suggestion against the sample. Choose a signed amount column, or clear it and choose separate positive debit and credit columns. Negative amounts normally mean money out. If your bank uses positive amounts for spending, select **Reverse amount signs**. Select the exact date format; ambiguous dates default to Australian day/month/year. A wrong format can change dates even when they look valid. If present, map **Running balance (optional)** to the balance after each transaction; headerless amount/balance columns can be suggested when their running totals reconcile.
 3. **Review & approve:** choose **Review transactions**. Categories are filled automatically using your merchant rules, previous transactions and recognised merchants, just like PDF statements. Review or change these suggestions. Check the target account, dates, amounts and selected money-in/money-out totals. Change an amount or date through **Change mapping**, then preview again. Invalid rows are excluded; possible duplicates start excluded. Select a legitimate duplicate only after checking it. You can deselect any other row you do not want to import.
+
+**Check your balance** shows the file’s date coverage, source/selected/excluded row counts and projected app balance at the end of the file. A verified running-balance column also supplies the bank’s opening and closing balances. A difference requires acknowledgement before approval; check missing earlier exports, excluded/duplicate rows and the account opening balance first. A bank export can contain only a recent portion of the history you requested. The app never invents missing transactions or silently changes the account’s opening balance.
 
 Mark positive refunds with Refund and the original expense category. Mark transfers and credit-card repayments with Transfer, and select the other tracked account; both entries are created together. A later CSV from that other account flags the matching amount/date as a possible duplicate.
 Edit descriptions, categories and owner labels as needed. **Approve & import** saves only the selected valid transactions. No transactions are saved during upload or mapping. **View account** returns to the updated activity. CSV reviews are temporary; if you leave before approving or the preview expires after 24 hours, upload the file again.
@@ -74,6 +82,8 @@ Open **Settings → AI** (More → Settings → AI on mobile). An administrator 
 AI can suggest column mappings and categories. Redacted sample descriptions and CSV samples are sent to OpenRouter when you request suggestions.
 Amounts and dates always come from your CSV. AI cannot commit an import or overwrite a chosen category.
 Review every suggestion. If AI is unavailable, finish the import manually.
+
+CSV category suggestions run in batches of 25 with visible progress. A failed batch is retried once; **Retry suggestions** resumes unfinished work while retaining completed suggestions and all source rows. Uncertain, unknown or incompatible category suggestions remain uncategorised; valid suggestions in the same batch are kept. You can review them manually and approve without AI. AI suggestions never remove transactions or change their dates and amounts. A category failure cannot itself explain a balance difference. If AI requests are temporarily limited, wait a minute before retrying; you can still approve your reviewed transactions.
 
 ## Categories and merchant rules
 Open Categories in the sidebar, or More → Categories on mobile. Categories are separate from Settings. Default income and expense categories are included. Add category creates a new one; choose Parent category to make a subcategory. Parents and children must share the same income/expense type, with one subcategory level.
@@ -140,7 +150,7 @@ Dropdowns use the same visual style throughout the app. Use Tab to focus, Enter 
 
 ## Expense reports
 
-Open **Expenses** to review spending by category, account or person. Use This month, This year or All history, then refine the dates, account, person and category. A parent category filter includes its subcategories; the category breakdown shows each actual category separately. Refunds reduce net expenses, and transfers and income are excluded. Household spending stays under Household rather than being split between people. The report includes monthly totals and the matching transactions. Archived categories and accounts remain available for historical reporting.
+Open **Expenses** to review spending by category, account or person. Use This month, This year or All history, then refine the dates, account, person and category. A parent category filter includes its subcategories; the category breakdown shows each actual category separately. The summary shows Net expenses and Spending. Refunds reduce net expenses, and transfers and income are excluded. Household spending stays under Household rather than being split between people. The report includes monthly totals and the matching transactions. Archived categories and accounts remain available for historical reporting.
 
 To review recurring items from a statement already imported, open its account → Statements → View. **Recurring items from this statement** offers patterns supported by the posted transactions, excluding providers already tracked. Select the ones you want and choose **Accept recurring items**. This adds future schedules without importing the statement's transactions again.
 

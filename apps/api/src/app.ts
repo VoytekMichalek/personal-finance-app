@@ -78,9 +78,25 @@ app.use("/api/auth", accessLimit, authHandler);
 app.use("/api/access", accessLimit, accessRouter);
 app.use("/api", requireUser);
 app.use("/api", financeRouter, receiptRouter, statementRouter);
+// AI batches have their own allowance so a large review cannot exhaust approval.
+app.use(
+  "/api/imports/suggest",
+  rateLimit({
+    keyGenerator: (_req, res) => res.locals.user.id,
+    windowMs: 60000,
+    limit: 30,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+      error:
+        "Please wait a minute before retrying AI suggestions. Your reviewed transactions are unchanged.",
+    },
+  }),
+);
 app.use(
   "/api/imports",
   rateLimit({
+    skip: (req) => req.path === "/suggest",
     keyGenerator: (_req, res) => res.locals.user.id,
     windowMs: 60000,
     limit: 30,

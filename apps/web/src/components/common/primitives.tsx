@@ -137,14 +137,25 @@ export { Select } from "../ui/select";
 export function Pill({
   children,
   tone = "neutral",
+  colour,
 }: {
   children: ReactNode;
   tone?: "neutral" | "positive" | "warning";
+  colour?: string;
 }) {
   return (
     <span
+      style={
+        colour
+          ? {
+              backgroundColor: `color-mix(in srgb, ${colour} 13%, white)`,
+              color: `color-mix(in srgb, ${colour} 55%, black)`,
+              borderColor: `color-mix(in srgb, ${colour} 28%, white)`,
+            }
+          : undefined
+      }
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium",
+        "inline-flex max-w-full items-center rounded-full border border-transparent px-2.5 py-1 text-[11px] font-medium",
         tone === "positive"
           ? "bg-emerald-50 text-emerald-700"
           : tone === "warning"

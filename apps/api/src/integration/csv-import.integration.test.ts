@@ -188,3 +188,42 @@ it("automatically categorises CSV previews like statements and preserves reviewe
     subscriptions.id,
   ]);
 });
+
+it("reconciles and imports every row of a synthetic 620-row bank export", async () => {
+  const accountId = await account();
+  await prisma.account.update({
+    where: { id: accountId },
+    data: { openingBalanceCents: 100000n },
+  });
+  const lines = Array.from(
+    { length: 620 },
+    (_, index) =>
+      `${today()},-1.01,Synthetic purchase ${index},${((100000 - (index + 1) * 101) / 100).toFixed(2)}`,
+  );
+  const csv = lines.reverse().join("\n");
+  const headers = await post("/imports/headers", { csv, accountId });
+  expect(headers.body.rowCount).toBe(620);
+  const preview = await post("/imports/preview", {
+    csv,
+    accountId,
+    hasHeaders: false,
+    mapping: headers.body.mapping,
+  });
+  expect(preview.body.reconciliation).toMatchObject({
+    balanceVerified: true,
+    sourceRows: 620,
+    bankOpeningCents: 100000,
+    bankClosingCents: 37380,
+  });
+  expect(preview.body.rows).toHaveLength(620);
+  const result = await post(`/imports/${preview.body.id}/commit`, {
+    rows: preview.body.rows,
+  });
+  expect(result.body.imported).toBe(620);
+  const saved = await prisma.transaction.findMany({ where: { accountId } });
+  expect(saved).toHaveLength(620);
+  expect(
+    saved.reduce((sum, row) => sum + Number(row.amountCents), 100000),
+  ).toBe(37380);
+  expect(new Set(saved.map((row) => row.sourceRow)).size).toBe(620);
+});

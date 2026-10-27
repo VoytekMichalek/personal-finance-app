@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, ArrowUpRight } from "lucide-react";
-import { assetValue, money } from "@finance/shared";
+import { assetValue, money, identityColour } from "@finance/shared";
 import { useSnapshot } from "../hooks/data";
 import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
@@ -52,8 +52,14 @@ export function Assets() {
                 <div className="min-w-0">
                   <p className="break-words font-semibold">{asset.name}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <Pill>{asset.classification}</Pill>
-                    <Pill>
+                    <Pill
+                      colour={identityColour(
+                        "asset-class:" + asset.classification,
+                      )}
+                    >
+                      {asset.classification}
+                    </Pill>
+                    <Pill colour={identityColour("asset-kind:" + asset.kind)}>
                       {asset.kind === "asset" ? "Asset" : "Liability"}
                     </Pill>
                   </div>

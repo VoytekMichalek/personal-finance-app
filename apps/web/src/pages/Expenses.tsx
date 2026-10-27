@@ -160,11 +160,10 @@ function ExpenseReport({ data }: { data: Snapshot }) {
           Choose an end date on or after the start date.
         </p>
       )}
-      <div className="mb-5 grid gap-4 sm:grid-cols-3">
+      <div className="mb-5 grid gap-4 sm:grid-cols-2">
         {[
           ["Net expenses", report.totalCents],
           ["Spending", report.spendingCents],
-          ["Refunds", report.refundCents],
         ].map(([label, amount]) => (
           <Card key={label}>
             <p className="text-xs text-muted-foreground">{label}</p>

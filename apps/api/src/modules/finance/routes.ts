@@ -1,3 +1,5 @@
+import { bulkCategory } from "./bulk-category.js";
+import { bulkDelete } from "./bulk-delete.js";
 import { Router } from "express";
 import { z } from "zod";
 import {
@@ -131,35 +133,11 @@ financeRouter.delete("/transactions/:id", async (req, res) => {
   res.json({ ok: true });
 });
 financeRouter.post("/transactions/bulk-category", async (req, res) => {
-  const input = z
-    .object({
-      categoryId: z.uuid().nullable(),
-      records: z
-        .array(z.object({ id: z.uuid(), version: z.number().int().positive() }))
-        .min(1)
-        .max(1000),
-    })
-    .parse(req.body);
-  await prisma.$transaction(async (tx) => {
-    for (const record of input.records) {
-      const current = await tx.transaction.findUnique({
-        where: { id: record.id },
-      });
-      if (!current || current.kind === "transfer")
-        throw new HttpError(400, "Select income, expenses or refunds.");
-      await validateCategory(tx, input.categoryId, current.kind);
-      const changed = await tx.transaction.updateMany({
-        where: record,
-        data: { categoryId: input.categoryId, version: { increment: 1 } },
-      });
-      if (!changed.count)
-        throw new HttpError(
-          409,
-          "A selected transaction changed. Refresh and try again.",
-        );
-    }
-  });
+  await bulkCategory(req.body);
   res.json({ ok: true });
+});
+financeRouter.post("/transactions/bulk-delete", async (req, res) => {
+  res.json(await bulkDelete(req.body));
 });
 for (const method of ["post", "put"] as const) {
   financeRouter[method](

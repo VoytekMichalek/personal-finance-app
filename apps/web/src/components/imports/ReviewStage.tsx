@@ -1,3 +1,6 @@
+import { importBalance } from "../../lib/import-balance";
+import { useState } from "react";
+import { ReconciliationNotice } from "./ReconciliationNotice";
 import { money, type ImportPreview, type Snapshot } from "@finance/shared";
 import { FileSpreadsheet, Sparkles } from "lucide-react";
 import type { CsvImport } from "../../hooks/csv-import";
@@ -14,6 +17,17 @@ export function ReviewStage({
   flow: CsvImport;
   preview: ImportPreview;
 }) {
+  const [acknowledged, setAcknowledged] = useState("");
+  const summary = importBalance(data, flow.accountId, preview);
+  const reviewKey = JSON.stringify([
+    preview.id,
+    summary.difference,
+    preview.rows.filter((row) => row.include).map((row) => row.rowNumber),
+  ]);
+  const needsCheck = Boolean(
+    summary.source?.warning ||
+      (summary.difference !== null && summary.difference !== 0),
+  );
   const { accountId, filename, busy, page, setPage, updateRow } = flow;
   const selected = preview.rows.filter((row) => row.include && !row.error);
   const moneyIn = selected.reduce(
@@ -26,6 +40,7 @@ export function ReviewStage({
   );
   return (
     <>
+      <ReconciliationNotice summary={summary} />
       <Card className="mb-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
@@ -59,7 +74,9 @@ export function ReviewStage({
               onClick={() => void flow.suggestCategories()}
             >
               <Sparkles size={14} />
-              Suggest categories
+              {flow.aiProgress?.failed
+                ? "Retry suggestions"
+                : "Suggest categories"}
             </Button>
             <Button
               variant="secondary"
@@ -69,7 +86,11 @@ export function ReviewStage({
               Change mapping
             </Button>
             <Button
-              disabled={!selected.length || Boolean(busy)}
+              disabled={
+                !selected.length ||
+                Boolean(busy) ||
+                (needsCheck && acknowledged !== reviewKey)
+              }
               onClick={() => void flow.approve()}
             >
               {busy || "Approve & import (" + selected.length + ")"}
@@ -77,6 +98,31 @@ export function ReviewStage({
           </div>
         </div>
       </Card>
+      {flow.aiProgress && (
+        <p role="status" className="mb-4 text-sm">
+          AI checked {flow.aiProgress.done} of {flow.aiProgress.total} remaining
+          transactions
+          {flow.aiProgress.failed
+            ? " · interrupted; retry to continue"
+            : flow.aiProgress.done === flow.aiProgress.total
+              ? " · complete. Uncertain matches remain uncategorised."
+              : "…"}
+        </p>
+      )}
+      {needsCheck && (
+        <label className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={acknowledged === reviewKey}
+            onChange={(event) =>
+              setAcknowledged(event.target.checked ? reviewKey : "")
+            }
+          />
+          I have checked the balance difference and want to import the selected
+          rows.
+        </label>
+      )}
       <ImportRows
         {...{ data, accountId, preview, page, setPage, busy, updateRow }}
       />

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { categoryLabel, type Category } from "@finance/shared";
+import { type Category } from "@finance/shared";
 import { Select, SelectItem } from "../ui/select";
+import { CategoryChip } from "../common/EntityChip";
 import { Dialog } from "../ui/dialog";
 import { CategoryForm } from "./Categories";
 export function CategoryPicker({
@@ -33,12 +34,14 @@ export function CategoryPicker({
         }
       >
         <SelectItem value="__new_category__">+ Create category</SelectItem>
-        <SelectItem value="">Uncategorised</SelectItem>
+        <SelectItem value="">
+          <CategoryChip categoryId={null} categories={categories} />
+        </SelectItem>
         {categories
           .filter((c) => !c.archived && c.kind === kind)
           .map((c) => (
             <SelectItem key={c.id} value={c.id}>
-              {categoryLabel(c, categories)}
+              <CategoryChip categoryId={c.id} categories={categories} />
             </SelectItem>
           ))}
       </Select>

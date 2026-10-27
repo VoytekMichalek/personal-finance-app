@@ -1,3 +1,4 @@
+import { useId } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -19,6 +20,7 @@ export function BalanceChart({
   valueLabel?: string;
   step?: boolean;
 }) {
+  const gradient = useId();
   return (
     <div role="img" aria-label={label} className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -27,7 +29,7 @@ export function BalanceChart({
           margin={{ top: 10, right: 5, left: 0, bottom: 0 }}
         >
           <defs>
-            <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#007aff" stopOpacity={0.14} />
               <stop offset="100%" stopColor="#007aff" stopOpacity={0} />
             </linearGradient>
@@ -72,8 +74,8 @@ export function BalanceChart({
             dataKey="balanceCents"
             stroke="#007aff"
             strokeWidth={2.5}
-            dot={step ? { r: 3, fill: "#007aff" } : false}
-            fill="url(#balanceFill)"
+            dot={step && points.length < 90 ? { r: 3, fill: "#007aff" } : false}
+            fill={`url(#${gradient})`}
             isAnimationActive={false}
           />
         </AreaChart>

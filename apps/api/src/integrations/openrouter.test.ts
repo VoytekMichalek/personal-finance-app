@@ -54,3 +54,60 @@ describe("AI is advisory and validated", () => {
     );
   });
 });
+
+it("requests categories without an unused mapping and reports truncated responses", async () => {
+  const fetcher = vi.fn().mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        choices: [
+          {
+            finish_reason: "length",
+            message: { content: '{"categories":[' },
+          },
+        ],
+      }),
+    ),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  await expect(
+    suggest(approvedModels.models[0]!.id, { rows: [] }, "categories"),
+  ).rejects.toThrow("cut short");
+  const request = JSON.parse(fetcher.mock.calls[0]![1].body);
+  expect(request.response_format.json_schema.schema.required).toEqual([
+    "categories",
+  ]);
+  expect(
+    request.response_format.json_schema.schema.properties.mapping,
+  ).toBeUndefined();
+  expect(request.max_tokens).toBe(4000);
+});
+
+it("constrains category output to supplied IDs and allows the service to sanitise provider mistakes", async () => {
+  const categoryId = "00000000-0000-4000-8000-000000000001";
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  categories: [{ rowNumber: 1, categoryId: "invented" }],
+                }),
+              },
+            },
+          ],
+        }),
+      ),
+    );
+  vi.stubGlobal("fetch", fetcher);
+  expect(
+    await suggest(approvedModels.models[0]!.id, {}, "categories", [categoryId]),
+  ).toEqual({ categories: [{ rowNumber: 1, categoryId: "invented" }] });
+  const request = JSON.parse(fetcher.mock.calls[0]![1].body);
+  expect(
+    request.response_format.json_schema.schema.properties.categories.items
+      .properties.categoryId.enum,
+  ).toEqual([categoryId, null]);
+});

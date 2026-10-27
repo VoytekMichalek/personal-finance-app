@@ -184,6 +184,13 @@ version (10.7.4 or later), preserve the 48-hour dependency age policy and rerun
 affected checks in a future release. No audit suppression was introduced and
 v0.0.1 must not be retagged.
 
+The 28 October v0.0.4 candidate audit passes the HIGH/CRITICAL dependency gate
+and reports two moderate advisories: the existing `ip-address` item above, plus
+[`qs` GHSA-6pq8-jhm2-2vcw](https://github.com/advisories/GHSA-6pq8-jhm2-2vcw).
+No dependency was changed or advisory suppressed in this feature release; the new
+moderate item remains an upgrade/call-path assessment follow-up. Image scans remain
+separate required release gates.
+
 ## Troubleshooting logs
 
 Normal requests, authentication denials and health polls are quiet. Unexpected

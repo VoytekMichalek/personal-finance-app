@@ -1,5 +1,5 @@
 import { SelectItem, FormSelect } from "../ui/select";
-import { categoryLabel } from "@finance/shared";
+import { CategoryChip } from "../common/EntityChip";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -140,7 +140,7 @@ export function ScheduleForm({
             .filter((c) => !c.archived && c.kind === kind)
             .map((c) => (
               <SelectItem key={c.id} value={c.id}>
-                {categoryLabel(c, data.categories)}
+                <CategoryChip categoryId={c.id} categories={data.categories} />
               </SelectItem>
             ))}
         </Select>

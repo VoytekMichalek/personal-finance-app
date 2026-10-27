@@ -1,6 +1,6 @@
+import { CategoryChip, PersonChip } from "../common/EntityChip";
 import { Link } from "react-router-dom";
 import {
-  categoryLabel,
   displayDate,
   money,
   type Snapshot,
@@ -18,7 +18,6 @@ export function ExpenseTransactions({
       {[...rows]
         .sort((a, b) => b.date.localeCompare(a.date))
         .map((row) => {
-          const category = data.categories.find((c) => c.id === row.categoryId);
           return (
             <article
               key={row.id}
@@ -28,15 +27,11 @@ export function ExpenseTransactions({
                 <p className="break-words font-medium">{row.description}</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
                   {displayDate(row.date)} ·{" "}
-                  {category
-                    ? categoryLabel(category, data.categories)
-                    : "Uncategorised"}{" "}
-                  ·{" "}
-                  {row.owner === "household"
-                    ? "Household"
-                    : (data.people.find((p) => p.id === row.owner)?.name ??
-                      "Former member")}{" "}
-                  ·{" "}
+                  <CategoryChip
+                    categoryId={row.categoryId}
+                    categories={data.categories}
+                  />{" "}
+                  <PersonChip owner={row.owner} people={data.people} />{" "}
                   <Link
                     className="text-primary"
                     to={"/accounts/" + row.accountId}

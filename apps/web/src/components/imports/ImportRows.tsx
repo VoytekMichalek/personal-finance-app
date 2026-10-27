@@ -8,6 +8,7 @@ import {
 } from "react";
 import {
   money,
+  identityColour,
   displayDate,
   type ImportRow,
   type Snapshot,
@@ -112,14 +113,24 @@ const ReviewRow = memo(function ReviewRow({
             }
           >
             {row.amountCents < 0 ? (
-              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="expense">
+                <Pill colour={identityColour("type:expense")}>Expense</Pill>
+              </SelectItem>
             ) : (
               <>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="refund">Refund</SelectItem>
+                <SelectItem value="income">
+                  <Pill colour={identityColour("type:income")}>Income</Pill>
+                </SelectItem>
+                <SelectItem value="refund">
+                  <Pill colour={identityColour("type:refund")}>Refund</Pill>
+                </SelectItem>
               </>
             )}
-            <SelectItem value="transfer">Transfer / card repayment</SelectItem>
+            <SelectItem value="transfer">
+              <Pill colour={identityColour("type:transfer")}>
+                Transfer / card repayment
+              </Pill>
+            </SelectItem>
           </Select>
         </label>
         <div className="grid min-w-0 gap-1.5 text-xs text-muted-foreground">
@@ -138,7 +149,9 @@ const ReviewRow = memo(function ReviewRow({
                 .filter((a) => !a.archived && a.id !== accountId)
                 .map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.name}
+                    <Pill colour={identityColour("account:" + a.id)}>
+                      {a.name}
+                    </Pill>
                   </SelectItem>
                 ))}
             </Select>

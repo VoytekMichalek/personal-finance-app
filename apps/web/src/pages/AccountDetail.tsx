@@ -1,3 +1,5 @@
+import { TransactionBrowser } from "../components/transactions/TransactionBrowser";
+import { AccountInsights } from "../components/accounts/AccountInsights";
 import { useState } from "react";
 import {
   Link,
@@ -56,7 +58,6 @@ export function AccountDetail() {
   const [search, setSearch] = useSearchParams();
   const tab = search.get("tab") ?? "activity";
   const setTab = (value: string) => setSearch({ tab: value });
-  const [page, setPage] = useState(0);
   if (query.isPending) return <Loading />;
   if (query.error)
     return (
@@ -164,6 +165,7 @@ export function AccountDetail() {
       >
         {[
           ["activity", "Transactions"],
+          ["insights", "Balance & spending"],
           ["forecast", "Upcoming & forecast"],
           ["statements", "Statements"],
         ].map(([value, label]) => (
@@ -206,60 +208,24 @@ export function AccountDetail() {
             {displayDate(account.openingDate)}. {transactions.length}{" "}
             transactions.
           </p>
-          <div className="divide-y">
-            {transactions.slice(page * 50, page * 50 + 50).map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  if (t.kind === "transfer") {
-                    navigate("/transactions?account=" + id);
-                    return;
-                  }
-                  setTransaction(t);
-                  setTransactionOpen(true);
-                }}
-                className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-4 text-left hover:bg-muted"
-              >
-                <span>
-                  <span className="block text-sm font-medium">
-                    {t.description}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {displayDate(t.date)} ·{" "}
-                    {data.categories.find((c) => c.id === t.categoryId)?.name ??
-                      (t.kind === "transfer" ? "Transfer" : "Uncategorised")}
-                  </span>
-                </span>
-                <span className="text-sm font-semibold tabular-nums">
-                  {money(t.amountCents)}
-                </span>
-              </button>
-            ))}
-          </div>
-          {!transactions.length && (
-            <p className="py-8 text-sm text-muted-foreground">
-              Upload a statement or CSV, or add your first transaction.
-            </p>
-          )}
-          <div className="mt-4 flex justify-between">
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={!page}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={(page + 1) * 50 >= transactions.length}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <TransactionBrowser
+            data={data}
+            accountId={account.id}
+            onOpen={(record) => {
+              if (record.kind === "transfer") {
+                navigate(
+                  "/transactions?account=" + id + "&detail=" + record.id,
+                );
+                return;
+              }
+              setTransaction(record);
+              setTransactionOpen(true);
+            }}
+          />
         </Card>
+      )}
+      {tab === "insights" && (
+        <AccountInsights key={account.id} data={data} account={account} />
       )}
       {tab === "forecast" && (
         <>

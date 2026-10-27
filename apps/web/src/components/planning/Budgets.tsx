@@ -1,5 +1,5 @@
 import { SelectItem, FormSelect } from "../ui/select";
-import { categoryLabel } from "@finance/shared";
+import { CategoryChip } from "../common/EntityChip";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -200,7 +200,7 @@ function BudgetForm({
             .filter((c) => !c.archived && c.kind === "expense")
             .map((c) => (
               <SelectItem key={c.id} value={c.id}>
-                {categoryLabel(c, data.categories)}
+                <CategoryChip categoryId={c.id} categories={data.categories} />
               </SelectItem>
             ))}
         </FormSelect>

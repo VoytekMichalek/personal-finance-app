@@ -1,5 +1,5 @@
 import { SelectItem, FormSelect } from "../ui/select";
-import { categoryLabel } from "@finance/shared";
+import { categoryLabel, categoryColour, identityColour } from "@finance/shared";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,7 +61,9 @@ export function Categories({ data }: { data: Snapshot }) {
             >
               <span
                 className="size-2.5 rounded-full"
-                style={{ background: category.color }}
+                style={{
+                  background: categoryColour(category, data.categories),
+                }}
               />
               <span className="flex-1 text-xs font-medium">
                 {category.parentId
@@ -70,7 +72,15 @@ export function Categories({ data }: { data: Snapshot }) {
                   : ""}
                 {category.name}
               </span>
-              <Pill>{category.archived ? "Archived" : category.kind}</Pill>
+              <Pill
+                colour={
+                  category.archived
+                    ? undefined
+                    : identityColour("type:" + category.kind)
+                }
+              >
+                {category.archived ? "Archived" : category.kind}
+              </Pill>
               <Pencil size={12} className="text-gray-400" />
             </button>
           ))}

@@ -1,3 +1,4 @@
+import { PersonChip } from "../components/common/EntityChip";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Wallet, Plus, ArrowUpRight, CreditCard, Banknote } from "lucide-react";
@@ -122,12 +123,7 @@ export function Accounts() {
                   {money(balance)}
                 </p>
                 <div className="flex gap-2">
-                  <Pill>
-                    {account.owner === "household"
-                      ? "Household"
-                      : (data.people.find((p) => p.id === account.owner)
-                          ?.name ?? "Former member")}
-                  </Pill>
+                  <PersonChip owner={account.owner} people={data.people} />
                   {account.archived && <Pill>Archived</Pill>}
                 </div>
               </button>

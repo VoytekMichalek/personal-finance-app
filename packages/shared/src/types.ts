@@ -116,7 +116,18 @@ export type ImportRow = {
   duplicate: boolean;
   error: string | null;
 };
+export type CsvReconciliation = {
+  sourceRows: number;
+  from: string | null;
+  to: string | null;
+  netCents: number;
+  bankOpeningCents: number | null;
+  bankClosingCents: number | null;
+  balanceVerified: boolean;
+  warning: string | null;
+};
 export type ImportPreview = {
+  reconciliation?: CsvReconciliation;
   id: string;
   rows: ImportRow[];
   filename: string;

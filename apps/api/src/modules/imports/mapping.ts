@@ -1,5 +1,6 @@
 import { mappingSchema, parseMoney, type Mapping } from "@finance/shared";
 import { parseDate } from "./parser.js";
+import { runningBalances } from "./balances.js";
 
 // Suggestions are deterministic and deliberately editable; ambiguous dates keep
 // the Australian default. Never infer debit/credit direction from magnitude.
@@ -101,10 +102,37 @@ export function suggestMapping(
     debitColumn,
     creditColumn,
     dateFormat: formats(dateColumn)[0] ?? "DMY",
+    balanceColumn: find([
+      "balance",
+      "runningbalance",
+      "accountbalance",
+      "closingbalance",
+    ]),
   };
   if (headers.every((h) => /^Column \d+$/.test(h))) {
     // A balance or account number can also be numeric. Leave ambiguous amounts unmapped.
     if (numeric.length === 1) guessed.amountColumn = numeric[0]!;
+    if (numeric.length === 2 && sample.length >= 3) {
+      const candidates = numeric.flatMap((amount) => {
+        const balance = numeric.find((column) => column !== amount)!;
+        try {
+          const checked = runningBalances(
+            sample.map((row) => ({
+              date: parseDate(row[dateColumn]!, guessed.dateFormat),
+              amountCents: parseMoney(row[amount]!),
+            })),
+            sample.map((row) => parseMoney(row[balance]!)),
+          );
+          return checked ? [{ amount, balance }] : [];
+        } catch {
+          return [];
+        }
+      });
+      if (candidates.length === 1) {
+        guessed.amountColumn = candidates[0]!.amount;
+        guessed.balanceColumn = candidates[0]!.balance;
+      }
+    }
     const text = headers.filter(
       (h) => h !== dateColumn && !numeric.includes(h),
     );
@@ -119,6 +147,7 @@ export function suggestMapping(
       ...(mapping.amountColumn
         ? [mapping.amountColumn]
         : [mapping.debitColumn, mapping.creditColumn]),
+      ...(mapping.balanceColumn ? [mapping.balanceColumn] : []),
     ];
     if (
       used.every((h) => headers.includes(h)) &&

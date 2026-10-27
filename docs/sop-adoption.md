@@ -245,3 +245,86 @@ fix, the full affected CSV/journeys/statements/transactions/review-reports/AI-se
 selection passed 49 cases in 3.2 minutes; its existing desktop-only sidebar case
 was inapplicable on mobile. Long-column desktop/mobile screenshots were inspected.
 No test assertions, timeouts, browser projects or isolation boundaries were weakened.
+
+## CSV reconciliation and account insights — 28 October 2026
+
+Current SOP main was retrieved once through the installed read-only helper at
+`2026-10-27T19:14:25.039Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, held fixed for this task. Policy loading,
+architecture, application UI, testing and user-documentation guidance were read
+against the adopted baseline. Focused local checks and repository-owned full CI
+remain the applicable approach; no unrelated policy migration is claimed.
+
+CSV review now reconciles a mapped running balance, exposes file coverage and
+selected/excluded totals, and flags a bank/app difference before approval. AI
+category responses use bounded batches, complete row-coverage validation, progress
+and resumable retries. The provider schema lists eligible IDs; unknown, archived
+or wrong-kind category IDs are left uncategorised without discarding valid labels; source rows, amounts and dates remain authoritative.
+Account/global transaction filters share selection across all matching pages and
+atomic optimistic bulk categorisation. Account history includes daily closing
+balances and category spending drill-downs. Identity chips use stable colours with
+text labels. The maintained user guide covers these flows and recovery.
+
+No schema, dependency, environment input, auth, logging or deployment workflow
+changes are introduced. The supplied bank CSV was inspected read-only; personal
+rows are not included in fixtures, repository documentation or AI requests. All
+automated financial tests use synthetic records in finance_test or finance_e2e.
+At this checkpoint, no release or production ledger change was made. The owner
+subsequently authorised the v0.0.4 release described below.
+
+Verification on the working tree based on `3036191`: all 76 unit tests, all 58
+real PostgreSQL integration tests, all workspace typechecks, lint, guardrails and
+production builds passed. The three affected pending/retry/focus journeys passed
+ten consecutive runs per browser with retries disabled (60 passes). The complete
+affected account/CSV/transaction/expense/statement/settings browser selection then
+passed 61 cases; its existing desktop-only sidebar case was inapplicable on mobile.
+Desktop/mobile account-chart and mapping screenshots were inspected. Initial
+fixture/selector failures were corrected, including giving the archived-category
+regression its own temporary category; no assertion or timeout was weakened.
+The final rate-limit separation retains 30 AI requests per minute per user while
+allowing independent import approval; its exhaustion and successful commit path
+passed the API integration suite. Real provider calls were not required for these
+synthetic failure/recovery checks.
+
+The local frontend is available at localhost:5173. During browser verification,
+a temporary local launcher served the normal API on 3001 and proxied Vite to it,
+while the isolated E2E API used 3000. Both local readiness and the frontend returned
+200, and an unauthenticated proxied API request correctly returned 401. Repository
+port/configuration conventions are unchanged. That local checkpoint preceded the owner’s request to commit and release v0.0.4.
+
+## Bulk deletion and v0.0.4 release candidate — 28 October 2026
+
+The owner requested bulk deletion, removal of the separate Refunds summary card,
+and a commit followed by the next patch release. The fixed SOP snapshot above
+remains in use; its newer shared-wrapper/build-metadata conventions are not
+migrated. The permanent repository-owned CI and automatic deployment exceptions
+remain authoritative. Root and workspace versions are now 0.0.4.
+
+Filtered selections expose Delete selected on both global and account transaction
+views. Confirmation freezes IDs and versions and counts linked counterparts
+outside the filter. The API validates the complete confirmed transfer set and
+rejects the entire deletion for receipts, missing entries or stale versions,
+including rollback across deletion chunks. Tests mutate only isolated synthetic
+records. Production household records are not edited by the release task. The
+Expenses summary retains Spending and Net expenses; refunds still reduce totals.
+
+Repository inspection for R17–R19 confirms no environment input, service ownership,
+configuration phase, auth, logging sink or diagnostic-control change. New validation
+and stale/receipt conflicts use the existing quiet 4xx path; no transaction bodies
+or provider responses are logged. There is no schema/migration or dependency change.
+The existing single API/webapp image and documented runtime-only root example
+remain applicable. The required exact-candidate Validate/Release image smoke gates
+will verify startup validation, quiet denials/polls, sanitised failure reporting and
+diagnostic redaction before deployment; live release evidence belongs in handover.
+
+Final working-tree verification passed: guardrails, lint, every workspace typecheck,
+production builds, all 76 unit tests, all 62 real PostgreSQL integration tests and
+all five deployment-script tests. The full affected browser selection passed 65
+cases in 4.3 minutes, with the existing desktop-only sidebar case inapplicable on
+mobile. Both new bulk-delete journeys passed on each browser, and confirmation
+and two-card expense screenshots were inspected. The earlier 60 consecutive
+pending/retry/focus passes remain applicable; no timing behaviour changed in this
+last increment. No retries or assertions were weakened. The dependency audit
+passed its high/critical gate with two moderate advisories recorded in hosting.md.
+The local app remains on localhost:5173 with its normal database, separate from
+finance_test and finance_e2e.

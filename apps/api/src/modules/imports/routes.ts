@@ -14,9 +14,10 @@ import { prisma, json } from "../../lib/db.js";
 import { HttpError } from "../../lib/errors.js";
 import { validateAccount } from "../finance/service.js";
 import { csvRecords, parseRows, readCsv } from "./parser.js";
-import { redact, suggest } from "../../integrations/openrouter.js";
+import { suggestCsv } from "./suggestions.js";
 import { commitRows } from "./commit.js";
 import { suggestMapping } from "./mapping.js";
+import { reconcileCsv } from "./balances.js";
 export const importRouter = Router();
 importRouter.get("/mapping/:accountId", async (req, res) => {
   const saved = await prisma.importMapping.findUnique({
@@ -42,80 +43,14 @@ importRouter.post("/headers", async (req, res) => {
   });
 });
 importRouter.post("/suggest", async (req, res) => {
-  const input = z
-    .object({
-      csv: z.string().max(5_000_000),
-      hasHeaders: z.boolean().default(true),
-      rows: z
-        .array(
-          z.object({
-            rowNumber: z.number().int(),
-            description: z.string().max(250),
-            amountCents: z.number(),
-            kind: z
-              .enum(["income", "expense", "refund", "transfer"])
-              .optional(),
-          }),
-        )
-        .max(500)
-        .optional(),
-    })
-    .parse(req.body);
-  const modelId = (await prisma.setup.findUnique({ where: { id: 1 } }))
-    ?.modelId;
-  if (!modelId)
-    throw new HttpError(400, "Choose a model in Settings → AI first.");
-  const records = csvRecords(input.csv, input.hasHeaders);
-  const categories = await prisma.category.findMany({
-    where: { archived: false },
-    select: { id: true, name: true, kind: true },
-  });
-  const result = await suggest(modelId, {
-    headers: Object.keys(records[0] ?? {}),
-    sample: records
-      .slice(0, 3)
-      .map((row) =>
-        Object.fromEntries(Object.entries(row).map(([k, v]) => [k, redact(v)])),
-      ),
-    categories,
-    rows: input.rows?.map((row) => ({
-      rowNumber: row.rowNumber,
-      description: redact(row.description),
-      direction: row.kind
-        ? row.kind === "income"
-          ? "income"
-          : "expense"
-        : row.amountCents < 0
-          ? "expense"
-          : "income",
-    })),
-  });
-  const headers = Object.keys(records[0] ?? {});
-  if (
-    result.mapping &&
-    [
-      result.mapping.dateColumn,
-      result.mapping.descriptionColumn,
-      result.mapping.amountColumn,
-      result.mapping.debitColumn,
-      result.mapping.creditColumn,
-    ].some((c) => c && !headers.includes(c))
-  )
-    throw new HttpError(502, "AI suggested a column that is not in the CSV.");
-  if (
-    result.categories.some(
-      (item) =>
-        item.categoryId && !categories.some((c) => c.id === item.categoryId),
-    )
-  )
-    throw new HttpError(502, "AI suggested an unknown category.");
-  res.json(result);
+  res.json(await suggestCsv(req.body));
 });
 importRouter.post("/preview", async (req, res) => {
   const input = previewSchema.parse(req.body);
   const account = await validateAccount(prisma, input.accountId);
   const records = csvRecords(input.csv, input.hasHeaders);
   const rows = parseRows(records, input.mapping, account.owner);
+  const reconciliation = reconcileCsv(records, rows, input.mapping);
   const [existing, categories, rules] = await Promise.all([
     prisma.transaction.findMany({
       where: { accountId: account.id },
@@ -158,6 +93,7 @@ importRouter.post("/preview", async (req, res) => {
     id: batch.id,
     rows,
     filename: "CSV import",
+    reconciliation,
     validCount: rows.filter((r) => !r.error).length,
     invalidCount: rows.filter((r) => r.error).length,
   });
