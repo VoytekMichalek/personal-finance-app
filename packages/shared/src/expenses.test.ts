@@ -68,6 +68,75 @@ it("retains net refunds and uncategorised spending", () => {
     { id: "uncategorised", amountCents: -2000, count: 1 },
   ]);
 });
+it("searches descriptions consistently across totals and groups while retaining every other filter", () => {
+  const data = {
+    categories,
+    transactions: [
+      row("spend", "expense", -4000, { description: "Funky shop" }),
+      row("refund", "refund", 1500, { description: "FUNKY refund" }),
+      row("unmatched", "expense", -999, { description: "Other purchase" }),
+      row("uncategorised", "expense", -700, {
+        description: "Funky uncategorised purchase",
+        categoryId: null,
+      }),
+      row("other-person", "expense", -1000, {
+        description: "Funky shop",
+        owner: "household",
+      }),
+      row("other-account", "expense", -2000, {
+        description: "Funky shop",
+        accountId: "bank",
+      }),
+      row("outside", "expense", -3000, {
+        description: "Funky shop",
+        date: "2025-12-31",
+      }),
+      row("transfer", "transfer", -4000, { description: "Funky shop" }),
+    ],
+  };
+  const filters = {
+    from: "2026-01-01",
+    to: "2026-01-31",
+    owner: "person",
+    accountId: "card",
+    categoryId: "home",
+    search: "  fUnKy  ",
+  };
+  const report = expenseReport(data, filters);
+  expect(report.rows.map((item) => item.id)).toEqual(["spend", "refund"]);
+  expect(report.spendingCents).toBe(4000);
+  expect(report.refundCents).toBe(1500);
+  expect(report.totalCents).toBe(2500);
+  for (const group of [
+    report.categories,
+    report.accounts,
+    report.people,
+    report.months,
+  ])
+    expect(
+      group.map(({ amountCents, count }) => ({ amountCents, count })),
+    ).toEqual([{ amountCents: 2500, count: 2 }]);
+  expect(
+    expenseReport(data, {
+      ...filters,
+      detail: { group: "categories", id: "insurance" },
+    }).rows,
+  ).toEqual(report.rows);
+  const uncategorised = expenseReport(data, {
+    ...filters,
+    categoryId: "uncategorised",
+  });
+  expect(uncategorised.rows.map((item) => item.id)).toEqual(["uncategorised"]);
+  expect(uncategorised.totalCents).toBe(700);
+  expect(
+    expenseReport(data, { ...filters, search: "   " }).rows.map(
+      (item) => item.id,
+    ),
+  ).toEqual(["spend", "refund", "unmatched"]);
+  expect(
+    expenseReport(data, { ...filters, search: "not present" }).rows,
+  ).toEqual([]);
+});
 it("drills into the exact category, account or person without losing report filters", () => {
   const data = {
     categories,

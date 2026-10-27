@@ -7,7 +7,7 @@ import {
   type Mapping,
 } from "@finance/shared";
 import { toast } from "sonner";
-import { api, send } from "../lib/api";
+import { api, send, ApiError } from "../lib/api";
 import { suggestCsvBatch } from "./csv-suggestions";
 
 const emptyMapping: Mapping = {
@@ -51,6 +51,13 @@ export function useCsvImport(initialAccountId: string) {
   const running = useRef(false);
   const mutation = useMutation({
     mutationFn: ({ run }: { label: string; run: () => Promise<void> }) => run(),
+    onError: (error) => {
+      if (
+        error instanceof ApiError &&
+        error.details?.type === "import-conflicts"
+      )
+        void client.invalidateQueries({ queryKey: ["snapshot"] });
+    },
   });
   const integrations = useQuery({
     queryKey: ["integrations"],
@@ -148,8 +155,10 @@ export function useCsvImport(initialAccountId: string) {
       setPreview(result);
       setPage(0);
     });
+  const clearError = mutation.reset;
   const updateRow = useCallback(
     (rowNumber: number, patch: Partial<ImportRow>) => {
+      clearError();
       suggested.current.delete(rowNumber);
       setPreview((current) =>
         current
@@ -170,7 +179,7 @@ export function useCsvImport(initialAccountId: string) {
           : current,
       );
     },
-    [],
+    [clearError],
   );
   const suggestCategories = () =>
     task("Suggesting categories…", async () => {
@@ -261,6 +270,7 @@ export function useCsvImport(initialAccountId: string) {
     setPage,
     busy,
     error: mutation.error?.message,
+    conflictError: mutation.error,
     aiAvailable,
     aiProgress,
     fileSelected,

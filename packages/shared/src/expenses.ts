@@ -12,12 +12,14 @@ export type ExpenseFilters = {
   accountId?: string;
   owner?: string;
   categoryId?: string;
+  search?: string;
   detail?: { group: ExpenseGroup; id: string };
 };
 export function expenseReport(
   data: Pick<Snapshot, "transactions" | "categories">,
   filters: ExpenseFilters,
 ) {
+  const search = filters.search?.trim().toLowerCase();
   const rows = data.transactions.filter(
     (t) =>
       (t.kind === "expense" || t.kind === "refund") &&
@@ -25,12 +27,15 @@ export function expenseReport(
       t.date <= filters.to &&
       (!filters.accountId || t.accountId === filters.accountId) &&
       (!filters.owner || t.owner === filters.owner) &&
+      (!search || t.description.toLowerCase().includes(search)) &&
       (!filters.detail ||
         groupKey(t, filters.detail.group) === filters.detail.id) &&
       (!filters.categoryId ||
-        t.categoryId === filters.categoryId ||
-        data.categories.find((c) => c.id === t.categoryId)?.parentId ===
-          filters.categoryId),
+        (filters.categoryId === "uncategorised"
+          ? t.categoryId === null
+          : t.categoryId === filters.categoryId ||
+            data.categories.find((c) => c.id === t.categoryId)?.parentId ===
+              filters.categoryId)),
   );
   const group = (key: (t: Transaction) => string) => {
     const totals = new Map<

@@ -2,10 +2,12 @@ import { APIError } from "better-auth/api";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import type { ErrorRequestHandler } from "express";
+import type { ImportConflictDetails } from "@finance/shared";
 export class HttpError extends Error {
   constructor(
     public status: number,
     message: string,
+    public details?: ImportConflictDetails,
   ) {
     super(message);
   }
@@ -21,17 +23,18 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
   if (error instanceof HttpError) {
-    response.status(error.status).json({ error: error.message });
+    response.status(error.status).json({
+      error: error.message,
+      ...(error.details ? { details: error.details } : {}),
+    });
     return;
   }
   if (error instanceof ZodError) {
-    response
-      .status(400)
-      .json({
-        error: error.issues
-          .map((i) => i.path.join(".") + ": " + i.message)
-          .join("; "),
-      });
+    response.status(400).json({
+      error: error.issues
+        .map((i) => i.path.join(".") + ": " + i.message)
+        .join("; "),
+    });
     return;
   }
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -53,9 +56,7 @@ export const errorHandler: ErrorRequestHandler = (
     }
   }
   if (error instanceof Error && error.name === "MulterError") {
-    response
-      .status(400)
-      .json({ error: "Upload a single file, up to 20 MB." });
+    response.status(400).json({ error: "Upload a single file, up to 20 MB." });
     return;
   }
   console.error(

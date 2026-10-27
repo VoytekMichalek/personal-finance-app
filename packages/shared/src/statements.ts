@@ -47,6 +47,9 @@ export const statementUploadSchema = z.object({
     .transform((v) => v === "true"),
   year: z.coerce.number().int().min(1900).max(2200).optional(),
 });
+export const statementRetrySchema = z.object({
+  discardReview: z.boolean().default(false),
+});
 
 export type StatementProcessing = {
   id: string;

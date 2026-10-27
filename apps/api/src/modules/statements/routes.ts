@@ -48,7 +48,9 @@ statementRouter.get("/statements/:id", async (req, res) =>
   res.json(await statementPreview(z.uuid().parse(req.params.id))),
 );
 statementRouter.post("/statements/:id/retry", async (req, res) =>
-  res.status(202).json(await retryStatement(z.uuid().parse(req.params.id))),
+  res
+    .status(202)
+    .json(await retryStatement(z.uuid().parse(req.params.id), req.body)),
 );
 statementRouter.post("/statements/:id/commit", async (req, res) =>
   res.json(await commitStatement(z.uuid().parse(req.params.id), req.body)),

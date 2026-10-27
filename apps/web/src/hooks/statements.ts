@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, send } from "../lib/api";
+import { api, send, ApiError } from "../lib/api";
 import {
   isStatementProcessing,
   type StatementResult,
@@ -58,6 +58,21 @@ export function useStatementRetry() {
     },
   });
 }
+export function useStatementReread() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      send<StatementResult>("/statements/" + id + "/retry", {
+        discardReview: true,
+      }),
+    onSuccess: async (result) => {
+      client.setQueryData(["statement", result.id], result);
+      await client.invalidateQueries({
+        queryKey: ["statements", result.accountId],
+      });
+    },
+  });
+}
 export function useStatementCommit() {
   const client = useQueryClient();
   return useMutation({
@@ -66,6 +81,13 @@ export function useStatementCommit() {
         "/statements/" + id + "/commit",
         body,
       ),
+    onError: (error) => {
+      if (
+        error instanceof ApiError &&
+        error.details?.type === "import-conflicts"
+      )
+        void client.invalidateQueries({ queryKey: ["snapshot"] });
+    },
     onSuccess: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: ["snapshot"] }),

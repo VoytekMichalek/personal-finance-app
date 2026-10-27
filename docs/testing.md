@@ -95,3 +95,41 @@ balances, global-page deletion, and recovery after receipt/version conflicts. Th
 use real isolated database/API completion, with response waits registered before
 actions and no added timers. Expense report journeys retain refund-adjusted totals
 after removing the separate Refunds summary card.
+
+Expense chart coverage: `expense-category-trend.test.ts` owns exact signed cents,
+category-stack reconciliation, zero-net categories, income/transfer exclusion,
+quiet periods, clipped date ranges, Monday–Sunday weeks across years, leap days and
+calendar dates around DST. It composes the existing filtered expense report rather
+than introducing a second filter implementation. `expense-chart.spec.ts` exercises
+all three intervals against real persisted synthetic data, visible stacks, the
+accessible values table, refund labels, compact height, horizontal chart scrolling,
+transaction pagination/reset, long descriptions and empty filters on both browsers.
+The existing expense detail, ownership and account insight journeys retain their
+coverage. No deadlines, debounce, loading barriers or retry timing are changed;
+readiness uses observable rendered state and real API completion. Browser execution
+keeps one worker because fixtures share finance_e2e; pure tests and typechecks can
+run independently. The production build is reused across browser runs.
+
+Import recovery and search coverage (28 October): synthetic BOQ-style PDF fixtures
+own hyphenated day/month dates, printed year headings across New Year, processed-date
+columns, wrapped descriptions and exact running-balance reconciliation. Actual
+Poppler extraction and PostgreSQL tests verify persistence, original source values,
+explicit ready-preview rereading, committed protection and re-read/commit races.
+The supplied household PDF was checked read-only; it is never a committed fixture.
+
+Import conflict integration tests own complete row/match details, explicit duplicate
+overrides, exact-opposite linking without a duplicate counterpart, preserved receipts/
+notes/ownership/import attribution, stale or reused choices, scheduled-payment guards,
+and atomic rollback after a concurrent edit. Single-delete coverage guards against
+orphaning a payment linked concurrently. Desktop/mobile import journeys own top-of-review
+conflict discovery, exact row navigation/focus, matching-payment links, confirmation,
+skipping, explicit separate payments and successful persistence. Cached empty PDF
+recovery uses a response barrier plus the installed browser clock for polling.
+
+Shared expense tests own search and uncategorised filtering consistently across totals,
+chart inputs, included transactions and drill-downs. Browser journeys own clear-X and
+Escape focus, optional date clearing, account-scope preservation, inline category
+eligibility/persistence and recovery after a real stale write. Repeat affected pending,
+polling and focus cases ten times per browser without retries, then run the affected
+suite. Existing build reuse and the single finance_e2e worker remain required; API
+checks run independently in finance_test. No timeout or assertion is weakened.

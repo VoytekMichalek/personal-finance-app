@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { X } from "lucide-react";
 import type { Snapshot, Transaction } from "@finance/shared";
 import { Card, Input, Select } from "../common/primitives";
 import { OwnerFilter } from "../common/form";
 import { CategoryChip } from "../common/EntityChip";
+import { SearchInput } from "../common/SearchInput";
+import { Button } from "../ui/button";
 import { SelectItem } from "../ui/select";
 import { TransactionTable } from "./TransactionTable";
 
@@ -27,6 +30,15 @@ export function TransactionBrowser({
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const activeAccount = accountId ?? account;
+  const filtered = !!(
+    search ||
+    (!accountId && account) ||
+    owner !== "all" ||
+    category ||
+    kind ||
+    from ||
+    to
+  );
   const rows = data.transactions.filter(
     (t) =>
       (!search || t.description.toLowerCase().includes(search.toLowerCase())) &&
@@ -54,11 +66,11 @@ export function TransactionBrowser({
     <>
       <Card className="mb-4 p-4!">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Input
+          <SearchInput
             aria-label="Search transactions"
             placeholder="Search activity"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onValueChange={setSearch}
           />
           {!accountId && (
             <Select
@@ -97,21 +109,26 @@ export function TransactionBrowser({
           </Select>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Input
-            aria-label="From date"
-            type="date"
-            className="h-9 w-36 text-xs"
-            value={from}
-            onChange={(event) => setFrom(event.target.value)}
-          />
+          <DateFilter label="From date" value={from} onChange={setFrom} />
           <span className="text-xs text-muted-foreground">to</span>
-          <Input
-            aria-label="To date"
-            type="date"
-            className="h-9 w-36 text-xs"
-            value={to}
-            onChange={(event) => setTo(event.target.value)}
-          />
+          <DateFilter label="To date" value={to} onChange={setTo} />
+          {filtered && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setAccount("");
+                setOwner("all");
+                setCategory("");
+                setKind("");
+                setFrom("");
+                setTo("");
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
         </div>
         {from && to && from > to && (
           <p role="alert" className="mt-3 text-sm text-amber-800">
@@ -121,5 +138,43 @@ export function TransactionBrowser({
       </Card>
       <TransactionTable key={context} data={data} rows={rows} onOpen={onOpen} />
     </>
+  );
+}
+
+function DateFilter({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex items-center">
+      <Input
+        ref={input}
+        aria-label={label}
+        type="date"
+        className="h-11 w-36 text-xs sm:h-9"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      {value && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Clear ${label.toLowerCase()}`}
+          onClick={() => {
+            onChange("");
+            input.current?.focus();
+          }}
+        >
+          <X size={15} aria-hidden="true" />
+        </Button>
+      )}
+    </div>
   );
 }

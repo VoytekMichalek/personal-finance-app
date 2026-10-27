@@ -12,6 +12,7 @@ import { CategoryChip, PersonChip } from "../common/EntityChip";
 import { Button } from "../ui/button";
 import { SelectItem } from "../ui/select";
 import { BulkDelete } from "./BulkDelete";
+import { TransactionCategory } from "./TransactionCategory";
 
 export function TransactionTable({
   data,
@@ -200,10 +201,10 @@ export function TransactionTable({
                           </span>
                         </button>
                         <div className="mt-2 flex flex-wrap gap-1 sm:hidden">
-                          <CategoryChip
-                            categoryId={row.categoryId}
+                          <TransactionCategory
+                            row={row}
                             categories={data.categories}
-                            transfer={row.kind === "transfer"}
+                            disabled={action.isPending}
                           />
                           <PersonChip owner={row.owner} people={data.people} />
                         </div>
@@ -219,10 +220,10 @@ export function TransactionTable({
                         </Pill>
                       </td>
                       <td className="hidden p-3 sm:table-cell">
-                        <CategoryChip
-                          categoryId={row.categoryId}
+                        <TransactionCategory
+                          row={row}
                           categories={data.categories}
-                          transfer={row.kind === "transfer"}
+                          disabled={action.isPending}
                         />
                       </td>
                       <td className="hidden p-3 xl:table-cell">

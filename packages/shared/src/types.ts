@@ -102,6 +102,7 @@ export type Snapshot = {
   today: string;
 };
 export type ImportRow = {
+  linkExisting?: { id: string; version: number };
   categoryChosen?: boolean;
   kind: "income" | "expense" | "refund" | "transfer";
   counterAccountId: string | null;

@@ -1,5 +1,9 @@
+import { StatementSourceNotes } from "./StatementSourceNotes";
+import { ImportConflicts } from "../imports/ImportConflicts";
+import { useImportConflicts } from "../../hooks/import-conflicts";
 import { useState, useCallback, useTransition } from "react";
 import { SavedRecurring } from "./SavedRecurring";
+import { StatementReadAgain } from "./StatementReadAgain";
 import { EditAccountButton } from "../accounts/EditAccountButton";
 import { DatePicker } from "../ui/date-picker";
 import { LoaderCircle } from "lucide-react";
@@ -13,7 +17,7 @@ import {
   type Snapshot,
   type StatementPreview,
 } from "@finance/shared";
-import { Card, Field, Input, Pill } from "../common/primitives";
+import { Card, Field, Input } from "../common/primitives";
 import { Button } from "../ui/button";
 import { ImportRows } from "../imports/ImportRows";
 import { useStatementCommit } from "../../hooks/statements";
@@ -50,14 +54,19 @@ export function StatementReview({
   );
   const [error, setError] = useState("");
   const commit = useStatementCommit();
+  const conflicts = useImportConflicts(data, account.id, rows, commit.error);
+  const [focusRow, setFocusRow] = useState<{ rowNumber: number }>();
+  const clearError = commit.reset;
   const selected = rows.filter((r) => r.include && !r.error);
-  const [sourcePage, setSourcePage] = useState(1);
   const updateRow = useCallback(
-    (n: number, patch: Partial<ImportRow>) =>
+    (n: number, patch: Partial<ImportRow>) => {
+      clearError();
+      setReviewed(false);
       setRows((current) =>
         current.map((r) => (r.rowNumber === n ? { ...r, ...patch } : r)),
-      ),
-    [],
+      );
+    },
+    [clearError],
   );
   const firstDate = selected.map((r) => r.date).sort()[0];
   const dateProblem =
@@ -93,6 +102,27 @@ export function StatementReview({
     );
   return (
     <>
+      <ImportConflicts
+        conflicts={conflicts}
+        rows={rows}
+        data={data}
+        busy={commit.isPending}
+        updateRow={updateRow}
+        reviewRow={(rowNumber) => {
+          setPage(
+            Math.floor(
+              rows.findIndex((row) => row.rowNumber === rowNumber) / 20,
+            ),
+          );
+          setFocusRow({ rowNumber });
+          goTo(1);
+        }}
+      />
+      {commit.error && (
+        <p role="alert" className="mb-4 text-sm text-destructive">
+          {commit.error.message}
+        </p>
+      )}
       <Card className="mb-5">
         <div className="flex flex-wrap justify-between gap-3">
           <span>
@@ -102,12 +132,15 @@ export function StatementReview({
               {rows.filter((r) => r.duplicate).length} possible duplicates
             </span>
           </span>
-          <a
-            href={"/api/statements/" + preview.id + "/file"}
-            className="text-xs text-primary"
-          >
-            Download source PDF
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={"/api/statements/" + preview.id + "/file"}
+              className="text-xs text-primary"
+            >
+              Download source PDF
+            </a>
+            <StatementReadAgain id={preview.id} disabled={commit.isPending} />
+          </div>
         </div>
       </Card>
       <div className="mb-6 flex flex-wrap gap-2">
@@ -210,73 +243,7 @@ export function StatementReview({
               notes below.
             </p>
           )}
-          <details className="rounded-2xl border bg-white p-5">
-            <summary className="cursor-pointer text-sm font-medium">
-              Source & reading notes
-              {preview.details.warnings.some((w) =>
-                /reconcile|does not match|no transactions/i.test(w),
-              )
-                ? " · Check totals"
-                : ""}
-            </summary>
-            <div className="my-4 space-y-2 text-xs leading-5 text-muted-foreground">
-              {preview.details.warnings
-                .filter(
-                  (w) =>
-                    !/AI extraction needs|Credit card balances owed/i.test(w) &&
-                    !(
-                      preview.details.opening &&
-                      /opening balance/i.test(w) &&
-                      /not identified|not found|no verified/i.test(w)
-                    ),
-                )
-                .map((w) => (
-                  <p key={w}>{w}</p>
-                ))}
-            </div>
-            <div className="max-h-96 overflow-auto rounded-xl border">
-              {preview.details.lines
-                .filter((l) => l.page === sourcePage)
-                .map((l) => (
-                  <div
-                    key={l.page + ":" + l.line}
-                    className={
-                      "flex gap-3 border-b px-3 py-2 text-xs " +
-                      (l.status === "review" ? "bg-amber-50" : "")
-                    }
-                  >
-                    <span className="shrink-0 text-muted-foreground">
-                      {l.line}
-                    </span>
-                    <span className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono">
-                      {l.text}
-                    </span>
-                    {l.rowNumber && <Pill>Row {l.rowNumber}</Pill>}
-                  </div>
-                ))}
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={sourcePage === 1}
-                onClick={() => setSourcePage((p) => p - 1)}
-              >
-                Previous page
-              </Button>
-              <span className="text-xs">
-                Page {sourcePage} of {preview.pages}
-              </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={sourcePage >= preview.pages}
-                onClick={() => setSourcePage((p) => p + 1)}
-              >
-                Next page
-              </Button>
-            </div>
-          </details>
+          <StatementSourceNotes preview={preview} />
         </div>
       )}
       {step === 1 && (
@@ -292,6 +259,7 @@ export function StatementReview({
             setPage={setPage}
             busy={commit.isPending ? "Saving" : ""}
             updateRow={updateRow}
+            focusRow={focusRow}
           />
         </>
       )}
@@ -349,13 +317,14 @@ export function StatementReview({
               transactions before importing.
             </p>
           )}
-          {(error || commit.error) && (
+          {error && (
             <p role="alert" className="mb-4 text-sm text-destructive">
-              {error || commit.error?.message}
+              {error}
             </p>
           )}
           <Button
             disabled={
+              conflicts.length > 0 ||
               !reviewed ||
               !selected.length ||
               commit.isPending ||

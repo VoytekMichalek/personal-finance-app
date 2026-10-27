@@ -1,5 +1,6 @@
 import { bulkCategory } from "./bulk-category.js";
 import { bulkDelete } from "./bulk-delete.js";
+import { deleteTransaction } from "./delete-transaction.js";
 import { Router } from "express";
 import { z } from "zod";
 import {
@@ -116,21 +117,7 @@ financeRouter.post("/transfers", async (req, res) =>
 );
 financeRouter.delete("/transactions/:id", async (req, res) => {
   const id = z.uuid().parse((req.params as Record<string, string>).id);
-  const record = await prisma.transaction.findUnique({ where: { id } });
-  if (!record) throw new HttpError(404, "Transaction not found.");
-  const where = record.transferGroupId
-    ? { transferGroupId: record.transferGroupId }
-    : { id };
-  const attached = await prisma.receipt.count({
-    where: { transaction: where },
-  });
-  if (attached)
-    throw new HttpError(
-      409,
-      "Remove the attached receipts before deleting this transaction.",
-    );
-  await prisma.transaction.deleteMany({ where });
-  res.json({ ok: true });
+  res.json(await deleteTransaction(id));
 });
 financeRouter.post("/transactions/bulk-category", async (req, res) => {
   await bulkCategory(req.body);

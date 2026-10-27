@@ -150,6 +150,9 @@ export const previewSchema = csvUploadSchema.extend({
   mapping: mappingSchema,
 });
 export const importRowSchema = z.object({
+  linkExisting: z
+    .object({ id, version: z.number().int().positive() })
+    .optional(),
   kind: z.enum(["income", "expense", "refund", "transfer"]).optional(),
   counterAccountId: id.nullable().default(null),
   rowNumber: z.number().int().positive(),

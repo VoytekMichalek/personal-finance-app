@@ -8,9 +8,11 @@ export * from "./categories.js";
 
 export * from "./integrations.js";
 export * from "./expenses.js";
+export * from "./expense-category-trend.js";
 
 export * from "./categorisation.js";
 
 export * from "./colours.js";
 
 export * from "./account-history.js";
+export * from "./import-conflicts.js";

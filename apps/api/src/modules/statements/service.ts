@@ -64,7 +64,7 @@ export async function commitStatement(id: string, body: unknown) {
   const input = statementCommitSchema.parse(body);
   return prisma.$transaction(
     async (tx) => {
-      const statement = await tx.statement.findUnique({
+      const initial = await tx.statement.findUnique({
         where: { id },
         select: {
           accountId: true,
@@ -73,16 +73,18 @@ export async function commitStatement(id: string, body: unknown) {
           status: true,
         },
       });
-      if (!statement) throw new HttpError(404, "Statement not found.");
+      if (!initial) throw new HttpError(404, "Statement not found.");
+      await tx.$executeRawUnsafe(
+        "SELECT pg_advisory_xact_lock(hashtext($1))",
+        initial.accountId,
+      );
+      // Re-read after the lock: a confirmed re-read may have queued a new preview.
+      const statement = await tx.statement.findUniqueOrThrow({ where: { id } });
       if (statement.status !== "ready")
         throw new HttpError(
           409,
           "Wait for statement processing to finish before reviewing it.",
         );
-      await tx.$executeRawUnsafe(
-        "SELECT pg_advisory_xact_lock(hashtext($1))",
-        statement.accountId,
-      );
       const batch = await tx.importBatch.findUniqueOrThrow({
         where: { id: statement.importBatchId },
       });

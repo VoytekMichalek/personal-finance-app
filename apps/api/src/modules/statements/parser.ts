@@ -11,7 +11,7 @@ export const openingLabel =
 export const closingLabel =
   /closing balance|new balance|balance carried forward|balance c\/f|ending balance/i;
 const datePattern =
-  /^(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?|\d{1,2}\s+[A-Za-z]{3,9}(?:\s+\d{4})?)\b/;
+  /^(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?|\d{1,2}[\s-]+[A-Za-z]{3,9}(?:[\s-]+\d{4})?)\b/;
 const months = [
   "jan",
   "feb",
@@ -75,9 +75,14 @@ export function parseStatement(
   let closingAmount: number | null = null;
   let pendingBalance: "opening" | "closing" | null = null;
   let hasBalanceColumn = false;
+  let tableYear: number | undefined;
   let debitAt = -1,
     creditAt = -1;
   for (const [pageIndex, page] of pages.entries()) {
+    let descriptionAt = -1,
+      amountsAt = -1,
+      hasProcessedDate = false;
+    let previousRow: ImportRow | undefined;
     for (const [lineIndex, raw] of page.split(/\r?\n/).entries()) {
       const text = raw.trim();
       if (!text) continue;
@@ -96,6 +101,23 @@ export function parseStatement(
         hasBalanceColumn = /balance/i.test(text);
         debitAt = raw.search(/withdrawals?|debits?|money out|paid out/i);
         creditAt = raw.search(/deposits?|credits?|money in|paid in/i);
+        descriptionAt = raw.search(/description|details/i);
+        amountsAt = raw.search(
+          /withdrawals?|debits?|money out|paid out|deposits?|credits?|money in|paid in|amount/i,
+        );
+        hasProcessedDate = /\bprocessed\b/i.test(text);
+        previousRow = undefined;
+        continue;
+      }
+      // A printed year in the date column takes precedence over the fallback
+      // year. Keep it across pages until the next heading, including New Year.
+      if (
+        descriptionAt >= 0 &&
+        /^20\d{2}$/.test(text) &&
+        raw.search(/\S/) < descriptionAt
+      ) {
+        tableYear = Number(text);
+        previousRow = undefined;
         continue;
       }
       const values = [...raw.matchAll(statementMoneyPattern)];
@@ -127,8 +149,31 @@ export function parseStatement(
         closingAmount = amount(values.at(-1)![0]);
         continue;
       }
+      const start = raw.search(/\S/);
+      // Only join text aligned within the description column. This keeps
+      // page footers, summaries and unrecognised monetary lines separate,
+      // including references that happen to resemble a date or an amount.
+      if (
+        previousRow &&
+        descriptionAt >= 0 &&
+        amountsAt > descriptionAt &&
+        Math.abs(start - descriptionAt) <= 2 &&
+        raw.trimEnd().length <= amountsAt + 2
+      ) {
+        const joined = `${previousRow.description} ${text}`;
+        previousRow.description = joined.slice(0, 250);
+        if (joined.length > 250) {
+          previousRow.error =
+            "Description is too long. Check the source lines.";
+          previousRow.include = false;
+        }
+        source.rowNumber = previousRow.rowNumber;
+        source.status = previousRow.error ? "review" : "transaction";
+        continue;
+      }
       const match = text.match(datePattern);
       if (!match) {
+        previousRow = undefined;
         if (
           values.length &&
           !/total|balance|interest rate|page\s+\d|account number|bsb/i.test(
@@ -139,25 +184,46 @@ export function parseStatement(
         continue;
       }
       if (!values.length) {
-        source.status = "review";
+        previousRow = undefined;
+        const remaining = text.slice(match[0].length).trim();
+        const endDate = remaining.replace(/^(?:-|to)\s+/i, "");
+        if (
+          remaining === endDate ||
+          endDate.match(datePattern)?.[0] !== endDate
+        )
+          source.status = "review";
         continue;
       }
       let posted = "",
         error: string | null = null;
       try {
-        posted = statementDate(match[1]!, inferredYear);
+        posted = statementDate(match[1]!, tableYear ?? inferredYear);
       } catch {
         error =
           "Date is ambiguous or invalid. Check the source line and statement year.";
       }
-      const first = values[0]!;
-      const description = raw
+      const transactionValues =
+        hasProcessedDate && amountsAt > descriptionAt
+          ? values.filter((entry) => entry.index >= amountsAt - 2)
+          : values;
+      const first = transactionValues[0];
+      if (!first) {
+        source.status = "review";
+        previousRow = undefined;
+        continue;
+      }
+      let description = raw
         .slice(raw.indexOf(match[1]!) + match[1]!.length, first.index)
         .trim();
+      if (hasProcessedDate) {
+        const processed = description.match(datePattern);
+        if (processed)
+          description = description.slice(processed[0].length).trim();
+      }
       let value = amount(first[0]);
       const ending =
-        hasBalanceColumn && values.length >= 2
-          ? amount(values.at(-1)![0])
+        hasBalanceColumn && transactionValues.length >= 2
+          ? amount(transactionValues.at(-1)![0])
           : null;
       if (ending !== null && balance !== null) {
         const delta = ending - balance;
@@ -186,6 +252,9 @@ export function parseStatement(
             "Cannot determine debit or credit safely. Use a statement with running balances or signed amounts.";
       }
       if (ending !== null) balance = ending;
+      if (hasProcessedDate && hasBalanceColumn && transactionValues.length < 2)
+        error =
+          "Transaction amount or running balance is missing. Check this line.";
       if (!description || description.length > 250 || !value)
         error = "Transaction needs a description and a nonzero amount.";
       const row: ImportRow = {
@@ -203,6 +272,7 @@ export function parseStatement(
         error,
       };
       rows.push(row);
+      previousRow = row;
       source.rowNumber = row.rowNumber;
       source.status = error ? "review" : "transaction";
     }

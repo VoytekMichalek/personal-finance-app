@@ -1,3 +1,14 @@
+import type { ImportConflictDetails } from "@finance/shared";
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public details?: ImportConflictDetails,
+  ) {
+    super(message);
+  }
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {},
@@ -18,8 +29,12 @@ export async function api<T>(
       .catch(() => ({ error: "Request failed." }))) as {
       error?: string;
       message?: string;
+      details?: ImportConflictDetails;
     };
-    throw new Error(body.error ?? body.message ?? "Request failed.");
+    throw new ApiError(
+      body.error ?? body.message ?? "Request failed.",
+      body.details,
+    );
   }
   return response.json() as Promise<T>;
 }

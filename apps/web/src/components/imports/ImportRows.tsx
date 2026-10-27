@@ -20,6 +20,7 @@ import { Button } from "../ui/button";
 import { CategoryPicker } from "../categories/CategoryPicker";
 type RowProps = {
   row: ImportRow;
+  focusRow?: { rowNumber: number };
   data: Snapshot;
   accountId: string;
   busy: string;
@@ -31,7 +32,12 @@ const ReviewRow = memo(function ReviewRow({
   accountId,
   busy,
   updateRow,
+  focusRow,
 }: RowProps) {
+  const articleRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (focusRow?.rowNumber === row.rowNumber) articleRef.current?.focus();
+  }, [focusRow, row.rowNumber]);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   useLayoutEffect(() => {
     const field = descriptionRef.current;
@@ -56,6 +62,8 @@ const ReviewRow = memo(function ReviewRow({
   const other = data.accounts.find((a) => a.id === row.counterAccountId);
   return (
     <article
+      ref={articleRef}
+      tabIndex={-1}
       aria-label={"Transaction row " + row.rowNumber}
       className={
         "min-w-0 space-y-3 p-4 sm:p-5 " +
@@ -109,6 +117,8 @@ const ReviewRow = memo(function ReviewRow({
                 kind: value as ImportRow["kind"],
                 categoryId: null,
                 counterAccountId: null,
+                linkExisting: undefined,
+                allowDuplicate: false,
               })
             }
           >
@@ -141,7 +151,11 @@ const ReviewRow = memo(function ReviewRow({
               aria-label={"Transfer account row " + row.rowNumber}
               value={row.counterAccountId ?? ""}
               onValueChange={(value) =>
-                patch({ counterAccountId: value || null })
+                patch({
+                  counterAccountId: value || null,
+                  linkExisting: undefined,
+                  allowDuplicate: false,
+                })
               }
             >
               <SelectItem value="">Choose account</SelectItem>
@@ -180,6 +194,19 @@ const ReviewRow = memo(function ReviewRow({
           </Select>
         </label>
       </div>
+      {row.linkExisting && (
+        <p className="text-xs text-primary">
+          This row will link to the chosen existing payment on approval.{" "}
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={!!busy}
+            onClick={() => patch({ linkExisting: undefined })}
+          >
+            Undo link choice
+          </Button>
+        </p>
+      )}
       {other && row.date < other.openingDate && row.include && (
         <div className="space-y-2">
           <p role="alert" className="text-xs text-destructive">
@@ -202,6 +229,7 @@ export function ImportRows({
   setPage,
   busy,
   updateRow,
+  focusRow,
 }: Omit<RowProps, "row"> & {
   preview: { rows: ImportRow[] };
   page: number;
@@ -216,6 +244,7 @@ export function ImportRows({
             <ReviewRow
               key={row.rowNumber}
               row={row}
+              focusRow={focusRow}
               data={data}
               accountId={accountId}
               busy={busy}

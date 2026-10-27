@@ -328,3 +328,108 @@ last increment. No retries or assertions were weakened. The dependency audit
 passed its high/critical gate with two moderate advisories recorded in hosting.md.
 The local app remains on localhost:5173 with its normal database, separate from
 finance_test and finance_e2e.
+
+## Expense chart and transaction layout — 28 October 2026
+
+Current SOP main was retrieved once through the installed read-only helper at
+`2026-10-27T21:30:59.128Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, and held fixed for this task.
+Policy loading, frontend architecture, application UI, testing and user documentation
+were read against the adopted baseline. Current guidance permits focused local
+checks and keeps full CI in GitHub. Repository-owned CI, build identity and the
+existing documentation-navigation exception remain in force; no unrelated policy
+migration is included.
+
+Expenses now has a category-stacked chart with month, Monday–Sunday week and day
+intervals. Integer-cent buckets retain quiet periods and clip the first/last period
+to the selected dates. Refunds reduce their own category, with negative stacks below
+zero. Existing filters and exact-category drill-down remain authoritative. The
+category/account/person ranking is compact and scrollable; included transactions
+use responsive columns/cards, ten-row pagination and reset on filter changes.
+The shared detail dialog uses the same improved transaction presentation. The
+maintained user guide explains all new controls and refund/date semantics.
+
+This chart change adds no dependency, database schema, API, authentication,
+environment input, logging, release or deployment configuration changes. It is a
+scoped UI/calculation change, not a deployment-readiness assessment or a release.
+
+Focused verification on the working tree based on `74c66fd` passed: all workspace
+typechecks at the chart implementation checkpoint, changed-source lint/formatting,
+source/file guardrails, shared/API/web production builds and 27 selected expense,
+finance and colour unit cases. Web/shared typechecks were repeated successfully
+with the concurrent expense-search changes present. The new chart browser file
+passed all four desktop/mobile cases with one worker and retries disabled; the
+other 20 selected expense-detail, account-insight and review-report cases passed
+in the broader run. An initial fixture assumption of twelve starter categories
+was corrected to check the actual seeded count while retaining the overflow and
+last-category accessibility assertions.
+
+Final browser command: `FINANCE_WEBKIT_EXECUTABLE=/tmp/finance-csv-webkit.sh mise exec -- pnpm exec playwright test e2e/expense-chart.spec.ts --retries=0 --reporter=list --output=artifacts/expense-chart-results` (4 passed, 38.5 seconds).
+The separate output directory avoids trace-cleanup collisions with another active
+finance chat. Browser/database runs were sequenced against finance_e2e; no real
+ledger was reset. Desktop (1440 and 1714 pixels) and mobile chart/list screenshots
+were inspected. Existing search/import work in the shared checkout was preserved.
+These are focused local results, not full GitHub CI, publication or deployment.
+
+## Import recovery and transaction discovery — 28 October 2026
+
+Current SOP main was retrieved once via the installed read-only helper at
+`2026-10-27T21:33:54.242Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, held fixed for this task.
+The policy-loading procedure and relevant application UI, testing and user-guide
+standards were read against the adopted `9335fad` baseline. Existing personal CI,
+release/deployment and documentation-navigation exceptions remain unchanged. This
+increment preserves the concurrently developed expense-chart work and does not
+claim a broader SOP migration or a deployment-readiness assessment.
+
+CSV/PDF import reviews now identify matching source rows and saved payments at the
+top, offer exact-row navigation and explicit skip/link/separate-payment decisions,
+and return structured conflicts after concurrent edits. Linking creates only the
+missing account entry, retains the existing payment's history/attachments, and uses
+version predicates with atomic rollback. Single deletion uses the same guarded
+transaction service as bulk deletion to prevent a concurrent link leaving an orphan.
+The PDF parser supports printed year headings and processed-date columns; a confirmed
+Read again action refreshes only uncommitted saved previews. Search, Uncategorised
+filters, clear controls and inline category editing are documented in the maintained
+user guide. No private statement or transaction fixture is committed.
+
+No dependency, schema/migration, environment input, logging sink, diagnostic control,
+authentication or deployment configuration changes. Structured expected conflicts use
+the quiet authenticated 4xx path; no financial descriptions or documents are logged.
+This is local feature validation; no new release or deployment is performed here.
+
+Working-tree validation based on `74c66fd` passed: production builds, every workspace
+typecheck, repository lint, source/file guardrails, 89 unit tests and all 73 real
+PostgreSQL integration tests. Five affected pending/polling/focus journeys each
+passed ten consecutive times on desktop Chromium and mobile WebKit: 100 passes,
+one worker, no retries (7.3 minutes). The full browser suite then passed 95 cases
+with three existing platform-specific skips (7.0 minutes). No assertions, deadlines,
+coverage or browser projects were weakened. A stopped interactive repeat process
+was rerun to completion in a persistent runner; its partial result was not used
+for the ten-run evidence.
+
+Final review also made detail deletion submit the displayed IDs and versions,
+preventing a stale standalone confirmation from expanding to a newly linked pair.
+The web was rebuilt, all typechecks/lint/guardrails repeated, and all eight selected
+transaction/deletion browser cases passed on the final build. The interactive
+runner stopped after seven completed cases; the remaining mobile transfer case
+passed separately (7.8 seconds). This final change does not alter the earlier
+focus/polling behavior. Synthetic screenshots were inspected on desktop/mobile.
+The user's PDF was verified read-only through native extraction and the parser:
+307 source transactions, exact opening/net/closing reconciliation, no row errors
+or reading warnings. No household ledger mutation was used for testing. Both
+localhost:5173 and the local API readiness endpoint returned 200 at handover.
+
+
+## Combined v0.0.5 release candidate — 28 October 2026
+
+The owner explicitly authorised committing all shared-checkout changes across chats
+and releasing the next patch version. This combines the expense-chart and import
+recovery/discovery work above. All four workspace manifests identify v0.0.5; no
+previous tag is moved. The fixed SOP revision and existing exceptions above apply.
+The final review found no private source documents, secrets, migration, dependency,
+environment or logging changes. The documented local results are reused for this
+candidate; GitHub Validate must pass on its exact commit before the annotated tag
+is pushed. Release then repeats required validation, smoke/security checks and
+publication, followed by the existing exact-tag/commit production rollout check.
+The workflow run and release provide immutable publication/deployment evidence.

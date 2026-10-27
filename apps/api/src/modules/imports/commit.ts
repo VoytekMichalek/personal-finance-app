@@ -12,20 +12,24 @@ import {
   createTransfer,
   validateOwner,
 } from "../finance/service.js";
+import { checkImportConflicts, type ApprovedImportRow } from "./conflicts.js";
+import { linkImportedPayment } from "./link-payment.js";
 export async function commitRows(
   tx: Prisma.TransactionClient,
   batch: ImportBatch,
   input: z.infer<typeof commitImportSchema>,
 ) {
-  const original = json<ImportRow[]>(batch.preview);
+  const original = new Map(
+    json<ImportRow[]>(batch.preview).map((row) => [row.rowNumber, row]),
+  );
   const seen = new Set<number>();
-  let imported = 0;
+  const approved: ApprovedImportRow[] = [];
   for (const row of input.rows) {
     if (seen.has(row.rowNumber))
       throw new HttpError(400, "A source row was supplied twice.");
     seen.add(row.rowNumber);
     if (!row.include) continue;
-    const source = original.find((r) => r.rowNumber === row.rowNumber);
+    const source = original.get(row.rowNumber);
     if (
       !source ||
       source.error ||
@@ -37,19 +41,6 @@ export async function commitRows(
         "Source amounts and dates must match the preview. Correct the mapping and preview again.",
       );
     dateSchema.parse(row.date);
-    const duplicate = await tx.transaction.findFirst({
-      where: {
-        accountId: batch.accountId,
-        date: row.date,
-        amountCents: BigInt(row.amountCents),
-        OR: [{ importBatchId: null }, { importBatchId: { not: batch.id } }],
-      },
-    });
-    if (duplicate && !row.allowDuplicate)
-      throw new HttpError(
-        409,
-        "A selected row may be a duplicate. Review and explicitly retain it if correct.",
-      );
     const kind = row.kind ?? (row.amountCents < 0 ? "expense" : "income");
     if (kind === "transfer") {
       if (!row.counterAccountId || row.counterAccountId === batch.accountId)
@@ -57,26 +48,32 @@ export async function commitRows(
           400,
           "Choose a different account for each transfer.",
         );
-      const counterpart = await tx.transaction.findFirst({
-        where: {
-          accountId: row.counterAccountId,
-          date: row.date,
-          amountCents: BigInt(-row.amountCents),
-        },
-      });
-      if (counterpart && !row.allowDuplicate)
-        throw new HttpError(
-          409,
-          "A matching payment already exists in the other account. Check it before importing: if it is already a linked transfer, skip this statement row; otherwise correct that payment to a transfer first.",
-        );
+    } else if ((kind === "expense") !== row.amountCents < 0) {
+      throw new HttpError(
+        400,
+        "Transaction type must agree with the source amount.",
+      );
+    }
+    approved.push({ ...row, kind });
+  }
+  if (!approved.length)
+    throw new HttpError(400, "Select at least one valid row to import.");
+
+  // Collect every existing-payment conflict before any ledger entry is changed.
+  await checkImportConflicts(tx, batch, approved);
+  for (const row of approved) {
+    const kind = row.kind!;
+    if (kind === "transfer" && row.linkExisting) {
+      await linkImportedPayment(tx, batch, row);
+    } else if (kind === "transfer") {
       await validateOwner(tx, row.owner);
       await createTransfer(
         tx,
         {
           fromAccountId:
-            row.amountCents < 0 ? batch.accountId : row.counterAccountId,
+            row.amountCents < 0 ? batch.accountId : row.counterAccountId!,
           toAccountId:
-            row.amountCents < 0 ? row.counterAccountId : batch.accountId,
+            row.amountCents < 0 ? row.counterAccountId! : batch.accountId,
           amountCents: Math.abs(row.amountCents),
           date: row.date,
           description: row.description,
@@ -89,11 +86,6 @@ export async function commitRows(
         },
       );
     } else {
-      if ((kind === "expense") !== row.amountCents < 0)
-        throw new HttpError(
-          400,
-          "Transaction type must agree with the source amount.",
-        );
       await createTransaction(
         tx,
         {
@@ -106,10 +98,6 @@ export async function commitRows(
         { importBatchId: batch.id, sourceRow: row.rowNumber },
       );
     }
-    imported++;
   }
-  if (!imported)
-    throw new HttpError(400, "Select at least one valid row to import.");
-
-  return imported;
+  return approved.length;
 }

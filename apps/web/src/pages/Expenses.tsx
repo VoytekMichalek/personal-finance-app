@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
 import {
   categoryLabel,
   expenseReport,
@@ -18,8 +17,11 @@ import {
 import { Select, SelectItem } from "../components/ui/select";
 import { DatePicker } from "../components/ui/date-picker";
 import { Button } from "../components/ui/button";
+import { ExpenseCategoryChart } from "../components/expenses/ExpenseCategoryChart";
+import { ExpenseBreakdown } from "../components/expenses/ExpenseBreakdown";
 import { ExpenseDetail } from "../components/expenses/ExpenseDetail";
 import { ExpenseTransactions } from "../components/expenses/ExpenseTransactions";
+import { SearchInput } from "../components/common/SearchInput";
 export function Expenses() {
   const query = useSnapshot();
   if (query.isPending) return <Loading />;
@@ -41,31 +43,15 @@ function ExpenseReport({ data }: { data: Snapshot }) {
   const [accountId, setAccount] = useState("");
   const [owner, setOwner] = useState("");
   const [categoryId, setCategory] = useState("");
-  const [group, setGroup] = useState<"categories" | "accounts" | "people">(
-    "categories",
-  );
+  const [search, setSearch] = useState("");
   const report = expenseReport(data, {
     from,
     to,
     accountId,
     owner,
     categoryId,
+    search,
   });
-  const person = (id: string) =>
-    id === "household"
-      ? "Household"
-      : (data.people.find((p) => p.id === id)?.name ?? "Former member");
-  const category = (id: string) => {
-    const item = data.categories.find((c) => c.id === id);
-    return item ? categoryLabel(item, data.categories) : "Uncategorised";
-  };
-  const name = (id: string) =>
-    group === "categories"
-      ? category(id)
-      : group === "accounts"
-        ? (data.accounts.find((a) => a.id === id)?.name ?? "Account")
-        : person(id);
-  const max = Math.max(1, ...report[group].map((r) => Math.abs(r.amountCents)));
   return (
     <>
       <PageHeading
@@ -108,6 +94,15 @@ function ExpenseReport({ data }: { data: Snapshot }) {
             All history
           </Button>
         </div>
+        <div className="mb-4">
+          <Field label="Search expenses">
+            <SearchInput
+              value={search}
+              onValueChange={setSearch}
+              placeholder="Search descriptions"
+            />
+          </Field>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <Field label="From">
             <DatePicker value={from} max={to} onChange={setFrom} />
@@ -144,6 +139,7 @@ function ExpenseReport({ data }: { data: Snapshot }) {
           <Field label="Category">
             <Select value={categoryId} onValueChange={setCategory}>
               <SelectItem value="">All categories</SelectItem>
+              <SelectItem value="uncategorised">Uncategorised</SelectItem>
               {data.categories
                 .filter((c) => c.kind === "expense")
                 .map((c) => (
@@ -173,105 +169,32 @@ function ExpenseReport({ data }: { data: Snapshot }) {
           </Card>
         ))}
       </div>
-      <div className="grid gap-5 xl:grid-cols-2">
-        <Card>
-          <div
-            role="tablist"
-            aria-label="Expense breakdown"
-            className="mb-5 flex flex-wrap gap-2"
-          >
-            {(
-              [
-                ["categories", "Category"],
-                ["accounts", "Account"],
-                ["people", "Person"],
-              ] as const
-            ).map(([key, label]) => (
-              <Button
-                key={key}
-                role="tab"
-                aria-selected={group === key}
-                variant={group === key ? "default" : "secondary"}
-                size="sm"
-                onClick={() => setGroup(key)}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-          {!report.rows.length && (
-            <p className="py-8 text-sm text-muted-foreground">
-              No expenses in this selection.
-            </p>
-          )}
-          <div className="space-y-5">
-            {report[group].map((row) => (
-              <button
-                type="button"
-                key={row.id}
-                aria-label={"View " + name(row.id) + " transactions"}
-                onClick={() =>
-                  setDetail({ group, id: row.id, title: name(row.id) })
-                }
-                className="block w-full rounded-xl p-3 text-left transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-primary"
-              >
-                <div className="mb-2 flex justify-between gap-4 text-sm">
-                  <span className="min-w-0 break-words">{name(row.id)}</span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <strong className="tabular-nums">
-                      {money(row.amountCents)}
-                    </strong>
-                    <ChevronRight size={15} className="text-muted-foreground" />
-                  </span>
-                </div>
-                <div className="h-2 rounded-full bg-muted">
-                  <div
-                    className={
-                      "h-2 rounded-full " +
-                      (row.amountCents < 0 ? "bg-emerald-400" : "bg-primary/70")
-                    }
-                    style={{
-                      width: (Math.abs(row.amountCents) / max) * 100 + "%",
-                    }}
-                  />
-                </div>
-              </button>
-            ))}
-          </div>
-        </Card>
-        <Card>
-          <h2 className="mb-5 font-semibold">By month</h2>
-          <div className="divide-y">
-            {report.months.map((month) => (
-              <div
-                key={month.id}
-                className="flex justify-between gap-4 py-3 text-sm"
-              >
-                <span>
-                  {new Intl.DateTimeFormat("en-AU", {
-                    month: "long",
-                    year: "numeric",
-                    timeZone: "UTC",
-                  }).format(new Date(month.id + "-01T00:00:00Z"))}
-                </span>
-                <strong>{money(month.amountCents)}</strong>
-              </div>
-            ))}
-          </div>
+      <ExpenseCategoryChart
+        rows={report.rows}
+        data={data}
+        from={from}
+        to={to}
+      />
+      <div className="grid items-start gap-5 2xl:grid-cols-[minmax(280px,1fr)_minmax(0,2fr)]">
+        <ExpenseBreakdown data={data} report={report} onSelect={setDetail} />
+        <Card className="min-w-0">
+          <h2 className="mb-1 font-semibold">
+            Included transactions · {report.rows.length}
+          </h2>
+          <p className="mb-4 text-xs text-muted-foreground">
+            Newest first · matches your report filters
+          </p>
+          <ExpenseTransactions
+            key={[from, to, accountId, owner, categoryId, search].join(":")}
+            rows={report.rows}
+            data={data}
+          />
         </Card>
       </div>
-      <Card className="mt-5">
-        <h2 className="mb-3 font-semibold">
-          Included transactions · {report.rows.length}
-        </h2>
-        <div className="max-h-[32rem] divide-y overflow-y-auto">
-          <ExpenseTransactions rows={report.rows} data={data} />
-        </div>
-      </Card>
       {detail && (
         <ExpenseDetail
           data={data}
-          filters={{ from, to, accountId, owner, categoryId, detail }}
+          filters={{ from, to, accountId, owner, categoryId, search, detail }}
           title={detail.title}
           onClose={() => setDetail(null)}
         />

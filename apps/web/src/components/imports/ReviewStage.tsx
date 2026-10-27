@@ -1,3 +1,5 @@
+import { useImportConflicts } from "../../hooks/import-conflicts";
+import { ImportConflicts } from "./ImportConflicts";
 import { importBalance } from "../../lib/import-balance";
 import { useState } from "react";
 import { ReconciliationNotice } from "./ReconciliationNotice";
@@ -17,6 +19,13 @@ export function ReviewStage({
   flow: CsvImport;
   preview: ImportPreview;
 }) {
+  const conflicts = useImportConflicts(
+    data,
+    flow.accountId,
+    preview.rows,
+    flow.conflictError,
+  );
+  const [focusRow, setFocusRow] = useState<{ rowNumber: number }>();
   const [acknowledged, setAcknowledged] = useState("");
   const summary = importBalance(data, flow.accountId, preview);
   const reviewKey = JSON.stringify([
@@ -40,6 +49,21 @@ export function ReviewStage({
   );
   return (
     <>
+      <ImportConflicts
+        conflicts={conflicts}
+        rows={preview.rows}
+        data={data}
+        busy={!!busy}
+        updateRow={updateRow}
+        reviewRow={(rowNumber) => {
+          setPage(
+            Math.floor(
+              preview.rows.findIndex((row) => row.rowNumber === rowNumber) / 20,
+            ),
+          );
+          setFocusRow({ rowNumber });
+        }}
+      />
       <ReconciliationNotice summary={summary} />
       <Card className="mb-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -87,6 +111,7 @@ export function ReviewStage({
             </Button>
             <Button
               disabled={
+                conflicts.length > 0 ||
                 !selected.length ||
                 Boolean(busy) ||
                 (needsCheck && acknowledged !== reviewKey)
@@ -124,7 +149,16 @@ export function ReviewStage({
         </label>
       )}
       <ImportRows
-        {...{ data, accountId, preview, page, setPage, busy, updateRow }}
+        {...{
+          data,
+          accountId,
+          preview,
+          page,
+          setPage,
+          busy,
+          updateRow,
+          focusRow,
+        }}
       />
       <p className="mt-4 text-xs leading-5 text-muted-foreground">
         Amounts and dates remain tied to your source rows. Correct their mapping

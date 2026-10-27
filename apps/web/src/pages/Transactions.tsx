@@ -143,7 +143,16 @@ export function Transactions() {
               )}
               <Button
                 variant="ghost"
+                disabled={action.isPending}
                 onClick={() => {
+                  const records = (
+                    detail.transferGroupId
+                      ? data.transactions.filter(
+                          (record) =>
+                            record.transferGroupId === detail.transferGroupId,
+                        )
+                      : [detail]
+                  ).map(({ id, version }) => ({ id, version }));
                   if (
                     !window.confirm(
                       detail.kind === "transfer"
@@ -153,8 +162,8 @@ export function Transactions() {
                   )
                     return;
                   action.mutate({
-                    path: "/transactions/" + detail.id,
-                    method: "DELETE",
+                    path: "/transactions/bulk-delete",
+                    body: { records },
                   });
                   setParam("detail");
                 }}
