@@ -1,5 +1,6 @@
 import {
   today,
+  categorise,
   type Category,
   type Rule,
   type ImportRow,
@@ -11,7 +12,7 @@ import { readWithAi } from "./ai-reader.js";
 import { extractPdf } from "./pdf.js";
 import { recoverBalances } from "./balances.js";
 import { parseStatement } from "./parser.js";
-import { categorise, recurringSuggestions } from "./suggestions.js";
+import { recurringSuggestions } from "./suggestions.js";
 export async function processStatement(
   accountId: string,
   content: Buffer,

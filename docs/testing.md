@@ -42,3 +42,26 @@ The statement-review confirmation check names its final acknowledgement checkbox
 Step navigation uses a React transition, so a generic checkbox selector can still
 find the preceding review screen's already-checked Include box. Waiting for the
 labelled confirmation control proves the new screen is ready without sleeps.
+
+CSV account upload coverage: parser/mapping units own delimiter detection,
+automatic headerless detection, duplicate/empty headers, exact cents, explicit reversed signs,
+date-format suggestions, compatible saved mappings and row limits. Real PostgreSQL
+tests in `csv-import.integration.test.ts` own authentication, preview-only state,
+approval-only mapping/transaction persistence, source-date enforcement and archived
+accounts; existing finance integration cases retain concurrency, amount-tampering,
+refund and linked-transfer coverage. `csv-import.spec.ts` and the CSV journeys own
+account-context navigation, editable suggestions, approval, exclusion, duplicate
+warnings, recoverable upload errors, reload persistence and desktop/mobile layout,
+including long selected column names and wrapped dropdown options. Shared
+categorisation tests cover rule priority, history, recognised merchants and category
+eligibility; API/browser tests verify automatic CSV categories and approved edits.
+The held-response journey releases its barrier in cleanup and runs ten times per
+browser with no retries. No timer deadline is introduced by this flow.
+
+These checks reuse the existing production build and one browser worker because
+the journeys reset the same `finance_e2e` database. Parser units and typechecks can
+run alongside database integration in the separate `finance_test` database.
+For this checkout's 27 October verification, missing WebKit native libraries were
+extracted into `/tmp/finance-csv-libs`; the temporary launcher
+`FINANCE_WEBKIT_EXECUTABLE=/tmp/finance-csv-webkit.sh` preserves that library path.
+This local workaround does not change CI's browser/native-dependency installation.

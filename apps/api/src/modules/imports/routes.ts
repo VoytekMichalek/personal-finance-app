@@ -5,14 +5,18 @@ import {
   previewSchema,
   commitImportSchema,
   mappingSchema,
+  csvHeadersSchema,
+  categorise,
+  type Category,
   today,
 } from "@finance/shared";
-import { prisma } from "../../lib/db.js";
+import { prisma, json } from "../../lib/db.js";
 import { HttpError } from "../../lib/errors.js";
-import { applyRule, validateAccount } from "../finance/service.js";
-import { csvRecords, parseRows } from "./parser.js";
+import { validateAccount } from "../finance/service.js";
+import { csvRecords, parseRows, readCsv } from "./parser.js";
 import { redact, suggest } from "../../integrations/openrouter.js";
 import { commitRows } from "./commit.js";
+import { suggestMapping } from "./mapping.js";
 export const importRouter = Router();
 importRouter.get("/mapping/:accountId", async (req, res) => {
   const saved = await prisma.importMapping.findUnique({
@@ -21,18 +25,27 @@ importRouter.get("/mapping/:accountId", async (req, res) => {
   res.json(saved?.mapping ?? null);
 });
 importRouter.post("/headers", async (req, res) => {
-  const csv = z.string().max(5_000_000).parse(req.body.csv);
-  const rows = csvRecords(csv);
+  const input = csvHeadersSchema.parse(req.body);
+  if (input.accountId) await validateAccount(prisma, input.accountId);
+  const { rows, hasHeaders } = readCsv(input.csv, input.hasHeaders);
+  const saved = input.accountId
+    ? await prisma.importMapping.findUnique({
+        where: { accountId: input.accountId },
+      })
+    : null;
   res.json({
     headers: Object.keys(rows[0] ?? {}),
     sample: rows.slice(0, 4),
     rowCount: rows.length,
+    hasHeaders,
+    mapping: suggestMapping(rows, saved?.mapping),
   });
 });
 importRouter.post("/suggest", async (req, res) => {
   const input = z
     .object({
       csv: z.string().max(5_000_000),
+      hasHeaders: z.boolean().default(true),
       rows: z
         .array(
           z.object({
@@ -51,8 +64,8 @@ importRouter.post("/suggest", async (req, res) => {
   const modelId = (await prisma.setup.findUnique({ where: { id: 1 } }))
     ?.modelId;
   if (!modelId)
-    throw new HttpError(400, "Choose a model in Settings → Imports first.");
-  const records = csvRecords(input.csv);
+    throw new HttpError(400, "Choose a model in Settings → AI first.");
+  const records = csvRecords(input.csv, input.hasHeaders);
   const categories = await prisma.category.findMany({
     where: { archived: false },
     select: { id: true, name: true, kind: true },
@@ -101,12 +114,23 @@ importRouter.post("/suggest", async (req, res) => {
 importRouter.post("/preview", async (req, res) => {
   const input = previewSchema.parse(req.body);
   const account = await validateAccount(prisma, input.accountId);
-  const records = csvRecords(input.csv);
+  const records = csvRecords(input.csv, input.hasHeaders);
   const rows = parseRows(records, input.mapping, account.owner);
-  const existing = await prisma.transaction.findMany({
-    where: { accountId: account.id },
-    select: { date: true, description: true, amountCents: true },
-  });
+  const [existing, categories, rules] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { accountId: account.id },
+      select: {
+        date: true,
+        description: true,
+        amountCents: true,
+        categoryId: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.category.findMany(),
+    prisma.rule.findMany(),
+  ]);
+  categorise(rows, json<Category[]>(categories), rules, existing);
   const fingerprints = new Set(
     existing.map((t) => t.date + "|" + t.amountCents),
   );
@@ -117,11 +141,6 @@ importRouter.post("/preview", async (req, res) => {
       row.include = false;
       continue;
     }
-    row.categoryId = await applyRule(
-      prisma,
-      row.description,
-      row.amountCents > 0 ? "income" : "expense",
-    );
     row.duplicate = fingerprints.has(row.date + "|" + row.amountCents);
     if (row.duplicate) row.include = false;
   }
@@ -134,11 +153,6 @@ importRouter.post("/preview", async (req, res) => {
       preview: rows,
       expiresAt: new Date(Date.now() + 86400000),
     },
-  });
-  await prisma.importMapping.upsert({
-    where: { accountId: account.id },
-    create: { accountId: account.id, mapping: input.mapping },
-    update: { mapping: input.mapping },
   });
   res.json({
     id: batch.id,
@@ -184,6 +198,12 @@ importRouter.post("/:id/commit", async (req, res) => {
       if (batch.expiresAt <= new Date())
         throw new HttpError(409, "Preview expired. Upload the CSV again.");
       const imported = await commitRows(tx, batch, input);
+      const mapping = mappingSchema.parse(batch.mapping);
+      await tx.importMapping.upsert({
+        where: { accountId: batch.accountId },
+        create: { accountId: batch.accountId, mapping },
+        update: { mapping },
+      });
       await tx.importBatch.update({
         where: { id: batch.id },
         data: { committedAt: new Date() },

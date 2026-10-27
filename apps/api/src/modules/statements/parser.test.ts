@@ -1,6 +1,7 @@
+import { categorise } from "@finance/shared";
 import { describe, it, expect } from "vitest";
 import { parseStatement } from "./parser.js";
-import { categorise, recurringSuggestions } from "./suggestions.js";
+import { recurringSuggestions } from "./suggestions.js";
 import { extractPdf } from "./pdf.js";
 import {
   statementPdf,

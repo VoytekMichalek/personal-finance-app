@@ -1,128 +1,62 @@
-import {
-  type ImportPreview,
-  type ImportRow,
-  type Mapping,
-  type Snapshot,
-} from "@finance/shared";
+import { money, type ImportPreview, type Snapshot } from "@finance/shared";
 import { FileSpreadsheet, Sparkles } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
-import { toast } from "sonner";
-import { send } from "../../lib/api";
+import type { CsvImport } from "../../hooks/csv-import";
 import { ImportRows } from "./ImportRows";
 import { Card } from "../common/primitives";
 import { Button } from "../ui/button";
-type Suggestion = {
-  mapping?: Mapping;
-  categories: { rowNumber: number; categoryId: string | null }[];
-};
-type Props = {
-  data: Snapshot;
-  accountId: string;
-  csv: string;
-  filename: string;
-  preview: ImportPreview;
-  busy: string;
-  selected: ImportRow[];
-  page: number;
-  setPage: Dispatch<SetStateAction<number>>;
-  setCompleted: (v: number) => void;
-  setPreview: Dispatch<SetStateAction<ImportPreview | undefined>>;
-  integrations: { data?: { modelId: string | null } };
-  query: { refetch: () => Promise<unknown> };
-  updateRow: (n: number, patch: Partial<ImportRow>) => void;
-  task: (label: string, operation: () => Promise<void>) => Promise<void>;
-};
+
 export function ReviewStage({
   data,
-  accountId,
-  csv,
-  filename,
+  flow,
   preview,
-  busy,
-  selected,
-  page,
-  setPage,
-  setCompleted,
-  setPreview,
-  integrations,
-  query,
-  updateRow,
-  task,
-}: Props) {
+}: {
+  data: Snapshot;
+  flow: CsvImport;
+  preview: ImportPreview;
+}) {
+  const { accountId, filename, busy, page, setPage, updateRow } = flow;
+  const selected = preview.rows.filter((row) => row.include && !row.error);
+  const moneyIn = selected.reduce(
+    (sum, row) => sum + Math.max(0, row.amountCents),
+    0,
+  );
+  const moneyOut = selected.reduce(
+    (sum, row) => sum + Math.max(0, -row.amountCents),
+    0,
+  );
   return (
     <>
       <Card className="mb-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <FileSpreadsheet size={17} />
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 break-all text-sm font-semibold">
+              <FileSpreadsheet size={17} className="shrink-0" />
               {filename}
+            </p>
+            <p className="mt-2 text-sm">
+              Import into {data.accounts.find((a) => a.id === accountId)?.name}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
               {preview.validCount} valid · {preview.invalidCount} need
               correction · {preview.rows.filter((r) => r.duplicate).length}{" "}
               possible duplicates
             </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {selected.length} selected · {money(moneyIn)} money in ·{" "}
+              {money(moneyOut)} money out
+            </p>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              {selected.filter((row) => row.categoryId).length} categorised.
+              Categories are suggested automatically from your rules, previous
+              transactions and recognised merchants, just like PDF statements.
+              Review or change them before approval.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
               variant="secondary"
-              disabled={Boolean(busy) || !integrations.data?.modelId}
-              onClick={() =>
-                void task("Suggesting categories…", async () => {
-                  for (
-                    let offset = 0;
-                    offset < preview.rows.length;
-                    offset += 100
-                  ) {
-                    const rows = preview.rows
-                      .slice(offset, offset + 100)
-                      .filter(
-                        (r) =>
-                          !r.error &&
-                          !r.categoryId &&
-                          !r.categoryChosen &&
-                          r.kind !== "transfer",
-                      );
-                    if (!rows.length) continue;
-                    const suggestions = await send<Suggestion>(
-                      "/imports/suggest",
-                      {
-                        csv,
-                        rows: rows.map(
-                          ({ rowNumber, description, amountCents, kind }) => ({
-                            rowNumber,
-                            description,
-                            amountCents,
-                            kind,
-                          }),
-                        ),
-                      },
-                    );
-                    setPreview((current) =>
-                      current
-                        ? {
-                            ...current,
-                            rows: current.rows.map((row) => {
-                              const suggestion = suggestions.categories.find(
-                                (s) => s.rowNumber === row.rowNumber,
-                              );
-                              return suggestion &&
-                                !row.categoryId &&
-                                !row.categoryChosen &&
-                                row.kind !== "transfer"
-                                ? {
-                                    ...row,
-                                    categoryId: suggestion.categoryId,
-                                  }
-                                : row;
-                            }),
-                          }
-                        : current,
-                    );
-                  }
-                })
-              }
+              disabled={Boolean(busy) || !flow.aiAvailable}
+              onClick={() => void flow.suggestCategories()}
             >
               <Sparkles size={14} />
               Suggest categories
@@ -130,57 +64,15 @@ export function ReviewStage({
             <Button
               variant="secondary"
               disabled={Boolean(busy)}
-              onClick={() => setPreview(undefined)}
+              onClick={flow.changePreview}
             >
               Change mapping
             </Button>
             <Button
               disabled={!selected.length || Boolean(busy)}
-              onClick={() =>
-                void task("Importing…", async () => {
-                  const result = await send<{
-                    imported: number;
-                    alreadyImported: boolean;
-                  }>("/imports/" + preview.id + "/commit", {
-                    rows: preview.rows
-                      .filter((r) => !r.error)
-                      .map(
-                        ({
-                          rowNumber,
-                          date,
-                          description,
-                          amountCents,
-                          kind,
-                          counterAccountId,
-                          categoryId,
-                          owner,
-                          include,
-                          allowDuplicate,
-                        }) => ({
-                          rowNumber,
-                          date,
-                          description,
-                          amountCents,
-                          kind,
-                          counterAccountId,
-                          categoryId,
-                          owner,
-                          include,
-                          allowDuplicate,
-                        }),
-                      ),
-                  });
-                  setCompleted(result.imported);
-                  await query.refetch();
-                  toast.success(
-                    result.alreadyImported
-                      ? "This file was already imported."
-                      : "Import complete",
-                  );
-                })
-              }
+              onClick={() => void flow.approve()}
             >
-              {busy || "Confirm import (" + selected.length + ")"}
+              {busy || "Approve & import (" + selected.length + ")"}
             </Button>
           </div>
         </div>
@@ -190,10 +82,10 @@ export function ReviewStage({
       />
       <p className="mt-4 text-xs leading-5 text-muted-foreground">
         Amounts and dates remain tied to your source rows. Correct their mapping
-        if needed. Mark refunds and transfers before confirming. Transfers
-        create both linked account entries; a later statement will flag the
-        other entry as a possible duplicate. Identical legitimate payments can
-        be retained explicitly.
+        if needed. Mark refunds and transfers before approving. Transfers create
+        both linked account entries; a later import will flag the other entry as
+        a possible duplicate. Identical legitimate payments can be retained
+        explicitly. Only selected valid rows are saved when you approve.
       </p>
     </>
   );

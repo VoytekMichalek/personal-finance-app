@@ -115,7 +115,7 @@ export function Field({
 }) {
   const id = useId();
   return (
-    <div className="grid gap-2 text-sm font-medium">
+    <div className="grid min-w-0 gap-2 text-sm font-medium">
       <label htmlFor={id}>{label}</label>
       {isValidElement(children)
         ? cloneElement(children as ReactElement<{ id?: string }>, { id })

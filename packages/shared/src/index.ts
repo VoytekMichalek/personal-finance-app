@@ -8,3 +8,5 @@ export * from "./categories.js";
 
 export * from "./integrations.js";
 export * from "./expenses.js";
+
+export * from "./categorisation.js";

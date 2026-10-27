@@ -180,3 +180,68 @@ All three existing sidebar/settings checks also passed at the normal desktop siz
 The isolated browser harness uses port 3107 because another app occupies 3000.
 Full desktop/mobile coverage remains in GitHub Validate; no release is requested
 as part of this change.
+
+## CSV uploads from accounts — 27 October 2026
+
+Current SOP main was retrieved once through the installed read-only helper at
+`2026-10-27T09:35:28.248Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, and held fixed for this task.
+Policy loading, frontend/backend architecture, application UI, testing and user
+documentation guidance were read against the adopted baseline. Current guidance
+permits focused local verification and reserves full application CI for GitHub;
+the personal CI ownership and documentation-navigation exceptions remain intact.
+No unrelated standards migration or full current-policy adoption is claimed.
+
+The existing CSV import is now available beside Upload statement on account
+details, with that account preselected. Deterministic mapping suggestions cover
+common headings and date formats, headerless files, signed or split amounts and
+explicit reversed signs. Invalid/lossy source files fail visibly. Approval uses
+the existing atomic, idempotent server commit with immutable preview dates/cents;
+only approved mappings become the account's remembered defaults. Query/mutation
+ownership now sits in a CSV feature hook. The maintained user guide describes
+upload, mapping, review, approval, limitations and recovery.
+
+This change introduces no dependency, environment input, database schema,
+authentication, logging, deployment or release-workflow change. The owner
+subsequently requested the overlap fix, automatic categorisation and a commit/release
+of the next patch version, v0.0.3. Existing automatic deployment authorisation applies;
+no new R01–R19 readiness decision is being introduced.
+
+Focused verification passed on the working tree based on `15a5da7` with Node
+24.21.0 and pnpm 10.34.6: source/file guardrails, changed-source ESLint, all three
+workspace typechecks, shared/API/web builds, 34 selected parser/mapping/finance
+unit tests and 13 real PostgreSQL CSV/finance integration tests. The upload
+response-barrier test passed ten consecutive times without retries in desktop
+Chromium and mobile WebKit. The complete affected CSV/journeys/statements browser
+selection then passed all 26 cases on both projects in 2.1 minutes. Desktop/mobile
+mapping and review screenshots were inspected, including overflow checks.
+All database work used `finance_test` or `finance_e2e`. WebKit needed temporary
+native libraries and a launcher as recorded in testing.md; no assertions, browser
+projects or timeouts were relaxed. Full GitHub CI and release are not claimed.
+
+Follow-up: long selected column names now truncate within their grid cells and
+options wrap inside the dropdown. Headerless exports are detected automatically,
+with an explicit override, so their first transaction remains available. CSV
+previews use the same shared categorisation function as PDF statements (rules,
+previous transactions and recognised merchants). Reviewed category overrides
+remain authoritative when approved. All four version manifests are 0.0.3.
+
+R17–R19 inspection for this release reviewed the unchanged service environment
+examples/config loader, Docker build context and runtime, migration entrypoint,
+error handler, Better Auth logging and opt-in diagnostics. Inputs remain runtime
+server-owned; local files/secrets stay outside the production bundle. Expected
+denials, validation and polls are quiet; unexpected errors retain sanitised events.
+No new warning or security-incident subsystem is introduced. The repository-local
+Validate/Release production-image smoke gates will supply exact-candidate evidence
+for startup validation, preserved data, quiet defaults, diagnostic redaction and
+fault reporting before deployment. Release run identities and rollout results are
+recorded in the release handover after completion.
+
+Final follow-up verification passed: guardrails, changed-source ESLint, all
+workspace typechecks/builds, 51 selected shared/parser/statement unit tests and
+24 real PostgreSQL CSV/finance/statement integration tests. The CSV response-barrier
+journey passed 20 runs (ten per browser, no retries). After the dropdown wrapper
+fix, the full affected CSV/journeys/statements/transactions/review-reports/AI-settings
+selection passed 49 cases in 3.2 minutes; its existing desktop-only sidebar case
+was inapplicable on mobile. Long-column desktop/mobile screenshots were inspected.
+No test assertions, timeouts, browser projects or isolation boundaries were weakened.

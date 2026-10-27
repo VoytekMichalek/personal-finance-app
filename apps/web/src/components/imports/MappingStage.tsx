@@ -1,81 +1,27 @@
-import { SelectItem } from "../ui/select";
-import { useRef } from "react";
-import {
-  mappingSchema,
-  type ImportPreview,
-  type Mapping,
-  type Snapshot,
-} from "@finance/shared";
+import { type Mapping, type Snapshot } from "@finance/shared";
 import { ArrowRight, Sparkles, Upload } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
-import { api, send } from "../../lib/api";
+import type { CsvImport } from "../../hooks/csv-import";
 import { Card, Field, SectionTitle, Select } from "../common/primitives";
+import { SelectItem } from "../ui/select";
 import { Button } from "../ui/button";
-type Suggestion = {
-  mapping?: Mapping;
-  categories: { rowNumber: number; categoryId: string | null }[];
-};
-type Props = {
-  data: Snapshot;
-  accountId: string;
-  setAccount: (v: string) => void;
-  csv: string;
-  filename: string;
-  headers: string[];
-  sample: Record<string, string>[];
-  mapping: Mapping;
-  setMapping: (v: Mapping) => void;
-  busy: string;
-  setError: (v: string) => void;
-  setPreview: Dispatch<SetStateAction<ImportPreview | undefined>>;
-  setPage: Dispatch<SetStateAction<number>>;
-  integrations: {
-    data?: { openrouterConfigured: boolean; modelId: string | null };
-  };
-  task: (label: string, operation: () => Promise<void>) => Promise<void>;
-  fileSelected: (file: File) => Promise<void>;
-};
+
 export function MappingStage({
   data,
-  accountId,
-  setAccount,
-  csv,
-  filename,
-  headers,
-  sample,
-  mapping,
-  setMapping,
-  busy,
-  setError,
-  setPreview,
-  setPage,
-  integrations,
-  task,
-  fileSelected,
-}: Props) {
-  const chosen = useRef(new Set<keyof Mapping>());
+  flow,
+}: {
+  data: Snapshot;
+  flow: CsvImport;
+}) {
+  const { accountId, filename, hasHeaders, columns, mapping, busy } = flow;
   return (
     <Card>
-      <SectionTitle>Choose an account and statement</SectionTitle>
+      <SectionTitle>Choose an account and CSV</SectionTitle>
       <div className="mb-6 max-w-md">
         <Field label="Import into">
           <Select
             disabled={Boolean(busy)}
             value={accountId}
-            onValueChange={async (value) => {
-              const id = value;
-              setAccount(id);
-              if (id) {
-                try {
-                  const saved = await api<Mapping | null>(
-                    "/imports/mapping/" + id,
-                  );
-                  if (saved) setMapping(saved);
-                } catch (e) {
-                  setError((e as Error).message);
-                }
-              }
-            }}
+            onValueChange={(value) => void flow.changeAccount(value)}
           >
             <SelectItem value="">Choose account</SelectItem>
             {data.accounts
@@ -88,62 +34,62 @@ export function MappingStage({
           </Select>
         </Field>
       </div>
-      <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-[#fafbfc] px-4 text-center">
+      <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-[#fafbfc] px-4 text-center focus-within:ring-2 focus-within:ring-primary">
         <Upload size={25} className="text-primary" />
-        <span className="text-sm font-medium">
+        <span className="max-w-full break-all text-sm font-medium">
           {filename || "Choose a bank CSV"}
         </span>
         <span className="text-xs text-muted-foreground">
-          Up to 5 MB · 10,000 rows · nothing is saved until you confirm
+          Up to 5 MB · 10,000 rows · transactions are saved only after approval
         </span>
         <input
           type="file"
           aria-label="Choose bank CSV"
           className="sr-only"
-          accept=".csv,text/csv"
+          accept=".csv,text/csv,text/tab-separated-values"
           disabled={Boolean(busy)}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void fileSelected(file);
-            e.target.value = "";
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void flow.fileSelected(file);
+            event.target.value = "";
           }}
         />
       </label>
-      {csv && (
+      <label className="mt-4 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={hasHeaders}
+          disabled={Boolean(busy)}
+          onChange={(event) => void flow.changeHeaders(event.target.checked)}
+        />
+        First row contains column names
+      </label>
+      {columns && !hasHeaders && (
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+          No column-name row is being used. All {columns.rowCount} transaction
+          rows are included, starting with the first row.
+        </p>
+      )}
+      {columns && (
         <>
           <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
             <SectionTitle>Match your columns</SectionTitle>
             <Button
               variant="secondary"
-              disabled={
-                Boolean(busy) ||
-                !integrations.data?.openrouterConfigured ||
-                !integrations.data?.modelId
-              }
-              onClick={() =>
-                void task("Suggesting mappings…", async () => {
-                  const suggestion = await send<Suggestion>(
-                    "/imports/suggest",
-                    { csv },
-                  );
-                  if (suggestion.mapping) {
-                    const next = { ...suggestion.mapping };
-                    const preserved = Object.fromEntries(
-                      [...chosen.current].map((key) => [key, mapping[key]]),
-                    );
-                    Object.assign(next, preserved);
-                    setMapping(next);
-                  }
-                })
-              }
+              disabled={Boolean(busy) || !flow.aiAvailable}
+              onClick={() => void flow.suggestColumns()}
             >
               <Sparkles size={15} />
               Suggest with AI
             </Button>
           </div>
+          <p className="mb-3 text-sm text-muted-foreground">
+            {columns.rowCount} rows found. We’ve prefilled matching columns
+            where possible. Check them against the sample below.
+          </p>
           <p className="mb-5 text-xs leading-5 text-muted-foreground">
-            AI sends redacted sample rows to OpenRouter. Suggestions are
-            optional and require your review. Configure a model in Settings →
+            Automatic suggestions work without AI. Optional AI suggestions send
+            redacted sample rows to OpenRouter; configure a model in Settings →
             AI.
           </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -160,13 +106,10 @@ export function MappingStage({
                 <Select
                   disabled={Boolean(busy)}
                   value={mapping[key]}
-                  onValueChange={(value) => {
-                    chosen.current.add(key);
-                    setMapping({ ...mapping, [key]: value });
-                  }}
+                  onValueChange={(value) => flow.changeMapping(key, value)}
                 >
                   <SelectItem value="">Choose column</SelectItem>
-                  {headers.map((header) => (
+                  {columns.headers.map((header) => (
                     <SelectItem key={header} value={header}>
                       {header}
                     </SelectItem>
@@ -178,13 +121,12 @@ export function MappingStage({
               <Select
                 disabled={Boolean(busy)}
                 value={mapping.dateFormat}
-                onValueChange={(value) => {
-                  chosen.current.add("dateFormat");
-                  setMapping({
-                    ...mapping,
-                    dateFormat: value as Mapping["dateFormat"],
-                  });
-                }}
+                onValueChange={(value) =>
+                  flow.changeMapping(
+                    "dateFormat",
+                    value as Mapping["dateFormat"],
+                  )
+                }
               >
                 <SelectItem value="DMY">Day / month / year</SelectItem>
                 <SelectItem value="MDY">Month / day / year</SelectItem>
@@ -192,15 +134,30 @@ export function MappingStage({
               </Select>
             </Field>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Use a signed amount column, or both debit and credit columns. Review
-            the sign and date format carefully.
+          <p className="mt-4 text-xs leading-5 text-muted-foreground">
+            Use a signed amount column, or clear it and choose both debit and
+            credit columns. Negative amounts mean money out; positive amounts
+            mean money in. Ambiguous dates default to day/month/year. Check the
+            date format carefully.
           </p>
+          {mapping.amountColumn && (
+            <label className="mt-4 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                disabled={Boolean(busy)}
+                checked={Boolean(mapping.invertAmounts)}
+                onChange={(event) =>
+                  flow.changeMapping("invertAmounts", event.target.checked)
+                }
+              />
+              Reverse amount signs (my bank uses positive amounts for money out)
+            </label>
+          )}
           <div className="mt-6 overflow-auto rounded-xl border">
-            <table className="w-full text-left text-[10px]">
+            <table aria-label="CSV sample" className="w-full text-left text-xs">
               <thead className="border-b bg-muted">
                 <tr>
-                  {headers.map((h) => (
+                  {columns.headers.map((h) => (
                     <th key={h} className="p-3">
                       {h}
                     </th>
@@ -208,9 +165,9 @@ export function MappingStage({
                 </tr>
               </thead>
               <tbody>
-                {sample.map((row, i) => (
-                  <tr key={i} className="border-b">
-                    {headers.map((h) => (
+                {columns.sample.map((row, index) => (
+                  <tr key={index} className="border-b">
+                    {columns.headers.map((h) => (
                       <td key={h} className="p-3 whitespace-nowrap">
                         {row[h]}
                       </td>
@@ -223,18 +180,7 @@ export function MappingStage({
           <Button
             className="mt-6"
             disabled={!accountId || Boolean(busy)}
-            onClick={() =>
-              void task("Preparing preview…", async () => {
-                const checked = mappingSchema.parse(mapping);
-                const result = await send<ImportPreview>("/imports/preview", {
-                  accountId,
-                  csv,
-                  mapping: checked,
-                });
-                setPreview(result);
-                setPage(0);
-              })
-            }
+            onClick={() => void flow.review()}
           >
             {busy || "Review transactions"}
             <ArrowRight size={14} />

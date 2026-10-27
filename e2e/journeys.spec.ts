@@ -5,8 +5,12 @@ import { today } from "../packages/shared/src/index";
 test("accounts and CSV review work across screen sizes", async ({ page }) => {
   await session(page);
   await account(page);
-  await page.goto("/imports");
-  await choose(page, page.getByLabel("Import into"), "Everyday");
+  await page.getByRole("button", { name: /Everyday/ }).click();
+  await expect(
+    page.getByRole("link", { name: "Upload statement" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Upload CSV" }).click();
+  await expect(page.getByLabel("Import into")).toHaveText("Everyday");
   await page.getByLabel("Choose bank CSV").setInputFiles({
     name: "statement.csv",
     mimeType: "text/csv",
@@ -25,7 +29,7 @@ test("accounts and CSV review work across screen sizes", async ({ page }) => {
   await choose(page, page.getByLabel("Type row 3"), "Refund");
   await choose(page, page.getByLabel("Category row 2"), "Groceries");
   await choose(page, page.getByLabel("Category row 3"), "Groceries");
-  await page.getByRole("button", { name: "Confirm import (3)" }).click();
+  await page.getByRole("button", { name: "Approve & import (3)" }).click();
   await expect(page.getByText("3 transactions imported")).toBeVisible();
   await page.goto("/transactions");
   await expect(
@@ -126,20 +130,26 @@ test("held CSV response keeps review unavailable until mapping is ready @timing"
     await barrier;
     await route.continue();
   });
-  await page.getByLabel("Choose bank CSV").setInputFiles({
-    name: "statement.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from("Date,Description,Amount\n01/09/2026,Test,-1"),
-  });
-  await requested;
-  await expect(page.getByLabel("Choose bank CSV")).toBeDisabled();
-  await expect(
-    page.getByRole("button", { name: "Review transactions" }),
-  ).toHaveCount(0);
-  release();
-  await expect(
-    page.getByRole("button", { name: "Review transactions" }),
-  ).toBeEnabled();
+  try {
+    await page.getByLabel("Choose bank CSV").setInputFiles({
+      name: "statement.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from("Date,Description,Amount\n01/09/2026,Test,-1"),
+    });
+    await requested;
+    await expect(page.getByLabel("Choose bank CSV")).toBeDisabled();
+    await expect(page.getByRole("status")).toHaveText("Reading CSV…");
+    await expect(
+      page.getByRole("button", { name: "Review transactions" }),
+    ).toHaveCount(0);
+    release();
+    await expect(
+      page.getByRole("button", { name: "Review transactions" }),
+    ).toBeEnabled();
+  } finally {
+    release();
+    await page.unrouteAll({ behavior: "wait" });
+  }
 });
 
 test("scheduled bills can be matched once and forecast assumptions are visible", async ({

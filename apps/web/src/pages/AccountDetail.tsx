@@ -6,7 +6,13 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, Pencil, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  FileSpreadsheet,
+  FileText,
+  Pencil,
+  Plus,
+} from "lucide-react";
 import {
   accountBalance,
   addDays,
@@ -100,12 +106,20 @@ export function AccountDetail() {
               Edit account
             </Button>
             {!account.archived && (
-              <Button asChild>
-                <Link to={"/accounts/" + id + "/statement"}>
-                  <FileText size={14} />
-                  Upload statement
-                </Link>
-              </Button>
+              <>
+                <Button asChild>
+                  <Link to={"/accounts/" + id + "/statement"}>
+                    <FileText size={14} />
+                    Upload statement
+                  </Link>
+                </Button>
+                <Button asChild variant="secondary">
+                  <Link to={"/imports?account=" + id}>
+                    <FileSpreadsheet size={14} />
+                    Upload CSV
+                  </Link>
+                </Button>
+              </>
             )}
           </div>
         }
@@ -224,7 +238,7 @@ export function AccountDetail() {
           </div>
           {!transactions.length && (
             <p className="py-8 text-sm text-muted-foreground">
-              Upload a statement or add your first transaction.
+              Upload a statement or CSV, or add your first transaction.
             </p>
           )}
           <div className="mt-4 flex justify-between">

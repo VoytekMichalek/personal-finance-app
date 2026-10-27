@@ -121,14 +121,30 @@ export const mappingSchema = z
     debitColumn: z.string().default(""),
     creditColumn: z.string().default(""),
     dateFormat: z.enum(["DMY", "MDY", "ISO"]).default("DMY"),
+    invertAmounts: z.boolean().optional(),
   })
   .refine(
     (v) => !!v.amountColumn || (!!v.debitColumn && !!v.creditColumn),
     "Map an amount column, or both debit and credit",
-  );
-export const previewSchema = z.object({
-  accountId: id,
+  )
+  .refine((v) => {
+    const columns = [
+      v.dateColumn,
+      v.descriptionColumn,
+      ...(v.amountColumn ? [v.amountColumn] : [v.debitColumn, v.creditColumn]),
+    ];
+    return new Set(columns).size === columns.length;
+  }, "Choose a different column for each field");
+export const csvUploadSchema = z.object({
   csv: z.string().min(1).max(5_000_000),
+  hasHeaders: z.boolean().default(true),
+});
+export const csvHeadersSchema = csvUploadSchema.extend({
+  hasHeaders: z.boolean().optional(),
+  accountId: id.optional(),
+});
+export const previewSchema = csvUploadSchema.extend({
+  accountId: id,
   mapping: mappingSchema,
 });
 export const importRowSchema = z.object({

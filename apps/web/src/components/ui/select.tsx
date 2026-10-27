@@ -52,14 +52,14 @@ export function Select({
         onBlur={onBlur}
         ref={ref}
         className={cn(
-          "group flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-3.5 text-left text-base font-normal shadow-sm transition hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/20 data-[state=open]:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "group flex h-11 w-full min-w-0 max-w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-3.5 text-left text-base font-normal shadow-sm transition hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/20 data-[state=open]:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
           className,
         )}
       >
-        <span className="truncate">
+        <span className="min-w-0 flex-1 truncate">
           <Radix.Value placeholder="Choose an option" />
         </span>
-        <Radix.Icon>
+        <Radix.Icon className="shrink-0">
           <ChevronDown className="size-4 shrink-0 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
         </Radix.Icon>
       </Radix.Trigger>
@@ -68,7 +68,7 @@ export function Select({
           position="popper"
           sideOffset={6}
           collisionPadding={12}
-          className="select-popup z-[80] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_12px_40px_#1e293b20] backdrop-blur-xl"
+          className="select-popup z-[80] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-content-available-width)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_12px_40px_#1e293b20] backdrop-blur-xl"
         >
           <Radix.ScrollUpButton className="flex justify-center p-1">
             <ChevronUp size={14} />
@@ -95,7 +95,9 @@ export function SelectItem({
       value={value || EMPTY}
       className="relative flex cursor-pointer select-none items-center rounded-xl py-2.5 pr-8 pl-3 text-sm outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-blue-50 data-[highlighted]:text-primary data-[state=checked]:font-semibold"
     >
-      <Radix.ItemText>{children}</Radix.ItemText>
+      <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">
+        <Radix.ItemText>{children}</Radix.ItemText>
+      </span>
       <Radix.ItemIndicator className="absolute right-2.5">
         <Check size={14} />
       </Radix.ItemIndicator>
