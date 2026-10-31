@@ -215,19 +215,29 @@ export function RememberTransaction({
             for each row, or explicitly create its counterpart.
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
-          The date and display filters limit this update, not future imports.
-          Manage saved rules in{" "}
-          <a
-            className="text-primary underline"
-            href="/categories"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Categories → Transaction rules
-          </a>
-          .
-        </p>
+        <div className="rounded-xl bg-muted/50 p-3 text-sm">
+          <p className="font-medium">
+            Also saves a rule for future transactions
+          </p>
+          <p className="mt-1">
+            Future matching CSV and PDF imports will automatically use{" "}
+            {transfer ? "this transfer and other account" : "this category"} for
+            your review. Your current date and display filters only limit which
+            existing transactions are updated now.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Manage saved rules in{" "}
+            <a
+              className="text-primary underline"
+              href="/categories"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Categories → Transaction rules
+            </a>
+            .
+          </p>
+        </div>
         {matches.length > limit && (
           <p role="alert" className="text-sm text-destructive">
             Narrow your filters or remembered text to match at most{" "}

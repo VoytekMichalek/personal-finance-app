@@ -309,3 +309,10 @@ Local v0.0.8 evidence (1 November, Node 24.21.0/pnpm 10.34.6):
 Full repository validation, audit and image scanning remain required in GitHub
 Actions for the exact final commit before tagging; release validation and verified
 rollout remain enforced by the existing repository-local release workflow.
+
+The local-preview wording follow-up makes future rule creation explicit in the
+Remember confirmation and user guide. Existing ledger-category and remembered-
+transfer integration suites passed again (14 cases), including real future CSV
+and PDF review and rule pausing. Web typecheck, focused lint, guardrails and diff
+checks passed. This is a copy/layout clarification; no matching, persistence or
+timing behaviour changed, so prior behaviour/timing evidence remains applicable.
