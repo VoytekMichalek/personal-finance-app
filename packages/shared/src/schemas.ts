@@ -58,13 +58,45 @@ export const transferSchema = z
     (v) => v.fromAccountId !== v.toAccountId,
     "Choose two different accounts",
   );
-export const ruleSchema = z.object({
-  pattern: z.string().trim().min(1).max(250),
-  matchMode: z.enum(["contains", "exact"]).default("contains"),
-  categoryId: id,
-  priority: z.number().int().min(0).max(10000).default(100),
-  enabled: z.boolean().default(true),
-});
+export const ruleSchema = z
+  .object({
+    pattern: z.string().trim().min(1).max(250),
+    matchMode: z.enum(["contains", "exact"]).default("contains"),
+    categoryId: id.nullable().default(null),
+    kind: z.literal("transfer").nullable().default(null),
+    accountId: id.nullable().default(null),
+    counterAccountId: id.nullable().default(null),
+    direction: z.enum(["in", "out"]).nullable().default(null),
+    priority: z.number().int().min(0).max(10000).default(100),
+    enabled: z.boolean().default(true),
+  })
+  .superRefine((rule, context) => {
+    if (rule.kind === "transfer") {
+      if (
+        !rule.accountId ||
+        !rule.counterAccountId ||
+        rule.accountId === rule.counterAccountId ||
+        !rule.direction ||
+        rule.categoryId
+      )
+        context.addIssue({
+          code: "custom",
+          path: ["counterAccountId"],
+          message: "Choose two different accounts and the transfer direction.",
+        });
+    } else if (
+      !rule.categoryId ||
+      rule.accountId ||
+      rule.counterAccountId ||
+      rule.direction
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["categoryId"],
+        message: "Choose a category for this rule.",
+      });
+    }
+  });
 export const transactionTypeSchema = z.object({
   version: z.number().int().positive(),
   kind: z.enum(["income", "expense", "refund", "transfer"]),
@@ -251,11 +283,4 @@ export const bulkDeleteSchema = z.object({
 });
 export const bulkCategorySchema = bulkDeleteSchema.extend({
   categoryId: z.uuid().nullable(),
-});
-
-export const rememberTransactionCategorySchema = bulkDeleteSchema.extend({
-  source: z.object({ id, version: z.number().int().positive() }),
-  categoryId: id,
-  pattern: z.string().trim().min(1).max(250),
-  matchMode: z.enum(["exact", "contains"]),
 });

@@ -18,3 +18,4 @@ export * from "./account-history.js";
 export * from "./import-conflicts.js";
 export * from "./import-review.js";
 export * from "./remembered-rule.js";
+export * from "./transaction-rules.js";

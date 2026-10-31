@@ -1,3 +1,5 @@
+import { useId, useState } from "react";
+import { ChartViewTabs } from "./ChartViewTabs";
 import {
   Bar,
   BarChart,
@@ -30,6 +32,8 @@ export function ExpenseDetail({
   title: string;
   onClose: () => void;
 }) {
+  const viewId = useId();
+  const [view, setView] = useState<"graph" | "table">("graph");
   const report = expenseReport(data, filters);
   const points = expenseTrend(report.rows, filters.from, filters.to);
   const daily =
@@ -41,11 +45,18 @@ export function ExpenseDetail({
         ? { day: "numeric", month: "short", timeZone: "UTC" }
         : { month: "short", year: "numeric", timeZone: "UTC" },
     ).format(new Date(date + "T00:00:00Z"));
-  const account = data.accounts.find((a) => a.id === filters.accountId)?.name;
-  const person =
-    filters.owner === "household"
-      ? "Household"
-      : data.people.find((p) => p.id === filters.owner)?.name;
+  const account = data.accounts
+    .filter((a) => filters.accountIds?.includes(a.id))
+    .map((a) => a.name)
+    .join(", ");
+  const person = (filters.owners ?? [])
+    .map((id) =>
+      id === "household"
+        ? "Household"
+        : data.people.find((p) => p.id === id)?.name,
+    )
+    .filter(Boolean)
+    .join(", ");
   return (
     <Dialog
       open
@@ -79,58 +90,75 @@ export function ExpenseDetail({
       <h2 className="mt-6 font-semibold">
         {daily ? "Daily" : "Monthly"} spending trend
       </h2>
-      <div
-        role="img"
-        aria-label={title + " spending trend"}
-        className="mt-4 h-52 w-full"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={points}
-            margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
-          >
-            <CartesianGrid vertical={false} stroke="#f0f1f2" />
-            <XAxis
-              dataKey="date"
-              tickFormatter={period}
-              interval="preserveStartEnd"
-              axisLine={false}
-              tickLine={false}
-              minTickGap={30}
-              tick={{ fontSize: 10 }}
-            />
-            <YAxis
-              width={58}
-              tickFormatter={(v) => money(Number(v), true)}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 10 }}
-            />
-            <Tooltip
-              cursor={{ fill: "#f5f7fa" }}
-              labelFormatter={(v) => period(String(v))}
-              formatter={(v) => [money(Number(v)), "Net expenses"]}
-              contentStyle={{ borderRadius: 12, fontSize: 12 }}
-            />
-            <ReferenceLine y={0} stroke="#cbd5e1" />
-            <Bar
-              dataKey="amountCents"
-              maxBarSize={32}
-              radius={[4, 4, 0, 0]}
-              isAnimationActive={false}
-            >
-              {points.map((p) => (
-                <Cell
-                  key={p.date}
-                  fill={p.amountCents < 0 ? "#059669" : "#007aff"}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="mt-3">
+        <ChartViewTabs id={viewId} value={view} onChange={setView} />
       </div>
-      <details className="mt-2 text-xs text-muted-foreground">
-        <summary className="cursor-pointer py-2">View trend values</summary>
+      <div
+        role="tabpanel"
+        id={`${viewId}-panel-graph`}
+        aria-labelledby={`${viewId}-tab-graph`}
+        hidden={view !== "graph"}
+      >
+        {view === "graph" && (
+          <div
+            role="img"
+            aria-label={title + " spending trend"}
+            className="mt-4 h-52 w-full"
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={points}
+                margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid vertical={false} stroke="#f0f1f2" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={period}
+                  interval="preserveStartEnd"
+                  axisLine={false}
+                  tickLine={false}
+                  minTickGap={30}
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis
+                  width={58}
+                  tickFormatter={(v) => money(Number(v), true)}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10 }}
+                />
+                <Tooltip
+                  cursor={{ fill: "#f5f7fa" }}
+                  labelFormatter={(v) => period(String(v))}
+                  formatter={(v) => [money(Number(v)), "Net expenses"]}
+                  contentStyle={{ borderRadius: 12, fontSize: 12 }}
+                />
+                <ReferenceLine y={0} stroke="#cbd5e1" />
+                <Bar
+                  dataKey="amountCents"
+                  maxBarSize={32}
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive={false}
+                >
+                  {points.map((p) => (
+                    <Cell
+                      key={p.date}
+                      fill={p.amountCents < 0 ? "#059669" : "#007aff"}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+      <div
+        role="tabpanel"
+        id={`${viewId}-panel-table`}
+        aria-labelledby={`${viewId}-tab-table`}
+        hidden={view !== "table"}
+        className="mt-2 text-xs text-muted-foreground"
+      >
         <div className="max-h-44 overflow-y-auto">
           <table className="w-full text-left">
             <caption className="sr-only">
@@ -156,7 +184,7 @@ export function ExpenseDetail({
             </tbody>
           </table>
         </div>
-      </details>
+      </div>
       <h2 className="mt-6 mb-2 font-semibold">
         Transactions · {report.rows.length}
       </h2>

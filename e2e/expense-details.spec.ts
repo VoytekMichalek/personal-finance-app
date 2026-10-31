@@ -1,4 +1,4 @@
-import { test, expect, session, choose } from "./fixtures";
+import { test, expect, session, tickFilter } from "./fixtures";
 const headers = { Origin: "http://localhost:3000" };
 test("expense breakdown opens filtered transactions and a complete period trend", async ({
   page,
@@ -49,11 +49,7 @@ test("expense breakdown opens filtered transactions and a complete period trend"
   }
   await page.goto("/expenses");
   await page.getByRole("button", { name: "All history" }).click();
-  await choose(
-    page,
-    page.getByRole("combobox", { name: "Person", exact: true }),
-    "Voytek",
-  );
+  await tickFilter(page, "Person", ["Voytek"]);
   const trigger = page.getByRole("button", {
     name: "View Groceries transactions",
     exact: true,
@@ -72,7 +68,7 @@ test("expense breakdown opens filtered transactions and a complete period trend"
       .getByRole("img", { name: "Groceries spending trend" })
       .getByText("Jan 2026", { exact: true }),
   ).toBeVisible();
-  await dialog.getByText("View trend values").click();
+  await dialog.getByRole("tab", { name: "Table", exact: true }).click();
   const trend = dialog.getByRole("table");
   await expect(
     trend.getByRole("row").filter({ hasText: "Feb 2026" }),
@@ -96,7 +92,7 @@ test("expense breakdown opens filtered transactions and a complete period trend"
     "scrollWidth",
     await dialog.evaluate((el) => el.clientWidth),
   );
-  await dialog.getByText("View trend values").click();
+  await dialog.getByRole("tab", { name: "Graph", exact: true }).click();
   await dialog.evaluate((el) => {
     el.scrollTop = 0;
   });
@@ -106,7 +102,7 @@ test("expense breakdown opens filtered transactions and a complete period trend"
   await dialog.getByRole("button", { name: "Close dialog" }).click();
   await expect(trigger).toBeFocused();
   await expect(
-    page.getByRole("combobox", { name: "Person", exact: true }),
+    page.getByRole("button", { name: "Person", exact: true }),
   ).toHaveText("Voytek");
   await page
     .getByRole("button", { name: "View Uncategorised transactions" })

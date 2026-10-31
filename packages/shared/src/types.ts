@@ -43,7 +43,11 @@ export type Rule = {
   id: string;
   matchMode?: "contains" | "exact";
   pattern: string;
-  categoryId: string;
+  categoryId: string | null;
+  kind?: "transfer" | null;
+  accountId?: string | null;
+  counterAccountId?: string | null;
+  direction?: "in" | "out" | null;
   priority: number;
   enabled: boolean;
 };

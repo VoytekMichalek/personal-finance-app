@@ -1,4 +1,4 @@
-import { test, expect, session, choose } from "./fixtures";
+import { test, expect, session, tickFilter } from "./fixtures";
 
 test("expense search filters totals, charts and drill-downs and clears with keyboard focus", async ({
   page,
@@ -59,7 +59,7 @@ test("expense search filters totals, charts and drill-downs and clears with keyb
     exact: true,
   });
   await expect(chart.locator(".recharts-bar")).toHaveCount(1);
-  await page.getByText("View chart values", { exact: true }).click();
+  await page.getByRole("tab", { name: "Table", exact: true }).click();
   const values = page.getByRole("table", {
     name: "Expenses by category and month",
   });
@@ -89,11 +89,7 @@ test("expense search filters totals, charts and drill-downs and clears with keyb
   await expect(search).toHaveValue("");
   await expect(search).toBeFocused();
   await expect(included).toBeVisible();
-  await choose(
-    page,
-    page.getByRole("combobox", { name: "Category", exact: true }),
-    "Uncategorised",
-  );
+  await tickFilter(page, "Category", ["Uncategorised"]);
   await expect(
     page.getByRole("heading", { name: "Included transactions · 1" }),
   ).toBeVisible();
@@ -102,6 +98,7 @@ test("expense search filters totals, charts and drill-downs and clears with keyb
       .getByRole("list", { name: "Expense transactions" })
       .getByText("Other purchase", { exact: true }),
   ).toBeVisible();
+  await page.getByRole("tab", { name: "Graph", exact: true }).click();
   await expect(page.getByRole("list", { name: "Chart categories" })).toHaveText(
     "Uncategorised",
   );

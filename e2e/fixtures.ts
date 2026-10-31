@@ -131,7 +131,10 @@ export async function chooseDate(page: Page, locator: Locator, date: string) {
     month: "long",
     timeZone: "UTC",
   }).format(new Date(date + "T00:00:00Z"));
-  const monthPicker = page.getByRole("combobox", { name: "Month", exact: true });
+  const monthPicker = page.getByRole("combobox", {
+    name: "Month",
+    exact: true,
+  });
   if ((await monthPicker.textContent())?.trim() !== month)
     await choose(page, monthPicker, month);
   const label = new Intl.DateTimeFormat("en-AU", {
@@ -141,4 +144,19 @@ export async function chooseDate(page: Page, locator: Locator, date: string) {
     timeZone: "UTC",
   }).format(new Date(date + "T00:00:00Z"));
   await page.getByRole("button", { name: label, exact: true }).click();
+}
+
+export async function tickFilter(page: Page, name: string, labels: string[]) {
+  const trigger = page.getByRole("button", { name, exact: true });
+  await trigger.click();
+  for (const label of labels) {
+    const option = page.getByRole("menuitemcheckbox", {
+      name: label,
+      exact: true,
+    });
+    await option.click();
+    await expect(option).toHaveAttribute("aria-checked", "true");
+  }
+  await page.keyboard.press("Escape");
+  await expect(trigger).toBeFocused();
 }

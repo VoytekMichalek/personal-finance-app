@@ -14,7 +14,7 @@ import {
   Loading,
   PageHeading,
 } from "../components/common/primitives";
-import { Select, SelectItem } from "../components/ui/select";
+import { MultiSelect } from "../components/ui/multi-select";
 import { DatePicker } from "../components/ui/date-picker";
 import { Button } from "../components/ui/button";
 import { ExpenseCategoryChart } from "../components/expenses/ExpenseCategoryChart";
@@ -40,16 +40,16 @@ function ExpenseReport({ data }: { data: Snapshot }) {
   >(null);
   const [from, setFrom] = useState(data.today.slice(0, 7) + "-01");
   const [to, setTo] = useState(data.today);
-  const [accountId, setAccount] = useState("");
-  const [owner, setOwner] = useState("");
-  const [categoryId, setCategory] = useState("");
+  const [accountIds, setAccount] = useState<string[]>([]);
+  const [owners, setOwner] = useState<string[]>([]);
+  const [categoryIds, setCategory] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const report = expenseReport(data, {
     from,
     to,
-    accountId,
-    owner,
-    categoryId,
+    accountIds,
+    owners,
+    categoryIds,
     search,
   });
   return (
@@ -116,38 +116,42 @@ function ExpenseReport({ data }: { data: Snapshot }) {
             />
           </Field>
           <Field label="Account">
-            <Select value={accountId} onValueChange={setAccount}>
-              <SelectItem value="">All accounts</SelectItem>
-              {data.accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </Select>
+            <MultiSelect
+              value={accountIds}
+              onChange={setAccount}
+              allLabel="All accounts"
+              options={data.accounts.map((a) => ({
+                value: a.id,
+                label: a.name,
+              }))}
+            />
           </Field>
           <Field label="Person">
-            <Select value={owner} onValueChange={setOwner}>
-              <SelectItem value="">Everyone</SelectItem>
-              <SelectItem value="household">Household</SelectItem>
-              {data.people.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </Select>
+            <MultiSelect
+              value={owners}
+              onChange={setOwner}
+              allLabel="Everyone"
+              options={[
+                { value: "household", label: "Household" },
+                ...data.people.map((p) => ({ value: p.id, label: p.name })),
+              ]}
+            />
           </Field>
           <Field label="Category">
-            <Select value={categoryId} onValueChange={setCategory}>
-              <SelectItem value="">All categories</SelectItem>
-              <SelectItem value="uncategorised">Uncategorised</SelectItem>
-              {data.categories
-                .filter((c) => c.kind === "expense")
-                .map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {categoryLabel(c, data.categories)}
-                  </SelectItem>
-                ))}
-            </Select>
+            <MultiSelect
+              value={categoryIds}
+              onChange={setCategory}
+              allLabel="All categories"
+              options={[
+                { value: "uncategorised", label: "Uncategorised" },
+                ...data.categories
+                  .filter((c) => c.kind === "expense")
+                  .map((c) => ({
+                    value: c.id,
+                    label: categoryLabel(c, data.categories),
+                  })),
+              ]}
+            />
           </Field>
         </div>
       </Card>
@@ -185,7 +189,14 @@ function ExpenseReport({ data }: { data: Snapshot }) {
             Newest first · matches your report filters
           </p>
           <ExpenseTransactions
-            key={[from, to, accountId, owner, categoryId, search].join(":")}
+            key={JSON.stringify([
+              from,
+              to,
+              accountIds,
+              owners,
+              categoryIds,
+              search,
+            ])}
             rows={report.rows}
             data={data}
           />
@@ -194,7 +205,15 @@ function ExpenseReport({ data }: { data: Snapshot }) {
       {detail && (
         <ExpenseDetail
           data={data}
-          filters={{ from, to, accountId, owner, categoryId, search, detail }}
+          filters={{
+            from,
+            to,
+            accountIds,
+            owners,
+            categoryIds,
+            search,
+            detail,
+          }}
           title={detail.title}
           onClose={() => setDetail(null)}
         />

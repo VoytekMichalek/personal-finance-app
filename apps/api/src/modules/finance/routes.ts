@@ -1,4 +1,5 @@
-import { rememberTransactionCategory } from "./remember-category.js";
+import { rememberTransaction } from "./remember-transaction.js";
+import { saveRule } from "./rules.js";
 import { bulkCategory } from "./bulk-category.js";
 import { changeTransactionType } from "./transaction-type.js";
 import { bulkDelete } from "./bulk-delete.js";
@@ -7,7 +8,6 @@ import { Router } from "express";
 import { z } from "zod";
 import {
   accountSchema,
-  ruleSchema,
   budgetSchema,
   scheduleSchema,
   assetSchema,
@@ -121,8 +121,8 @@ financeRouter.delete("/transactions/:id", async (req, res) => {
   const id = z.uuid().parse((req.params as Record<string, string>).id);
   res.json(await deleteTransaction(id));
 });
-financeRouter.post("/transactions/remember-category", async (req, res) => {
-  res.json(await rememberTransactionCategory(req.body));
+financeRouter.post("/transactions/remember", async (req, res) => {
+  res.json(await rememberTransaction(req.body));
 });
 financeRouter.post("/transactions/bulk-category", async (req, res) => {
   await bulkCategory(req.body);
@@ -153,17 +153,13 @@ for (const method of ["post", "put"] as const) {
   financeRouter[method](
     method === "post" ? "/rules" : "/rules/:id",
     async (req, res) => {
-      const data = ruleSchema.parse(req.body);
-      await validateCategory(prisma, data.categoryId);
       res.json(
-        await (method === "post"
-          ? prisma.rule.create({ data })
-          : prisma.rule.update({
-              where: {
-                id: z.uuid().parse((req.params as Record<string, string>).id),
-              },
-              data,
-            })),
+        await saveRule(
+          req.body,
+          method === "put"
+            ? z.uuid().parse((req.params as Record<string, string>).id)
+            : undefined,
+        ),
       );
     },
   );

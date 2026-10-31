@@ -9,9 +9,9 @@ const groupKey = (row: Transaction, group: ExpenseGroup) =>
 export type ExpenseFilters = {
   from: string;
   to: string;
-  accountId?: string;
-  owner?: string;
-  categoryId?: string;
+  accountIds?: string[];
+  owners?: string[];
+  categoryIds?: string[];
   search?: string;
   detail?: { group: ExpenseGroup; id: string };
 };
@@ -25,17 +25,20 @@ export function expenseReport(
       (t.kind === "expense" || t.kind === "refund") &&
       t.date >= filters.from &&
       t.date <= filters.to &&
-      (!filters.accountId || t.accountId === filters.accountId) &&
-      (!filters.owner || t.owner === filters.owner) &&
+      (!filters.accountIds?.length ||
+        filters.accountIds.includes(t.accountId)) &&
+      (!filters.owners?.length || filters.owners.includes(t.owner)) &&
       (!search || t.description.toLowerCase().includes(search)) &&
       (!filters.detail ||
         groupKey(t, filters.detail.group) === filters.detail.id) &&
-      (!filters.categoryId ||
-        (filters.categoryId === "uncategorised"
-          ? t.categoryId === null
-          : t.categoryId === filters.categoryId ||
-            data.categories.find((c) => c.id === t.categoryId)?.parentId ===
-              filters.categoryId)),
+      (!filters.categoryIds?.length ||
+        filters.categoryIds.some((categoryId) =>
+          categoryId === "uncategorised"
+            ? t.categoryId === null
+            : t.categoryId === categoryId ||
+              data.categories.find((c) => c.id === t.categoryId)?.parentId ===
+                categoryId,
+        )),
   );
   const group = (key: (t: Transaction) => string) => {
     const totals = new Map<

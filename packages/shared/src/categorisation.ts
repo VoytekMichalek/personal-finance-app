@@ -1,4 +1,4 @@
-import type { Category, ImportRow, Rule } from "./types.js";
+import type { Account, Category, ImportRow, Rule } from "./types.js";
 
 export const normaliseDescription = (value: string) =>
   value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -11,10 +11,49 @@ export const matchesRule = (
     : normaliseDescription(description).includes(
         normaliseDescription(rule.pattern),
       );
-export const compareRules = (a: Rule, b: Rule) =>
+export const compareRules = (
+  a: Pick<Rule, "matchMode" | "priority" | "id">,
+  b: Pick<Rule, "matchMode" | "priority" | "id">,
+) =>
   Number(b.matchMode === "exact") - Number(a.matchMode === "exact") ||
   a.priority - b.priority ||
   a.id.localeCompare(b.id);
+
+export function applyTransferRules(
+  rows: ImportRow[],
+  rules: Rule[],
+  accountId: string,
+  accounts: Pick<Account, "id" | "archived" | "openingDate">[],
+) {
+  const eligible = rules
+    .filter(
+      (rule) =>
+        rule.enabled &&
+        rule.kind === "transfer" &&
+        rule.accountId === accountId,
+    )
+    .sort(compareRules);
+  for (const row of rows) {
+    if (row.error) continue;
+    const rule = eligible.find(
+      (item) =>
+        matchesRule(row.description, item) &&
+        item.direction === (row.amountCents < 0 ? "out" : "in") &&
+        accounts.some(
+          (account) =>
+            account.id === item.counterAccountId &&
+            account.id !== accountId &&
+            !account.archived &&
+            row.date >= account.openingDate,
+        ),
+    );
+    if (!rule) continue;
+    row.kind = "transfer";
+    row.categoryId = null;
+    row.counterAccountId = rule.counterAccountId!;
+    row.categorySource = "rule";
+  }
+}
 
 const merchants: [RegExp, string][] = [
   [/woolworths|coles|aldi|iga\b/i, "Groceries"],

@@ -1,6 +1,7 @@
 import {
   today,
   categorise,
+  applyTransferRules,
   type Category,
   type Rule,
   type ImportRow,
@@ -17,10 +18,11 @@ export async function processStatement(
   onExtracted: (pages: number) => Promise<void>,
 ) {
   const account = await validateAccount(prisma, accountId);
-  const [categories, rules, history] = await Promise.all([
+  const [categories, rules, history, accounts] = await Promise.all([
     prisma.category.findMany(),
     prisma.rule.findMany(),
     prisma.transaction.findMany({ where: { accountId } }),
+    prisma.account.findMany(),
   ]);
   const { rows, details, pages } = await readStatement(
     content,
@@ -44,6 +46,7 @@ export async function processStatement(
       "Credit card balances owed are negative. Review credits as refunds or repayments. For repayments, choose the bank account that paid the card; both sides are recorded as a transfer. If that payment is already recorded, leave its duplicate unchecked.",
     );
   }
+  applyTransferRules(rows, rules as Rule[], accountId, accounts);
   categorise(
     rows,
     json<Category[]>(categories),

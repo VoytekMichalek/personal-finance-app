@@ -7,6 +7,7 @@ import {
   mappingSchema,
   csvHeadersSchema,
   categorise,
+  applyTransferRules,
   type Category,
   today,
 } from "@finance/shared";
@@ -51,7 +52,7 @@ importRouter.post("/preview", async (req, res) => {
   const records = csvRecords(input.csv, input.hasHeaders);
   const rows = parseRows(records, input.mapping, account.owner);
   const reconciliation = reconcileCsv(records, rows, input.mapping);
-  const [existing, categories, rules] = await Promise.all([
+  const [existing, categories, rules, accounts] = await Promise.all([
     prisma.transaction.findMany({
       where: { accountId: account.id },
       select: {
@@ -64,8 +65,10 @@ importRouter.post("/preview", async (req, res) => {
     }),
     prisma.category.findMany(),
     prisma.rule.findMany(),
+    prisma.account.findMany(),
   ]);
-  categorise(rows, json<Category[]>(categories), rules, existing);
+  applyTransferRules(rows, json(rules), account.id, accounts);
+  categorise(rows, json<Category[]>(categories), json(rules), existing);
   const fingerprints = new Set(
     existing.map((t) => t.date + "|" + t.amountCents),
   );

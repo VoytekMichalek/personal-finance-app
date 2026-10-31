@@ -1,4 +1,5 @@
-import { RememberTransactionCategory } from "./RememberTransactionCategory";
+import { RememberTransaction } from "./RememberTransaction";
+import { RememberButton } from "./RememberButton";
 import { useState } from "react";
 import {
   compareRules,
@@ -8,6 +9,8 @@ import {
   money,
   type Snapshot,
   type Transaction,
+  type TransactionFilters,
+  transferCounterpart,
 } from "@finance/shared";
 import { useAction } from "../../hooks/data";
 import { Card, Pill, Select } from "../common/primitives";
@@ -21,10 +24,12 @@ import { TransactionType } from "./TransactionType";
 export function TransactionTable({
   data,
   rows,
+  filters,
   onOpen,
 }: {
   data: Snapshot;
   rows: Transaction[];
+  filters: TransactionFilters;
   onOpen: (row: Transaction) => void;
 }) {
   const [remembering, setRemembering] = useState<string>();
@@ -33,26 +38,35 @@ export function TransactionTable({
     .filter(
       (rule) =>
         rule.enabled &&
-        data.categories.some(
-          (category) => category.id === rule.categoryId && !category.archived,
-        ),
+        (rule.kind === "transfer" ||
+          data.categories.some(
+            (category) => category.id === rule.categoryId && !category.archived,
+          )),
     )
     .sort(compareRules);
   const ruleMatches = new Set(
     rows
-      .filter(
-        (row) =>
-          row.kind !== "transfer" &&
-          row.categoryId &&
-          rules.find(
-            (rule) =>
-              data.categories.some(
-                (category) =>
-                  category.id === rule.categoryId &&
-                  category.kind ===
-                    (row.kind === "income" ? "income" : "expense"),
-              ) && matchesRule(row.description, rule),
-          )?.categoryId === row.categoryId,
+      .filter((row) =>
+        row.kind === "transfer"
+          ? rules.find(
+              (rule) =>
+                rule.kind === "transfer" &&
+                rule.accountId === row.accountId &&
+                rule.direction === (row.amountCents < 0 ? "out" : "in") &&
+                matchesRule(row.description, rule),
+            )?.counterAccountId ===
+              transferCounterpart(row, data.transactions)?.accountId &&
+            !!transferCounterpart(row, data.transactions)
+          : row.categoryId &&
+            rules.find(
+              (rule) =>
+                data.categories.some(
+                  (category) =>
+                    category.id === rule.categoryId &&
+                    category.kind ===
+                      (row.kind === "income" ? "income" : "expense"),
+                ) && matchesRule(row.description, rule),
+            )?.categoryId === row.categoryId,
       )
       .map((row) => row.id),
   );
@@ -82,10 +96,12 @@ export function TransactionTable({
   return (
     <>
       {rememberedRow && (
-        <RememberTransactionCategory
+        <RememberTransaction
           key={rememberedRow.id}
           row={rememberedRow}
           data={data}
+          rows={rows}
+          filters={filters}
           close={() => setRemembering(undefined)}
         />
       )}
@@ -207,6 +223,9 @@ export function TransactionTable({
                   <th className="hidden p-3 sm:table-cell">Category</th>
                   <th className="hidden p-3 xl:table-cell">Belongs to</th>
                   <th className="p-3 text-right">Amount</th>
+                  <th className="hidden p-3 text-right sm:table-cell">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -258,7 +277,6 @@ export function TransactionTable({
                           <TransactionCategory
                             row={row}
                             categories={data.categories}
-                            onRemember={(item) => setRemembering(item.id)}
                             disabled={action.isPending}
                           />
                           {ruleMatches.has(row.id) && (
@@ -288,7 +306,6 @@ export function TransactionTable({
                         <TransactionCategory
                           row={row}
                           categories={data.categories}
-                          onRemember={(item) => setRemembering(item.id)}
                           disabled={action.isPending}
                         />
                         {ruleMatches.has(row.id) && (
@@ -308,6 +325,20 @@ export function TransactionTable({
                       >
                         {row.amountCents > 0 ? "+" : ""}
                         {money(row.amountCents)}
+                        <div className="mt-2 sm:hidden">
+                          <RememberButton
+                            row={row}
+                            disabled={action.isPending}
+                            onClick={() => setRemembering(row.id)}
+                          />
+                        </div>
+                      </td>
+                      <td className="hidden p-3 text-right sm:table-cell">
+                        <RememberButton
+                          row={row}
+                          disabled={action.isPending}
+                          onClick={() => setRemembering(row.id)}
+                        />
                       </td>
                     </tr>
                   ))}

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { ChartViewTabs } from "./ChartViewTabs";
+import { useId, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -35,6 +36,8 @@ export function ExpenseCategoryChart({
   from: string;
   to: string;
 }) {
+  const viewId = useId();
+  const [view, setView] = useState<"graph" | "table">("graph");
   const [interval, setInterval] = useState<ExpenseInterval>("month");
   const { categoryIds, points } = useMemo(
     () => expenseCategoryTrend(rows, from, to, interval),
@@ -92,6 +95,9 @@ export function ExpenseCategoryChart({
           ))}
         </div>
       </div>
+      <div className="mb-4">
+        <ChartViewTabs id={viewId} value={view} onChange={setView} />
+      </div>
       {!rows.length ? (
         <p className="flex h-48 items-center justify-center text-sm text-muted-foreground">
           No expenses in this selection.
@@ -99,120 +105,143 @@ export function ExpenseCategoryChart({
       ) : (
         <>
           <div
-            key={interval + from + to}
-            role="region"
-            aria-label={`Expenses by category and ${interval}`}
-            tabIndex={0}
-            className="overflow-x-auto rounded-lg focus-visible:outline-2 focus-visible:outline-primary"
+            role="tabpanel"
+            id={`${viewId}-panel-graph`}
+            aria-labelledby={`${viewId}-tab-graph`}
+            hidden={view !== "graph"}
           >
-            <div
-              className="h-64 w-full"
-              style={{ minWidth: Math.max(280, points.length * 32) }}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={points}
-                  stackOffset="sign"
-                  margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+            {view === "graph" && (
+              <>
+                <div
+                  key={interval + from + to}
+                  role="region"
+                  aria-label={`Expenses by category and ${interval}`}
+                  tabIndex={0}
+                  className="overflow-x-auto rounded-lg focus-visible:outline-2 focus-visible:outline-primary"
                 >
-                  <CartesianGrid
-                    vertical={false}
-                    stroke="#e8ebef"
-                    strokeDasharray="3 3"
-                  />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={period}
-                    interval="preserveStartEnd"
-                    minTickGap={32}
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    width={64}
-                    tickFormatter={(value) => money(Number(value), true)}
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <ReferenceLine y={0} stroke="#94a3b8" />
-                  <Tooltip
-                    cursor={{ fill: "#94a3b815" }}
-                    content={({ active, label }) => {
-                      const point = points.find((item) => item.date === label);
-                      if (!active || !point) return null;
-                      return (
-                        <div className="max-h-64 max-w-72 overflow-y-auto rounded-xl border bg-white p-3 text-xs shadow-md">
-                          <p className="mb-2 font-medium">{range(point)}</p>
-                          {series.map(
-                            (item, index) =>
-                              point.amounts[index] !== 0 && (
-                                <div
-                                  key={item.id}
-                                  className="flex items-start justify-between gap-4 py-1"
-                                >
-                                  <span className="flex min-w-0 items-center gap-2">
-                                    <span
-                                      className="h-2 w-2 shrink-0 rounded-sm"
-                                      style={{ background: item.colour }}
-                                    />
-                                    {item.name}
-                                  </span>
-                                  <span className="shrink-0 tabular-nums">
-                                    {money(point.amounts[index] ?? 0)}
-                                  </span>
+                  <div
+                    className="h-64 w-full"
+                    style={{ minWidth: Math.max(280, points.length * 32) }}
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={points}
+                        stackOffset="sign"
+                        margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          vertical={false}
+                          stroke="#e8ebef"
+                          strokeDasharray="3 3"
+                        />
+                        <XAxis
+                          dataKey="date"
+                          tickFormatter={period}
+                          interval="preserveStartEnd"
+                          minTickGap={32}
+                          tick={{ fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          width={64}
+                          tickFormatter={(value) => money(Number(value), true)}
+                          tick={{ fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <ReferenceLine y={0} stroke="#94a3b8" />
+                        <Tooltip
+                          cursor={{ fill: "#94a3b815" }}
+                          content={({ active, label }) => {
+                            const point = points.find(
+                              (item) => item.date === label,
+                            );
+                            if (!active || !point) return null;
+                            return (
+                              <div className="max-h-64 max-w-72 overflow-y-auto rounded-xl border bg-white p-3 text-xs shadow-md">
+                                <p className="mb-2 font-medium">
+                                  {range(point)}
+                                </p>
+                                {series.map(
+                                  (item, index) =>
+                                    point.amounts[index] !== 0 && (
+                                      <div
+                                        key={item.id}
+                                        className="flex items-start justify-between gap-4 py-1"
+                                      >
+                                        <span className="flex min-w-0 items-center gap-2">
+                                          <span
+                                            className="h-2 w-2 shrink-0 rounded-sm"
+                                            style={{ background: item.colour }}
+                                          />
+                                          {item.name}
+                                        </span>
+                                        <span className="shrink-0 tabular-nums">
+                                          {money(point.amounts[index] ?? 0)}
+                                        </span>
+                                      </div>
+                                    ),
+                                )}
+                                <div className="mt-2 flex justify-between gap-4 border-t pt-2 font-semibold">
+                                  <span>Net expenses</span>
+                                  <span>{money(point.amountCents)}</span>
                                 </div>
-                              ),
-                          )}
-                          <div className="mt-2 flex justify-between gap-4 border-t pt-2 font-semibold">
-                            <span>Net expenses</span>
-                            <span>{money(point.amountCents)}</span>
-                          </div>
-                        </div>
-                      );
-                    }}
-                  />
-                  {series.map((item, index) => (
-                    <Bar
+                              </div>
+                            );
+                          }}
+                        />
+                        {series.map((item, index) => (
+                          <Bar
+                            key={item.id}
+                            name={item.name}
+                            dataKey={(point: ExpenseCategoryPoint) =>
+                              point.amounts[index]
+                            }
+                            stackId="expenses"
+                            fill={item.colour}
+                            maxBarSize={44}
+                            isAnimationActive={false}
+                          />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                {points.length > 8 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Scroll the chart horizontally to see more periods.
+                  </p>
+                )}
+                <ul
+                  aria-label="Chart categories"
+                  className="mt-4 grid max-h-40 grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-2 overflow-y-auto text-xs text-muted-foreground"
+                >
+                  {series.map((item) => (
+                    <li
                       key={item.id}
-                      name={item.name}
-                      dataKey={(point: ExpenseCategoryPoint) =>
-                        point.amounts[index]
-                      }
-                      stackId="expenses"
-                      fill={item.colour}
-                      maxBarSize={44}
-                      isAnimationActive={false}
-                    />
+                      className="flex items-start gap-2.5 rounded-lg bg-muted/50 px-3 py-2"
+                    >
+                      <span
+                        className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm"
+                        style={{ background: item.colour }}
+                      />
+                      <span className="min-w-0 leading-4 [overflow-wrap:anywhere]">
+                        {item.name}
+                      </span>
+                    </li>
                   ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                </ul>
+              </>
+            )}
           </div>
-          {points.length > 8 && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Scroll the chart horizontally to see more periods.
-            </p>
-          )}
-          <ul
-            aria-label="Chart categories"
-            className="mt-4 flex max-h-24 flex-wrap gap-x-5 gap-y-2 overflow-y-auto text-xs text-muted-foreground"
+          <div
+            role="tabpanel"
+            id={`${viewId}-panel-table`}
+            aria-labelledby={`${viewId}-tab-table`}
+            hidden={view !== "table"}
+            className="text-xs text-muted-foreground"
           >
-            {series.map((item) => (
-              <li key={item.id} className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-sm"
-                  style={{ background: item.colour }}
-                />
-                {item.name}
-              </li>
-            ))}
-          </ul>
-          <details className="mt-3 text-xs text-muted-foreground">
-            <summary className="w-fit cursor-pointer py-2">
-              View chart values
-            </summary>
             <div
               className="max-h-64 overflow-auto"
               tabIndex={0}
@@ -263,7 +292,7 @@ export function ExpenseCategoryChart({
                 </tbody>
               </table>
             </div>
-          </details>
+          </div>
         </>
       )}
     </Card>

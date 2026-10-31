@@ -139,8 +139,8 @@ it.each(["month", "week", "day"] as const)(
       {
         from: "2026-01-01",
         to: "2026-02-03",
-        owner: "person",
-        accountId: "bank",
+        owners: ["person"],
+        accountIds: ["bank"],
       },
     );
     const result = expenseCategoryTrend(

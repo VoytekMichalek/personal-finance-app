@@ -42,9 +42,9 @@ it("deducts refunds, excludes transfers and income, and filters people/accounts/
   const selected = expenseReport(data, {
     from: "2026-01-05",
     to: "2026-01-05",
-    accountId: "card",
-    owner: "person",
-    categoryId: "home",
+    accountIds: ["card"],
+    owners: ["person"],
+    categoryIds: ["home"],
   });
   expect(selected.totalCents).toBe(10550);
   expect(selected.refundCents).toBe(2001);
@@ -97,9 +97,9 @@ it("searches descriptions consistently across totals and groups while retaining 
   const filters = {
     from: "2026-01-01",
     to: "2026-01-31",
-    owner: "person",
-    accountId: "card",
-    categoryId: "home",
+    owners: ["person"],
+    accountIds: ["card"],
+    categoryIds: ["home"],
     search: "  fUnKy  ",
   };
   const report = expenseReport(data, filters);
@@ -124,7 +124,7 @@ it("searches descriptions consistently across totals and groups while retaining 
   ).toEqual(report.rows);
   const uncategorised = expenseReport(data, {
     ...filters,
-    categoryId: "uncategorised",
+    categoryIds: ["uncategorised"],
   });
   expect(uncategorised.rows.map((item) => item.id)).toEqual(["uncategorised"]);
   expect(uncategorised.totalCents).toBe(700);
@@ -152,12 +152,12 @@ it("drills into the exact category, account or person without losing report filt
   const filters = {
     from: "2026-01-01",
     to: "2026-01-31",
-    owner: "person",
-    accountId: "card",
+    owners: ["person"],
+    accountIds: ["card"],
   };
   const detail = expenseReport(data, {
     ...filters,
-    categoryId: "home",
+    categoryIds: ["home"],
     detail: { group: "categories", id: "insurance" },
   });
   expect(detail.rows.map((r) => r.id)).toEqual(["child", "refund"]);
@@ -202,4 +202,43 @@ it("fills daily and monthly trend gaps and keeps refunds below zero", () => {
   ]);
   expect(months.reduce((n, p) => n + p.amountCents, 0)).toBe(8000);
   expect(expenseTrend(rows, "2026-02-02", "2026-01-31")).toEqual([]);
+});
+
+it("unions multi-selections, intersects filter groups and counts parent/child overlaps only once", () => {
+  const data = {
+    categories,
+    transactions: [
+      row("a", "expense", -1000),
+      row("b", "refund", 200, { owner: "household", accountId: "bank" }),
+      row("c", "expense", -300, { categoryId: null }),
+      row("other-account", "expense", -999, { accountId: "cash" }),
+      row("other-person", "expense", -999, { owner: "other" }),
+      row("other-category", "expense", -999, { categoryId: "dining" }),
+    ],
+  };
+  const filters = {
+    from: "2026-01-01",
+    to: "2026-01-31",
+    accountIds: ["card", "bank"],
+    owners: ["person", "household"],
+    categoryIds: ["home", "insurance", "uncategorised"],
+  };
+  const report = expenseReport(data, filters);
+  expect(report.rows.map((r) => r.id)).toEqual(["a", "b", "c"]);
+  expect(report.totalCents).toBe(1100);
+  expect(
+    expenseReport(data, {
+      ...filters,
+      detail: { group: "categories", id: "insurance" },
+    }).totalCents,
+  ).toBe(800);
+  expect(
+    expenseReport(data, {
+      from: filters.from,
+      to: filters.to,
+      accountIds: [],
+      owners: [],
+      categoryIds: [],
+    }).rows,
+  ).toHaveLength(6);
 });

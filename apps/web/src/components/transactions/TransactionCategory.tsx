@@ -1,4 +1,3 @@
-import { Button } from "../ui/button";
 import {
   categoryColour,
   categoryLabel,
@@ -14,12 +13,10 @@ export function TransactionCategory({
   row,
   categories,
   disabled = false,
-  onRemember,
 }: {
   row: Transaction;
   categories: Category[];
   disabled?: boolean;
-  onRemember: (row: Transaction) => void;
 }) {
   const action = useTransactionCategory(row.id);
   const selectedId = action.isPending
@@ -53,17 +50,10 @@ export function TransactionCategory({
         }
         disabled={disabled || action.isPending || action.saving}
         onValueChange={(value) => {
-          if (value === "__remember_category__") {
-            onRemember(row);
-            return;
-          }
           if ((value || null) !== row.categoryId)
             action.mutate({ categoryId: value || null, version: row.version });
         }}
       >
-        <SelectItem value="__remember_category__">
-          Remember & apply to similar…
-        </SelectItem>
         <SelectItem value="">
           <CategoryChip categoryId={null} categories={categories} />
         </SelectItem>
@@ -78,18 +68,6 @@ export function TransactionCategory({
           </SelectItem>
         ))}
       </Select>
-      {action.isSuccess && row.categoryId && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="block px-0 text-[11px] text-primary"
-          disabled={disabled || action.saving}
-          aria-label={`Remember category for ${row.description}`}
-          onClick={() => onRemember(row)}
-        >
-          Remember & apply…
-        </Button>
-      )}
       {action.saving && (
         <p role="status" className="text-[10px] text-muted-foreground">
           Saving category…

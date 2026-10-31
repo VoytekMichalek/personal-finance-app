@@ -26,6 +26,7 @@ async function setup(count = 2) {
   });
   const rows = await prisma.transaction.findMany({ orderBy: { id: "asc" } });
   const input = {
+    filters: {},
     source: { id: rows[0]!.id, version: 1 },
     records: rows.map(({ id, version }) => ({ id, version })),
     categoryId: groceries.id,
@@ -71,7 +72,7 @@ it("categorises 800 existing payments across accounts and pages and saves a reus
       size: 10,
     },
   });
-  const result = await post("/transactions/remember-category", input);
+  const result = await post("/transactions/remember", input);
   expect(result.status).toBe(200);
   expect(result.body).toMatchObject({
     matched: 800,
@@ -118,14 +119,14 @@ it("rejects stale, incomplete, extra, invalid and unauthenticated requests witho
   expect(
     (
       await request(app)
-        .post("/api/transactions/remember-category")
+        .post("/api/transactions/remember")
         .set("Origin", origin)
         .send(input)
     ).status,
   ).toBe(401);
   expect(
     (
-      await post("/transactions/remember-category", {
+      await post("/transactions/remember", {
         ...input,
         records: input.records.slice(0, 1),
       })
@@ -133,7 +134,7 @@ it("rejects stale, incomplete, extra, invalid and unauthenticated requests witho
   ).toBe(409);
   expect(
     (
-      await post("/transactions/remember-category", {
+      await post("/transactions/remember", {
         ...input,
         pattern: "Wrong merchant",
       })
@@ -141,7 +142,7 @@ it("rejects stale, incomplete, extra, invalid and unauthenticated requests witho
   ).toBe(400);
   expect(
     (
-      await post("/transactions/remember-category", {
+      await post("/transactions/remember", {
         ...input,
         records: [...input.records, input.records[0]],
       })
@@ -152,7 +153,7 @@ it("rejects stale, incomplete, extra, invalid and unauthenticated requests witho
   });
   expect(
     (
-      await post("/transactions/remember-category", {
+      await post("/transactions/remember", {
         ...input,
         categoryId: salary.id,
       })
@@ -162,9 +163,7 @@ it("rejects stale, incomplete, extra, invalid and unauthenticated requests witho
     where: { id: rows[1]!.id },
     data: { version: { increment: 1 } },
   });
-  expect((await post("/transactions/remember-category", input)).status).toBe(
-    409,
-  );
+  expect((await post("/transactions/remember", input)).status).toBe(409);
   expect(await prisma.rule.count()).toBe(0);
   expect(
     await prisma.transaction.findUnique({ where: { id: rows[0]!.id } }),
@@ -191,9 +190,7 @@ it("rolls back every category chunk if rule persistence fails and can recover wi
       return callback(wrapped);
     }, options)) as typeof prisma.$transaction);
   try {
-    expect((await post("/transactions/remember-category", input)).status).toBe(
-      500,
-    );
+    expect((await post("/transactions/remember", input)).status).toBe(500);
   } finally {
     create.mockRestore();
   }
@@ -202,16 +199,52 @@ it("rolls back every category chunk if rule persistence fails and can recover wi
     await prisma.transaction.count({ where: { categoryId: groceries.id } }),
   ).toBe(0);
   expect(await prisma.transaction.count({ where: { version: 1 } })).toBe(620);
-  expect((await post("/transactions/remember-category", input)).status).toBe(
-    200,
-  );
+  expect((await post("/transactions/remember", input)).status).toBe(200);
   const refreshed = {
     ...input,
     source: { ...input.source, version: 2 },
     records: rows.map(({ id }) => ({ id, version: 2 })),
   };
-  expect(
-    (await post("/transactions/remember-category", refreshed)).status,
-  ).toBe(200);
+  expect((await post("/transactions/remember", refreshed)).status).toBe(200);
   expect(await prisma.rule.count()).toBe(1);
+});
+
+it("bounds remembered categories to every current filter and rejects hidden IDs", async () => {
+  const { input, rows, accounts, groceries } = await setup(60);
+  const source = rows.find(
+    (row) => row.accountId === accounts[0] && row.kind === "expense",
+  )!;
+  const filters = {
+    accountId: accounts[0],
+    owner: source.owner,
+    from: today(),
+    to: today(),
+    kind: "expense",
+    categoryId: "none",
+    search: "Local Shop",
+  };
+  const matched = rows.filter(
+    (row) => row.accountId === accounts[0] && !row.categoryId,
+  );
+  const scoped = {
+    ...input,
+    source: { id: matched[0]!.id, version: 1 },
+    filters,
+    records: matched.map(({ id, version }) => ({ id, version })),
+  };
+  expect(
+    (
+      await post("/transactions/remember", {
+        ...scoped,
+        records: input.records,
+      })
+    ).status,
+  ).toBe(409);
+  expect((await post("/transactions/remember", scoped)).status).toBe(200);
+  expect(
+    await prisma.transaction.count({ where: { categoryId: groceries.id } }),
+  ).toBe(matched.length);
+  expect(await prisma.transaction.count({ where: { version: 1 } })).toBe(
+    60 - matched.length,
+  );
 });

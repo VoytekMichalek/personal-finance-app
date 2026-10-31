@@ -1,6 +1,6 @@
 import * as Radix from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
-import type { ComponentProps, ReactNode, Ref } from "react";
+import { useState, type ComponentProps, type ReactNode, type Ref } from "react";
 import {
   useController,
   type Control,
@@ -39,6 +39,7 @@ export function Select({
   ref,
   ...aria
 }: Props) {
+  const [pointerFocus, setPointerFocus] = useState(false);
   return (
     <Radix.Root
       value={value === undefined ? undefined : value || EMPTY}
@@ -53,12 +54,18 @@ export function Select({
       <Radix.Trigger
         {...aria}
         id={id}
-        onBlur={onBlur}
+        onPointerDown={() => chip && setPointerFocus(true)}
+        onKeyDown={() => setPointerFocus(false)}
+        onBlur={() => {
+          setPointerFocus(false);
+          onBlur?.();
+        }}
         ref={ref}
         className={cn(
           "group flex h-11 w-full min-w-0 max-w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-3.5 text-left text-base font-normal shadow-sm transition hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/20 data-[state=open]:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
           chip &&
             "h-11 w-auto rounded-full border-0 bg-none p-0 shadow-none hover:shadow-none data-[state=open]:border-transparent",
+          chip && pointerFocus && "focus-visible:ring-0",
           className,
         )}
       >
@@ -66,7 +73,7 @@ export function Select({
           className={cn(
             "flex min-w-0 flex-1 items-center justify-between gap-3",
             chip &&
-              "gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium",
+              "gap-2 rounded-full border px-2.5 py-1 text-center text-[11px] font-medium",
           )}
           style={
             chip
@@ -95,6 +102,11 @@ export function Select({
       </Radix.Trigger>
       <Radix.Portal>
         <Radix.Content
+          // Radix restores trigger focus after selection, which some browsers
+          // mark focus-visible even after a click/tap. Keep focus for the next
+          // Tab, but show the chip's ring only when using the keyboard.
+          onPointerDownCapture={() => chip && setPointerFocus(true)}
+          onKeyDownCapture={() => setPointerFocus(false)}
           position="popper"
           sideOffset={6}
           collisionPadding={12}

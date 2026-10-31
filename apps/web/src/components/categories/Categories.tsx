@@ -1,5 +1,6 @@
+import { RuleForm } from "./RuleForm";
 import { SelectItem, FormSelect } from "../ui/select";
-import { categoryLabel, categoryColour, identityColour } from "@finance/shared";
+import { categoryColour, identityColour } from "@finance/shared";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +8,6 @@ import { z } from "zod";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import {
   categorySchema,
-  ruleSchema,
   type Category,
   type Rule,
   type Snapshot,
@@ -102,13 +102,14 @@ export function Categories({ data }: { data: Snapshot }) {
             </Button>
           }
         >
-          Category rules
+          Transaction rules
         </SectionTitle>
         <p className="mb-5 text-xs leading-5 text-muted-foreground">
           Rules saved during import review or from the transaction table appear
           here. Rules ignore case and extra spaces. Exact descriptions run
           before contains rules, then lower priorities run first. Your chosen
-          category takes precedence.
+          category takes precedence. Transfer rules also remember the source
+          account, direction and other account.
         </p>
         <div className="divide-y">
           {data.rules.map((item) => (
@@ -128,7 +129,10 @@ export function Categories({ data }: { data: Snapshot }) {
                   {item.pattern}”
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {data.categories.find((c) => c.id === item.categoryId)?.name}{" "}
+                  {item.kind === "transfer"
+                    ? `Transfer: ${data.accounts.find((a) => a.id === item.accountId)?.name} ${item.direction === "out" ? "→" : "←"} ${data.accounts.find((a) => a.id === item.counterAccountId)?.name}`
+                    : data.categories.find((c) => c.id === item.categoryId)
+                        ?.name}{" "}
                   · priority {item.priority} ·{" "}
                   {item.enabled ? "Enabled" : "Paused"}
                 </p>
@@ -138,7 +142,7 @@ export function Categories({ data }: { data: Snapshot }) {
                 size="icon"
                 aria-label={"Delete rule " + item.pattern}
                 onClick={() => {
-                  if (window.confirm("Delete this categorisation rule?"))
+                  if (window.confirm("Delete this transaction rule?"))
                     action.mutate({
                       path: "/rules/" + item.id,
                       method: "DELETE",
@@ -291,84 +295,6 @@ export function CategoryForm({
         Archiving hides a category and its subcategories from new entries, while
         preserving historical records.
       </p>
-    </form>
-  );
-}
-function RuleForm({
-  rule,
-  data,
-  done,
-}: {
-  rule?: Rule;
-  data: Snapshot;
-  done: () => void;
-}) {
-  const form = useForm<
-    z.input<typeof ruleSchema>,
-    unknown,
-    z.output<typeof ruleSchema>
-  >({
-    resolver: zodResolver(ruleSchema),
-    defaultValues: {
-      pattern: rule?.pattern ?? "",
-      matchMode: rule?.matchMode ?? "contains",
-      categoryId: rule?.categoryId ?? "",
-      priority: rule?.priority ?? 100,
-      enabled: rule?.enabled ?? true,
-    },
-  });
-  const action = useAction(done);
-  return (
-    <form
-      className="grid gap-4"
-      onSubmit={form.handleSubmit((body) =>
-        action.mutate({
-          path: "/rules" + (rule ? "/" + rule.id : ""),
-          body,
-          method: rule ? "PUT" : "POST",
-        }),
-      )}
-    >
-      <Field label="Match description">
-        <FormSelect control={form.control} name="matchMode">
-          <SelectItem value="contains">Contains</SelectItem>
-          <SelectItem value="exact">Exact description</SelectItem>
-        </FormSelect>
-      </Field>
-      <Field
-        label="Description text"
-        error={form.formState.errors.pattern?.message}
-      >
-        <Input placeholder="e.g. Woolworths" {...form.register("pattern")} />
-      </Field>
-      <Field
-        label="Assign category"
-        error={form.formState.errors.categoryId?.message}
-      >
-        <FormSelect control={form.control} name={"categoryId"}>
-          <SelectItem value="">Choose category</SelectItem>
-          {data.categories
-            .filter((c) => !c.archived)
-            .map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {categoryLabel(c, data.categories)}
-              </SelectItem>
-            ))}
-        </FormSelect>
-      </Field>
-      <Field label="Priority">
-        <Input
-          type="number"
-          {...form.register("priority", { valueAsNumber: true })}
-        />
-      </Field>
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" {...form.register("enabled")} />
-        Enable rule
-      </label>
-      <Button disabled={action.isPending} type="submit">
-        Save rule
-      </Button>
     </form>
   );
 }

@@ -552,3 +552,42 @@ and ledger application use the same idempotent rule-storage helper. A derived
 Matches saved rule marker highlights agreement with the highest-priority eligible
 saved rule after paging/reload without claiming false application provenance or
 adding a database field. No household data is modified by development tests.
+
+## Filtered transaction rules and expense controls — 1 November 2026
+
+Current SOP main was retrieved read-only once with the installed helper at
+`2026-10-31T18:56:56.276Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`. Policy loading, application UI,
+testing and user-documentation guidance were read at this fixed revision against
+the adopted local baseline. The existing scoped exceptions remain unchanged;
+current testing guidance allows focused local checks with full CI in GitHub.
+
+Clicking or tapping an inline type/category bubble no longer leaves its outer
+focus ring after selection. Focus is still restored for subsequent Tab navigation;
+keyboard interaction retains the visible ring. Standard form dropdown styling and
+form blur callbacks are preserved. Bubble labels are centred.
+
+The follow-up replaces category-menu remembering with a dedicated row action and
+explicit filtered-match confirmation, including balanced transfer rules. The shared
+filter implementation is recomputed by the server; confirmed IDs/versions must
+match before an atomic update. Counterpart payments outside display filters are
+explicitly shown in the transfer confirmation. The additive migration retains
+existing category rules, makes category optional for transfers, and constrains
+transfer account/direction fields. Future CSV/PDF reviews apply enabled transfer
+rules before category suggestions; importing still requires approval. The old
+ledger endpoint is replaced by `/transactions/remember` with no compatibility shim.
+
+Expenses filters now support multiple accounts, people and categories; graph/table
+tabs replace disclosure controls and the legend wraps in aligned rows. The user
+guide is updated for these workflow changes. No dependency, configuration, logging
+or deployment-policy change is included. Tests use isolated databases only.
+
+For this release, environment/deployment and logging guidance were also read at
+the same fixed SOP revision. R17/R18 inspection confirms the single API/web image,
+runtime-only operator inputs in `.env.example`, separate `.env.local.example`,
+secret-free build context and committed migration entrypoint remain intact. R19
+inspection confirms expected 4xx/conflict paths remain quiet, unexpected failures
+are sanitised, Better Auth logging stays disabled, and SIGUSR2 diagnostics still
+use an allowlist and exclude health polls. The existing personal CI/release and
+automatic rollout exceptions remain applicable; no upstream wrapper or runner
+migration is included. Production-image smoke evidence is recorded in testing.md.

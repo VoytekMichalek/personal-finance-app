@@ -13,9 +13,12 @@ export function updateImportRows(
 ): ImportRow[] {
   const source = rows.find((row) => row.rowNumber === rowNumber);
   if (!source) return rows;
-  const categoryEdit = ["categoryId", "description", "kind"].some((key) =>
-    Object.hasOwn(patch, key),
-  );
+  const categoryEdit = [
+    "categoryId",
+    "description",
+    "kind",
+    "counterAccountId",
+  ].some((key) => Object.hasOwn(patch, key));
   const changesRule =
     categoryEdit ||
     Object.hasOwn(patch, "rememberCategory") ||

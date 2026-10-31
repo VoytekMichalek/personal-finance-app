@@ -155,7 +155,7 @@ export function Pill({
           : undefined
       }
       className={cn(
-        "inline-flex max-w-full items-center rounded-full border border-transparent px-2.5 py-1 text-[11px] font-medium",
+        "inline-flex max-w-full items-center justify-center rounded-full border border-transparent px-2.5 py-1 text-center text-[11px] font-medium",
         tone === "positive"
           ? "bg-emerald-50 text-emerald-700"
           : tone === "warning"

@@ -203,11 +203,13 @@ const ReviewRow = memo(function ReviewRow({
           </Select>
         </label>
       </div>
-      {row.categorySource && row.categoryId && (
+      {row.categorySource && (row.categoryId || row.kind === "transfer") && (
         <Pill tone="positive">
-          {row.categorySource === "rule"
-            ? "Auto categorised · saved rule"
-            : "Auto categorised · remembered in this upload"}
+          {row.kind === "transfer"
+            ? "Auto transfer · saved rule"
+            : row.categorySource === "rule"
+              ? "Auto categorised · saved rule"
+              : "Auto categorised · remembered in this upload"}
         </Pill>
       )}
       {row.kind !== "transfer" && !row.error && (

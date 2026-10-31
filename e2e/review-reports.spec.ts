@@ -1,4 +1,4 @@
-import { test, expect, session, choose } from "./fixtures";
+import { test, expect, session, choose, tickFilter } from "./fixtures";
 import {
   statementPdf,
   sixMonthStatement,
@@ -89,9 +89,11 @@ test("readable review defaults to account owner, creates categories and preserve
   await page.getByRole("button", { name: "4. Confirm", exact: true }).click();
   // The step changes in a React transition. Wait for the confirmation control;
   // a generic checkbox can still match the previous step's checked include box.
-  await page.getByRole("checkbox", {
-    name: "I have checked all statement pages, amounts, opening balance, categorisations and recurring items. I accept the selected entries.",
-  }).check();
+  await page
+    .getByRole("checkbox", {
+      name: "I have checked all statement pages, amounts, opening balance, categorisations and recurring items. I accept the selected entries.",
+    })
+    .check();
   await page.getByRole("button", { name: "Accept & import statement" }).click();
   await expect(
     page.getByRole("heading", { name: "Statement imported" }),
@@ -135,11 +137,7 @@ test("expenses filter refunds and ownership", async ({ page }, info) => {
   await expect(
     page.getByText("$125.00", { exact: true }).first(),
   ).toBeVisible();
-  await choose(
-    page,
-    page.getByRole("combobox", { name: "Person", exact: true }),
-    "Voytek",
-  );
+  await tickFilter(page, "Person", ["Voytek"]);
   await expect(page.getByText("$75.00", { exact: true }).first()).toBeVisible();
   await page.getByRole("tab", { name: "Account", exact: true }).click();
   await expect(

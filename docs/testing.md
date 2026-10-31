@@ -252,3 +252,60 @@ account insights, bulk deletion, review reports, AI settings and core journeys.
 No application code changed after the final production build. Full repository CI,
 audit and exact-candidate image smoke/security checks remain owned by GitHub
 Validate and the repository-local Release workflow.
+
+Filtered transaction rules and expense controls (1 November): shared tests own
+intersection of ledger filters, transfer account/direction matching, valid pairs,
+future transfer eligibility, and union/intersection of multiple expense filters
+without double-counting parent/child category overlap. Real PostgreSQL tests own
+complete filtered ID/version validation, incoming/outgoing transfer pairs,
+confirmed existing or new counterpart entries, receipt/note preservation, hidden
+rows, reused/stale/scheduled choices, atomic rollback, reusable rules and future
+CSV/native PDF previews including paused rules.
+
+The dedicated Remember button and confirmation are exercised across 800 category
+matches and 55 filtered transfer matches across pages. Desktop/mobile coverage
+checks cancellation, matching-month/account scope, ambiguous counterparts, saved
+highlights, editing/pausing rules, and recovery from a concurrent change. Expense
+journeys retain prior chart totals, interval ranges, refunds, pagination and
+search/drill-down assertions while replacing single selection/disclosure controls
+with checked multi-selection and keyboard-operable Graph/Table tabs. Legend and
+confirmation screenshots are inspected at desktop and phone widths. Pointer
+selection preserves focus without the unwanted chip ring; keyboard navigation
+still shows its focus indicator.
+
+The existing response-barrier remembering case is repeated ten times per browser
+with retries disabled before the affected suite. No arbitrary waits or relaxed
+assertions are added. New ordinary interactions use real API completion and
+observable UI readiness. Builds are reused; one E2E worker remains necessary for
+finance_e2e fixture isolation, with finance_test checks running independently.
+
+Local v0.0.8 evidence (1 November, Node 24.21.0/pnpm 10.34.6):
+
+- Shared build, Prisma generation, API/web production builds, all workspace
+  typechecks, lint, guardrails, focused formatting and `git diff --check` passed.
+- 28 shared tests passed across expense reports/trends, categorisation, import
+  review and transaction rules. 23 API integration cases passed across ledger
+  categories, remembered transfers, inline types and remembered CSV/PDF categories.
+- The held-response ledger remembering case passed 20 runs (ten per browser,
+  no retries), followed by all 48 affected desktop/mobile journeys. The new
+  multi-filter and transfer-confirmation journeys also passed their focused run.
+- Chip pointer/keyboard focus was checked with 40 consecutive interactions:
+  ten type and ten category cycles in each browser. Pointer selection retained
+  focus without the outer ring; Tab/Shift+Tab/Enter/Escape retained keyboard focus
+  visibility. Existing form-focus regressions passed on both browser projects.
+- Desktop/mobile chart legends, multi-selection reports, transaction bubbles and
+  transfer confirmations were visually inspected. Temporary WebKit/native OCR
+  launchers remain local-only; CI installs native dependencies normally.
+- Production image `personal-finance:verification-v0.0.8`, metadata
+  `0.0.8 / unreleased / working-tree-v0.0.8`, image ID
+  `sha256:ffbca935292ef7b0cece0fcc981073bc428195b09553a968a67590a69bccc08b`,
+  passed `pnpm ci:smoke` with only
+  disposable containers/databases. The checks cover fresh/pending/current
+  migrations, preserved data and startup failure before serving, durable bootstrap,
+  non-root execution, required configuration, frontend/auth, quiet denials/polls,
+  optional diagnostics and redacted unexpected failures (R17–R19). No registry
+  publication or production database was required for this evidence.
+
+Full repository validation, audit and image scanning remain required in GitHub
+Actions for the exact final commit before tagging; release validation and verified
+rollout remain enforced by the existing repository-local release workflow.

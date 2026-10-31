@@ -53,21 +53,23 @@ const picker = (page: Page) =>
 const saved = (page: Page) =>
   page.waitForResponse(
     (response) =>
-      response.url().endsWith("/transactions/remember-category") &&
+      response.url().endsWith("/transactions/remember") &&
       response.request().method() === "POST",
   );
 
-test("remembers from the ledger, reviews 800 matches across filters and retains highlights after reload", async ({
+test("remembers from the ledger, reviews 800 matches across all pages and retains highlights after reload", async ({
   page,
 }, info) => {
-  const { db, accounts, source } = await seed(page, 800);
+  const { db, source } = await seed(page, 800);
   try {
-    await page.goto("/accounts/" + accounts[0].id);
+    await page.goto("/transactions");
     await page
       .getByRole("searchbox", { name: "Search transactions" })
-      .fill("OCT26/00823316");
+      .fill("Direct Credit 396297");
     await expect(
-      page.getByRole("button", { name: "Select all 1 matching transactions" }),
+      page.getByRole("button", {
+        name: "Select all 800 matching transactions",
+      }),
     ).toBeVisible();
     const categorySaved = page.waitForResponse(
       (response) =>
@@ -78,7 +80,7 @@ test("remembers from the ledger, reviews 800 matches across filters and retains 
     expect((await categorySaved).ok()).toBe(true);
     await page
       .getByRole("button", {
-        name: "Remember category for " + first,
+        name: "Remember " + first,
         exact: true,
       })
       .click();
@@ -87,9 +89,7 @@ test("remembers from the ledger, reviews 800 matches across filters and retains 
       "800 matching transactions",
     );
     await expect(
-      dialog.getByText(
-        "799 to update · 1 already correct. This will replace 1 existing category.",
-      ),
+      dialog.getByText("799 to update · 1 already correct."),
     ).toBeVisible();
     await expect(
       dialog.getByLabel("Remembered text", { exact: true }),
@@ -106,9 +106,11 @@ test("remembers from the ledger, reviews 800 matches across filters and retains 
     expect(
       await db.transaction.count({ where: { categoryId: { not: null } } }),
     ).toBe(2);
-    // Remembering is also available from an existing category's bubble after reloading.
+    // The dedicated row action remains available after reloading.
     await page.reload();
-    await choose(page, picker(page), "Remember & apply to similar…");
+    await page
+      .getByRole("button", { name: "Remember " + first, exact: true })
+      .click();
     const response = saved(page);
     await dialog
       .getByRole("button", { name: "Save rule & apply to 800", exact: true })
@@ -159,7 +161,7 @@ test("remembers from the ledger, reviews 800 matches across filters and retains 
     });
     await page.goto("/categories");
     await expect(
-      page.getByRole("heading", { name: "Category rules", exact: true }),
+      page.getByRole("heading", { name: "Transaction rules", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", {
@@ -182,7 +184,9 @@ test("ledger remembering previews pattern edits and recovers from concurrent cha
   });
   try {
     await page.goto("/transactions");
-    await choose(page, picker(page), "Remember & apply to similar…");
+    await page
+      .getByRole("button", { name: "Remember " + first, exact: true })
+      .click();
     const dialog = page.getByRole("dialog");
     await choose(
       page,
@@ -202,7 +206,7 @@ test("ledger remembering previews pattern edits and recovers from concurrent cha
       where: { id: source.id },
       data: { version: { increment: 1 }, notes: "Concurrent note" },
     });
-    await page.route("**/api/transactions/remember-category", async (route) => {
+    await page.route("**/api/transactions/remember", async (route) => {
       await barrier;
       await route.continue();
     });
@@ -211,7 +215,7 @@ test("ledger remembering previews pattern edits and recovers from concurrent cha
       .getByRole("button", { name: "Save rule & apply to 2", exact: true })
       .click();
     await expect(
-      dialog.getByRole("button", { name: "Applying category…", exact: true }),
+      dialog.getByRole("button", { name: "Applying rule…", exact: true }),
     ).toBeDisabled();
     expect(await db.rule.count()).toBe(0);
     release();

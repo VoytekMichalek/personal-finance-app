@@ -2,7 +2,7 @@ import {
   test,
   expect,
   session,
-  choose,
+  tickFilter,
   chooseDate,
   database,
 } from "./fixtures";
@@ -90,11 +90,7 @@ test("category stacks switch calendar intervals and transactions paginate within
     page.getByRole("button", { name: "To", exact: true }),
     "2026-03-02",
   );
-  await choose(
-    page,
-    page.getByRole("combobox", { name: "Person", exact: true }),
-    "Voytek",
-  );
+  await tickFilter(page, "Person", ["Voytek"]);
   const chart = page.getByRole("region", {
     name: "Expenses by category and month",
     exact: true,
@@ -104,7 +100,7 @@ test("category stacks switch calendar intervals and transactions paginate within
   expect((await chart.boundingBox())!.height).toBeLessThanOrEqual(280);
   const breakdown = page.getByRole("region", { name: "Breakdown totals" });
   expect((await breakdown.boundingBox())!.height).toBeLessThanOrEqual(320);
-  await page.getByText("View chart values", { exact: true }).click();
+  await page.getByRole("tab", { name: "Table", exact: true }).click();
   const values = page.getByRole("table", {
     name: "Expenses by category and month",
   });
@@ -145,6 +141,7 @@ test("category stacks switch calendar intervals and transactions paginate within
       has: page.getByRole("rowheader", { name: "1 Feb 2026", exact: true }),
     }),
   ).toContainText("-$25.00");
+  await page.getByRole("tab", { name: "Graph", exact: true }).click();
   const dailyChart = page.getByRole("region", {
     name: "Expenses by category and day",
     exact: true,
@@ -152,7 +149,6 @@ test("category stacks switch calendar intervals and transactions paginate within
   expect(
     await dailyChart.evaluate((el) => el.scrollWidth > el.clientWidth),
   ).toBe(true);
-  await page.getByText("View chart values", { exact: true }).click();
   await interval.getByRole("button", { name: "Month", exact: true }).click();
   const transactions = page.getByRole("list", { name: "Expense transactions" });
   await expect(transactions.getByRole("listitem")).toHaveCount(10);
@@ -207,11 +203,7 @@ test("category stacks switch calendar intervals and transactions paginate within
   await expect(
     transactions.getByText("Grocery purchase 1", { exact: true }),
   ).toBeVisible();
-  await choose(
-    page,
-    page.getByRole("combobox", { name: "Category", exact: true }),
-    "Groceries",
-  );
+  await tickFilter(page, "Category", ["Groceries"]);
   await expect(page.getByRole("status")).toContainText(
     "1–10 of 11 transactions",
   );

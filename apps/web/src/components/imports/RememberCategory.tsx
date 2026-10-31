@@ -86,7 +86,7 @@ export function RememberCategory({
               rel="noreferrer"
               className="text-primary underline"
             >
-              View category rules
+              View transaction rules
             </a>
           </p>
         </div>

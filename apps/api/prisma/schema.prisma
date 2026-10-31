@@ -109,6 +109,8 @@ model Account {
   schedules Schedule[]
   imports ImportBatch[]
   statements Statement[]
+  rules Rule[] @relation("RuleAccount")
+  counterRules Rule[] @relation("RuleCounterAccount")
 }
 model Category {
   parentId String?
@@ -160,8 +162,14 @@ model Rule {
   id String @id @default(uuid())
   matchMode RuleMatchMode @default(contains)
   pattern String
-  categoryId String
-  category Category @relation(fields:[categoryId],references:[id])
+  categoryId String?
+  category Category? @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+  kind String?
+  accountId String?
+  account Account? @relation("RuleAccount", fields:[accountId],references:[id],onDelete:Restrict)
+  counterAccountId String?
+  counterAccount Account? @relation("RuleCounterAccount", fields:[counterAccountId],references:[id],onDelete:Restrict)
+  direction String?
   priority Int @default(100)
   enabled Boolean @default(true)
 }

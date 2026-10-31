@@ -1,6 +1,11 @@
 import { useRef, useState } from "react";
 import { X } from "lucide-react";
-import type { Snapshot, Transaction } from "@finance/shared";
+import {
+  filterTransactions,
+  type Snapshot,
+  type Transaction,
+  type TransactionFilters,
+} from "@finance/shared";
 import { Card, Input, Select } from "../common/primitives";
 import { OwnerFilter } from "../common/form";
 import { CategoryChip } from "../common/EntityChip";
@@ -39,20 +44,16 @@ export function TransactionBrowser({
     from ||
     to
   );
-  const rows = data.transactions.filter(
-    (t) =>
-      (!search || t.description.toLowerCase().includes(search.toLowerCase())) &&
-      (!activeAccount || t.accountId === activeAccount) &&
-      (owner === "all" || t.owner === owner) &&
-      (!category ||
-        (category === "none" ? !t.categoryId : t.categoryId === category)) &&
-      (!from || t.date >= from) &&
-      (!to || t.date <= to) &&
-      (!kind ||
-        (kind === "expense"
-          ? t.kind === "expense" || t.kind === "refund"
-          : t.kind === kind)),
-  );
+  const filters: TransactionFilters = {
+    search,
+    accountId: activeAccount || null,
+    owner,
+    categoryId: category || null,
+    kind: (kind || null) as TransactionFilters["kind"],
+    from: from || null,
+    to: to || null,
+  };
+  const rows = filterTransactions(data.transactions, filters);
   const context = JSON.stringify([
     search,
     activeAccount,
@@ -136,7 +137,13 @@ export function TransactionBrowser({
           </p>
         )}
       </Card>
-      <TransactionTable key={context} data={data} rows={rows} onOpen={onOpen} />
+      <TransactionTable
+        key={context}
+        data={data}
+        rows={rows}
+        filters={filters}
+        onOpen={onOpen}
+      />
     </>
   );
 }
