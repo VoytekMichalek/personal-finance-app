@@ -16,6 +16,7 @@ type Props = {
   children: ReactNode;
   className?: string;
   disabled?: boolean;
+  scrollButtons?: boolean;
   id?: string;
   "aria-label"?: string;
   "aria-labelledby"?: string;
@@ -30,6 +31,7 @@ export function Select({
   onValueChange,
   className,
   disabled,
+  scrollButtons = true,
   id,
   onBlur,
   ref,
@@ -70,15 +72,25 @@ export function Select({
           collisionPadding={12}
           className="select-popup z-[80] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-content-available-width)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_12px_40px_#1e293b20] backdrop-blur-xl"
         >
-          <Radix.ScrollUpButton className="flex justify-center p-1">
-            <ChevronUp size={14} />
-          </Radix.ScrollUpButton>
-          <Radix.Viewport className="min-h-0 max-h-[280px] overflow-y-auto">
+          {scrollButtons && (
+            <Radix.ScrollUpButton className="flex justify-center p-1">
+              <ChevronUp size={14} />
+            </Radix.ScrollUpButton>
+          )}
+          <Radix.Viewport
+            className={cn(
+              "min-h-0 max-h-[280px] overflow-y-auto",
+              !scrollButtons &&
+                "[scrollbar-width:thin]! [&::-webkit-scrollbar]:block!",
+            )}
+          >
             {children}
           </Radix.Viewport>
-          <Radix.ScrollDownButton className="flex justify-center p-1">
-            <ChevronDown size={14} />
-          </Radix.ScrollDownButton>
+          {scrollButtons && (
+            <Radix.ScrollDownButton className="flex justify-center p-1">
+              <ChevronDown size={14} />
+            </Radix.ScrollDownButton>
+          )}
         </Radix.Content>
       </Radix.Portal>
     </Radix.Root>

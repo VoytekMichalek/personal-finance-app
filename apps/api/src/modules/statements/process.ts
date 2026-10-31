@@ -6,12 +6,9 @@ import {
   type ImportRow,
 } from "@finance/shared";
 import { prisma, json } from "../../lib/db.js";
-import { HttpError } from "../../lib/errors.js";
 import { validateAccount } from "../finance/service.js";
-import { readWithAi } from "./ai-reader.js";
-import { extractPdf } from "./pdf.js";
+import { readStatement } from "./read.js";
 import { recoverBalances } from "./balances.js";
-import { parseStatement } from "./parser.js";
 import { recurringSuggestions } from "./suggestions.js";
 export async function processStatement(
   accountId: string,
@@ -19,27 +16,20 @@ export async function processStatement(
   options: { year?: number; useAi?: boolean; modelId?: string | null },
   onExtracted: (pages: number) => Promise<void>,
 ) {
-  const { year, useAi, modelId } = options;
   const account = await validateAccount(prisma, accountId);
-  const pages = await extractPdf(content);
-  await onExtracted(pages.length);
   const [categories, rules, history] = await Promise.all([
     prisma.category.findMany(),
     prisma.rule.findMany(),
     prisma.transaction.findMany({ where: { accountId } }),
   ]);
-  if (useAi && !modelId)
-    throw new HttpError(400, "Choose an AI model in Settings → AI first.");
-  const { rows, details } = useAi
-    ? await readWithAi(
-        pages,
-        account.owner,
-        json<Category[]>(categories),
-        modelId!,
-        year,
-        account.type,
-      )
-    : parseStatement(pages, account.owner, year, account.type);
+  const { rows, details, pages } = await readStatement(
+    content,
+    account.owner,
+    json<Category[]>(categories),
+    account.type,
+    options,
+    onExtracted,
+  );
   recoverBalances(details, rows, account.type);
   if (account.type === "credit") {
     for (const row of rows) {
@@ -68,5 +58,5 @@ export async function processStatement(
     if (row.date > today()) row.error = "Future transactions cannot be posted.";
   }
   details.recurring = recurringSuggestions(rows, accountId, today());
-  return { rows, details, pages: pages.length };
+  return { rows, details, pages };
 }

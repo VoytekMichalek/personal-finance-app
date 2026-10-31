@@ -41,6 +41,7 @@ export type Transaction = {
 };
 export type Rule = {
   id: string;
+  matchMode?: "contains" | "exact";
   pattern: string;
   categoryId: string;
   priority: number;
@@ -102,6 +103,13 @@ export type Snapshot = {
   today: string;
 };
 export type ImportRow = {
+  rememberCategory?: boolean;
+  categorySource?: "rule" | "remembered";
+  rememberedFrom?: number;
+  previousCategory?: Pick<
+    ImportRow,
+    "categoryId" | "categoryChosen" | "categorySource"
+  >;
   linkExisting?: { id: string; version: number };
   categoryChosen?: boolean;
   kind: "income" | "expense" | "refund" | "transfer";

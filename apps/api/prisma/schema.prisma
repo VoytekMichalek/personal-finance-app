@@ -152,8 +152,13 @@ model Transaction {
   @@index([accountId,date])
   @@index([date,categoryId])
 }
+enum RuleMatchMode {
+  contains
+  exact
+}
 model Rule {
   id String @id @default(uuid())
+  matchMode RuleMatchMode @default(contains)
   pattern String
   categoryId String
   category Category @relation(fields:[categoryId],references:[id])

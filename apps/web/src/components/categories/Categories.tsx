@@ -105,8 +105,8 @@ export function Categories({ data }: { data: Snapshot }) {
           A little help with categorising
         </SectionTitle>
         <p className="mb-5 text-xs leading-5 text-muted-foreground">
-          Rules match merchant descriptions, ignoring case. Lower priorities run
-          first. Your chosen category always takes precedence.
+          Rules ignore case. Exact descriptions run before contains rules, then
+          lower priorities run first. Your chosen category takes precedence.
         </p>
         <div className="divide-y">
           {data.rules.map((item) => (
@@ -121,7 +121,10 @@ export function Categories({ data }: { data: Snapshot }) {
                   setRuleOpen(true);
                 }}
               >
-                <p className="text-sm font-medium">Contains “{item.pattern}”</p>
+                <p className="break-words text-sm font-medium">
+                  {item.matchMode === "exact" ? "Matches" : "Contains"} “
+                  {item.pattern}”
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {data.categories.find((c) => c.id === item.categoryId)?.name}{" "}
                   · priority {item.priority} ·{" "}
@@ -306,6 +309,7 @@ function RuleForm({
     resolver: zodResolver(ruleSchema),
     defaultValues: {
       pattern: rule?.pattern ?? "",
+      matchMode: rule?.matchMode ?? "contains",
       categoryId: rule?.categoryId ?? "",
       priority: rule?.priority ?? 100,
       enabled: rule?.enabled ?? true,
@@ -323,8 +327,14 @@ function RuleForm({
         }),
       )}
     >
+      <Field label="Match description">
+        <FormSelect control={form.control} name="matchMode">
+          <SelectItem value="contains">Contains</SelectItem>
+          <SelectItem value="exact">Exact description</SelectItem>
+        </FormSelect>
+      </Field>
       <Field
-        label="Description contains"
+        label="Description text"
         error={form.formState.errors.pattern?.message}
       >
         <Input placeholder="e.g. Woolworths" {...form.register("pattern")} />

@@ -53,6 +53,10 @@ handover. Billing completion belongs to the owner; no payment was submitted.
 
 ## Release flow
 
+Owner direction from 31 October 2026: increment only the final PATCH number for
+requested releases until instructed otherwise (for example, v0.0.5 → v0.0.6).
+This version preference does not authorise publication on its own.
+
 1. Commit the version in the root and workspace manifests, push main, and wait
    for complete passing Validate CI on that exact commit.
 2. Create an annotated `vMAJOR.MINOR.PATCH` tag on that commit and push it. Never

@@ -12,6 +12,7 @@ import {
   money,
   moneyInput,
   parseMoney,
+  updateImportRows,
   type Account,
   type ImportRow,
   type Snapshot,
@@ -62,9 +63,7 @@ export function StatementReview({
     (n: number, patch: Partial<ImportRow>) => {
       clearError();
       setReviewed(false);
-      setRows((current) =>
-        current.map((r) => (r.rowNumber === n ? { ...r, ...patch } : r)),
-      );
+      setRows((current) => updateImportRows(current, n, patch));
     },
     [clearError],
   );

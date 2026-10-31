@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   mappingSchema,
+  updateImportRows,
   type ImportPreview,
   type ImportRow,
   type Mapping,
@@ -164,17 +165,7 @@ export function useCsvImport(initialAccountId: string) {
         current
           ? {
               ...current,
-              rows: current.rows.map((row) =>
-                row.rowNumber === rowNumber
-                  ? {
-                      ...row,
-                      ...patch,
-                      ...(Object.hasOwn(patch, "categoryId")
-                        ? { categoryChosen: true }
-                        : {}),
-                    }
-                  : row,
-              ),
+              rows: updateImportRows(current.rows, rowNumber, patch),
             }
           : current,
       );

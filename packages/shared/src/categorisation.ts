@@ -1,5 +1,19 @@
 import type { Category, ImportRow, Rule } from "./types.js";
 
+export const normaliseDescription = (value: string) =>
+  value.trim().replace(/\s+/g, " ").toLowerCase();
+export const matchesRule = (
+  description: string,
+  rule: Pick<Rule, "pattern" | "matchMode">,
+) =>
+  rule.matchMode === "exact"
+    ? normaliseDescription(description) === normaliseDescription(rule.pattern)
+    : description.toLowerCase().includes(rule.pattern.toLowerCase());
+export const compareRules = (a: Rule, b: Rule) =>
+  Number(b.matchMode === "exact") - Number(a.matchMode === "exact") ||
+  a.priority - b.priority ||
+  a.id.localeCompare(b.id);
+
 const merchants: [RegExp, string][] = [
   [/woolworths|coles|aldi|iga\b/i, "Groceries"],
   [/netflix|spotify|disney|prime video|apple.com\/bill/i, "Subscriptions"],
@@ -25,11 +39,11 @@ export function categorise(
         c.kind === (row.kind === "income" ? "income" : "expense"),
     );
     const rule = [...rules]
-      .sort((a, b) => a.priority - b.priority)
+      .sort(compareRules)
       .find(
         (r) =>
           r.enabled &&
-          row.description.toLowerCase().includes(r.pattern.toLowerCase()) &&
+          matchesRule(row.description, r) &&
           eligible.some((c) => c.id === r.categoryId),
       );
     const previous = history.find(
@@ -44,5 +58,6 @@ export function categorise(
       eligible.find((c) => c.name.toLowerCase() === hint?.[1].toLowerCase())
         ?.id ??
       (eligible.some((c) => c.id === row.categoryId) ? row.categoryId : null);
+    row.categorySource = rule ? "rule" : undefined;
   }
 }

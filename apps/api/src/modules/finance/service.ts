@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   today,
+  matchesRule,
+  compareRules,
   type Snapshot,
   type Transaction,
   transactionSchema,
@@ -96,9 +98,8 @@ export async function applyRule(
     orderBy: [{ priority: "asc" }, { id: "asc" }],
   });
   return (
-    rules.find((rule) =>
-      description.toLowerCase().includes(rule.pattern.toLowerCase()),
-    )?.categoryId ?? null
+    rules.sort(compareRules).find((rule) => matchesRule(description, rule))
+      ?.categoryId ?? null
   );
 }
 export async function createTransaction(

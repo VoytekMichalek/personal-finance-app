@@ -67,7 +67,13 @@ const ReviewRow = memo(function ReviewRow({
       aria-label={"Transaction row " + row.rowNumber}
       className={
         "min-w-0 space-y-3 p-4 sm:p-5 " +
-        (row.error ? "bg-red-50/50" : !row.include ? "bg-muted/40" : "")
+        (row.error
+          ? "bg-red-50/50"
+          : !row.include
+            ? "bg-muted/40"
+            : row.categorySource
+              ? "bg-emerald-50/60"
+              : "")
       }
     >
       <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -194,6 +200,39 @@ const ReviewRow = memo(function ReviewRow({
           </Select>
         </label>
       </div>
+      {row.categorySource && row.categoryId && (
+        <Pill tone="positive">
+          {row.categorySource === "rule"
+            ? "Auto categorised · saved rule"
+            : "Auto categorised · remembered in this upload"}
+        </Pill>
+      )}
+      {row.kind !== "transfer" && !row.error && (
+        <label className="flex items-start gap-2 text-xs leading-5">
+          <input
+            type="checkbox"
+            className="mt-1"
+            aria-label={"Remember category row " + row.rowNumber}
+            disabled={
+              !!busy ||
+              !row.categoryId ||
+              !row.include ||
+              !row.description.trim()
+            }
+            checked={!!row.rememberCategory}
+            onChange={(event) =>
+              patch({ rememberCategory: event.target.checked })
+            }
+          />
+          <span>
+            Remember category
+            <span className="block text-muted-foreground">
+              Apply to matching descriptions in this upload and save a rule when
+              you import.
+            </span>
+          </span>
+        </label>
+      )}
       {row.linkExisting && (
         <p className="text-xs text-primary">
           This row will link to the chosen existing payment on approval.{" "}

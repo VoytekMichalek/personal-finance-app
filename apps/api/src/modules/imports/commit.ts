@@ -14,6 +14,7 @@ import {
 } from "../finance/service.js";
 import { checkImportConflicts, type ApprovedImportRow } from "./conflicts.js";
 import { linkImportedPayment } from "./link-payment.js";
+import { rememberCategories } from "./remember-categories.js";
 export async function commitRows(
   tx: Prisma.TransactionClient,
   batch: ImportBatch,
@@ -99,5 +100,6 @@ export async function commitRows(
       );
     }
   }
+  await rememberCategories(tx, approved);
   return approved.length;
 }

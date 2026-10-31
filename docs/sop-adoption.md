@@ -433,3 +433,72 @@ candidate; GitHub Validate must pass on its exact commit before the annotated ta
 is pushed. Release then repeats required validation, smoke/security checks and
 publication, followed by the existing exact-tag/commit production rollout check.
 The workflow run and release provide immutable publication/deployment evidence.
+
+## Remembered import categories and PDF reading — 31 October 2026
+
+Current SOP main was retrieved once with the installed read-only helper at
+`2026-10-31T07:18:33.111Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, and held fixed for this task.
+Policy loading, architecture, application UI, testing and user-documentation
+standards were read against the adopted `9335fad` baseline. Current guidance
+permits focused local verification and retains full CI in GitHub. The personal
+CI/release and documentation-navigation exceptions remain unchanged; this is not
+broader SOP adoption or a deployment-readiness assessment.
+
+CSV and PDF reviews now offer Remember category, matching full descriptions
+without case/spacing differences across all review pages. Automatic assignments
+are labelled and highlighted; edits and undo preserve explicit later choices.
+Approval saves exact-description rules atomically with selected transactions.
+A non-destructive migration adds the rule match mode, defaulting existing rules
+to their original contains semantics. Exact rules precede broader rules and can
+be edited, paused or deleted in Categories. Existing amounts, dates, selection,
+refund/transfer handling and previously posted records retain their semantics.
+
+PDF processing now scans pages automatically when the initial extraction has no
+rows, including selectable headings above scanned tables. Empty AI results use
+the deterministic reader where possible; unrecoverable empty results become a
+recoverable failed job instead of an empty ready review. Re-uploading a failed or
+older empty preview queues its original source again using the new upload options;
+non-empty and committed reviews retain existing protection. Synthetic regression
+fixtures cover both image-only and mixed text/image PDFs. The user's original
+PDF was not supplied for this task, so its exact failure is not claimed reproduced.
+
+The OpenRouter allowlist expands from six to eighteen models, retaining existing
+IDs. Provider and model labels come from the official public models API retrieved
+on 31 October 2026: https://openrouter.ai/api/v1/models. Every listed model advertises
+structured outputs; require_parameters, denied data collection and ZDR routing
+remain enforced. No account credentials or household documents were sent for
+catalogue verification. Actual provider availability remains dependent on the
+configured account and privacy-compatible routes. The model dropdown uses native viewport scrolling with a visible scrollbar;
+Radix scroll-button focus restoration otherwise snaps this longer list back to
+the initially focused option on mobile. Existing dropdowns keep their controls.
+
+User guides cover remembering/undo, rule ordering, first-read recovery and model
+labels. No dependency, environment input, logging sink, diagnostic setting,
+authentication, release workflow or deployment configuration changes are included.
+Validation evidence is recorded in docs/testing.md. The owner subsequently
+authorised committing this work and releasing the next patch, v0.0.6, and directed
+that only the last version number increase until instructed otherwise. This
+preference is recorded in AGENTS.md and docs/hosting.md. Environment/deployment
+and logging standards were also read for the release. Existing personal CI and
+automatic-deployment exceptions override upstream shared-workflow/manual-deploy
+guidance. The final commit must pass GitHub Validate before its annotated tag is
+pushed; Release then validates, smoke-tests/scans, publishes and verifies the
+production rollout against that exact tag and commit.
+
+R17–R19 release evidence: inspection confirmed the single API/web image still
+owns every runtime input in `.env.example` (`DATABASE_URL`, `BETTER_AUTH_URL`,
+`BETTER_AUTH_SECRET`, conditional `FIRST_USER_TOKEN`, optional `OPENROUTER_API_KEY`
+and the four `R2_*` inputs). `apps/api/src/lib/config.ts` validates them at startup;
+Docker build inputs remain immutable metadata only and `.dockerignore` excludes
+local environment files. The additive migration is included by the existing
+Prisma deployment/entrypoint path. Expected reader failures use `HttpError` and
+remain quiet; the unchanged worker/error middleware emits only sanitised events
+for unexpected failures. Better Auth logging remains disabled, while SIGUSR2
+diagnostics use allowlisted fields and exclude health polls. No new warning
+condition or security-incident subsystem was introduced. The required GitHub
+candidate image smoke run covers disposable-database migrations/restarts/failure,
+runtime validation, metadata, bundle secret checks, 401/403/400/404 responses,
+quiet polls, diagnostic redaction and controlled unexpected faults. Its exact
+commit/run identity supplies image evidence before publication/deployment;
+source inspection alone is not recorded as an image-verification pass.

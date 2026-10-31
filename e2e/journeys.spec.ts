@@ -27,8 +27,16 @@ test("accounts and CSV review work across screen sizes", async ({ page }) => {
   await page.getByRole("button", { name: "Review transactions" }).click();
   await expect(page.getByText("3 valid")).toBeVisible();
   await choose(page, page.getByLabel("Type row 3"), "Refund");
-  await choose(page, page.getByLabel("Category row 2"), "Groceries");
-  await choose(page, page.getByLabel("Category row 3"), "Groceries");
+  await choose(
+    page,
+    page.getByLabel("Category row 2", { exact: true }),
+    "Groceries",
+  );
+  await choose(
+    page,
+    page.getByLabel("Category row 3", { exact: true }),
+    "Groceries",
+  );
   await page.getByRole("button", { name: "Approve & import (3)" }).click();
   await expect(page.getByText("3 transactions imported")).toBeVisible();
   await page.goto("/transactions");

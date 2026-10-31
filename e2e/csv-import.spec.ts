@@ -107,7 +107,9 @@ test("headerless CSV preserves its first transaction and supports reversed bank 
   await expect(
     page.getByText("2 selected · $2.01 money in · $19.99 money out"),
   ).toBeVisible();
-  await expect(page.getByLabel("Category row 1")).toHaveText("Groceries");
+  await expect(page.getByLabel("Category row 1", { exact: true })).toHaveText(
+    "Groceries",
+  );
   await choose(page, page.getByLabel("Type row 2"), "Refund");
   await page.getByRole("button", { name: "Approve & import (2)" }).click();
   await expect(
@@ -187,7 +189,9 @@ test("long CSV column names stay inside mapping controls and open options", asyn
     ),
   ).toBe(true);
   await page.getByRole("button", { name: "Review transactions" }).click();
-  await expect(page.getByLabel("Category row 1")).toHaveText("Groceries");
+  await expect(page.getByLabel("Category row 1", { exact: true })).toHaveText(
+    "Groceries",
+  );
 });
 
 test("CSV errors recover and manual mappings are used for unfamiliar headers", async ({

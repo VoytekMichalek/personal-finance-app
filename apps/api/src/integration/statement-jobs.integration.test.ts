@@ -173,3 +173,27 @@ it("deduplicates concurrent uploads durably and rejects non-PDF data", async () 
   expect(invalid.status).toBe(400);
   expect(await prisma.statement.count()).toBe(1);
 });
+
+it("requeues an old empty preview on upload, preserving its source identity and completed imports", async () => {
+  const accountId = await account();
+  const uploaded = await upload(accountId);
+  processor.mockResolvedValue(result);
+  await processClaimedStatement((await claimStatement())!);
+  expect((await read(uploaded.body.id)).body.status).toBe("ready");
+  const repeated = await upload(accountId);
+  expect(repeated.body).toMatchObject({
+    id: uploaded.body.id,
+    status: "queued",
+  });
+  expect(await prisma.statement.count()).toBe(1);
+  await processClaimedStatement((await claimStatement())!);
+  const item = await prisma.statement.findUniqueOrThrow({
+    where: { id: uploaded.body.id },
+  });
+  await prisma.importBatch.update({
+    where: { id: item.importBatchId },
+    data: { committedAt: new Date() },
+  });
+  expect((await upload(accountId)).body.status).toBe("ready");
+  expect(await claimStatement()).toBeNull();
+});

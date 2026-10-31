@@ -25,9 +25,47 @@ export async function uploadStatement(
     await validateAccount(tx, accountId);
     const previous = await tx.statement.findFirst({
       where: { accountId, importBatch: { fileHash: hash } },
-      select: { id: true },
+      select: {
+        id: true,
+        status: true,
+        importBatch: { select: { id: true, preview: true, committedAt: true } },
+      },
     });
-    if (previous) return previous.id;
+    if (previous) {
+      if (
+        !previous.importBatch.committedAt &&
+        (previous.status === "failed" ||
+          (previous.status === "ready" &&
+            Array.isArray(previous.importBatch.preview) &&
+            previous.importBatch.preview.length === 0))
+      ) {
+        await tx.statement.update({
+          where: { id: previous.id },
+          data: {
+            status: "queued",
+            stage: "queued",
+            pages: 0,
+            details: {},
+            processingError: null,
+            leaseToken: null,
+            leaseUntil: null,
+            processingOptions: {
+              ...(year ? { year } : {}),
+              useAi,
+              modelId: modelId ?? null,
+            },
+          },
+        });
+        await tx.importBatch.update({
+          where: { id: previous.importBatch.id },
+          data: {
+            preview: [],
+            expiresAt: new Date(Date.now() + 7 * 86400000),
+          },
+        });
+      }
+      return previous.id;
+    }
     const item = await tx.statement.create({
       data: {
         account: { connect: { id: accountId } },

@@ -6,7 +6,10 @@ import path from "node:path";
 import { HttpError } from "../../lib/errors.js";
 const run = promisify(execFile);
 let processing = false;
-export async function extractPdf(buffer: Buffer): Promise<string[]> {
+export async function extractPdf(
+  buffer: Buffer,
+  forceOcr = false,
+): Promise<string[]> {
   if (processing)
     throw new HttpError(
       429,
@@ -40,7 +43,8 @@ export async function extractPdf(buffer: Buffer): Promise<string[]> {
           408,
           "This scan took too long to read. Split it into smaller PDFs.",
         );
-      if ((pages[i]?.replace(/\s/g, "").length ?? 0) >= 40) continue;
+      if (!forceOcr && (pages[i]?.replace(/\s/g, "").length ?? 0) >= 40)
+        continue;
       const prefix = path.join(dir, "page");
       await run(
         "pdftoppm",

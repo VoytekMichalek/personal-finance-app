@@ -34,6 +34,27 @@ it("persists encrypted credentials, leaves a blank replacement unchanged, and im
   });
   expect(status.text).not.toContain(key);
   expect(status.text).not.toContain(saved);
+  expect(status.body.models.length).toBeGreaterThan(6);
+  expect(status.body.models).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        provider: "Anthropic",
+        id: "~anthropic/claude-sonnet-latest",
+      }),
+      expect.objectContaining({
+        provider: "Google",
+        id: "~google/gemini-flash-latest",
+      }),
+    ]),
+  );
+  for (const model of status.body.models) {
+    expect(model.provider).toBeTruthy();
+    expect(model.displayName).toBeTruthy();
+    expect(
+      (await put("/integrations/ai", { modelId: model.id }, adminCookie))
+        .status,
+    ).toBe(200);
+  }
   expect(
     (await put("/integrations/ai", { modelId: null }, adminCookie)).status,
   ).toBe(200);

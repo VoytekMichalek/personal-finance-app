@@ -13,7 +13,7 @@ test("AI settings save and replace a private key, persist the model, and remove 
   await choose(
     page,
     page.getByRole("combobox", { name: "AI model" }),
-    "Luna Latest",
+    "OpenAI · GPT Luna Latest",
   );
   await page.getByRole("button", { name: "Save AI settings" }).click();
   await expect(page.getByRole("status")).toHaveText("AI settings saved.");
@@ -24,11 +24,20 @@ test("AI settings save and replace a private key, persist the model, and remove 
     "Key saved — leave blank to keep it",
   );
   await expect(page.getByRole("combobox", { name: "AI model" })).toHaveText(
-    "Luna Latest",
+    "OpenAI · GPT Luna Latest",
   );
   await key.fill("synthetic-browser-replacement");
+  await choose(
+    page,
+    page.getByRole("combobox", { name: "AI model" }),
+    "Anthropic · Claude Sonnet Latest",
+  );
   await page.getByRole("button", { name: "Save AI settings" }).click();
   await expect(page.getByRole("status")).toHaveText("AI settings saved.");
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "AI model" })).toHaveText(
+    "Anthropic · Claude Sonnet Latest",
+  );
   await page.getByRole("button", { name: "Remove saved key" }).click();
   await expect(key).toHaveAttribute(
     "placeholder",

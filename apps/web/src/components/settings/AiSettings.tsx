@@ -140,6 +140,7 @@ function AiSettingsForm({
           )}
           <Field label="AI model">
             <Select
+              scrollButtons={false}
               value={modelId}
               disabled={!admin || busy}
               onValueChange={(value) => {
@@ -150,7 +151,7 @@ function AiSettingsForm({
               <SelectItem value="">Choose a model</SelectItem>
               {data.models.map((item) => (
                 <SelectItem key={item.id} value={item.id}>
-                  {item.displayName}
+                  {item.provider} · {item.displayName}
                 </SelectItem>
               ))}
             </Select>

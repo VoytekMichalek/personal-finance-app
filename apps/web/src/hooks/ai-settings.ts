@@ -5,7 +5,7 @@ export type Integrations = {
   keySource: "settings" | "environment" | null;
   r2Configured: boolean;
   modelId: string | null;
-  models: { id: string; displayName: string }[];
+  models: { id: string; provider: string; displayName: string }[];
 };
 export function useAiSettings() {
   const client = useQueryClient();

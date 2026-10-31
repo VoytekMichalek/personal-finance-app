@@ -133,3 +133,58 @@ eligibility/persistence and recovery after a real stale write. Repeat affected p
 polling and focus cases ten times per browser without retries, then run the affected
 suite. Existing build reuse and the single finance_e2e worker remain required; API
 checks run independently in finance_test. No timeout or assertion is weakened.
+
+Remembered import categories (31 October): shared tests own matching across pages,
+case/whitespace normalisation, income/refund/transfer eligibility, undo, edited
+rows and replacing the remembered source. Real database tests exercise CSV and
+native PDF imports, approval-only rule creation, atomic rollback, idempotency,
+future matching, category replacement and unrelated descriptions. Existing contains
+rules keep their semantics through the additive match-mode migration.
+
+The first-read PDF checks cover image-only and mixed selectable-header/scanned-table
+fixtures through real Poppler/Tesseract and the complete reading coordinator.
+Focused reader units cover empty AI recovery and bounded OCR fallback; worker
+integration covers re-uploading old empty results and committed protection. Browser
+coverage proves a first upload reaches its review without Read again, alongside
+persisted background and explicit rereading journeys. Their controlled progress
+responses and preinstalled clocks retain real backend completion boundaries.
+
+The AI settings journey saves existing/new models with maker/name labels and
+exercises a model beyond the initial visible mobile dropdown options. Desktop and
+mobile import journeys check cross-page highlighting, undo, future-rule labels,
+real persistence and horizontal layout. Browser runs share finance_e2e and one
+worker; isolated API checks use finance_test. Builds are reused between repeat
+and affected-suite runs; no household database reset or provider call is used.
+
+Local v0.0.6 evidence (31 October, Node 24.21.0/pnpm 10.34.6):
+
+- `pnpm ci:prepare`, `pnpm build`, `pnpm typecheck`, `pnpm lint`,
+  `pnpm guardrails` and `git diff --check` passed.
+- Focused Vitest units passed 50 tests in eight files: shared import-review and
+  categorisation, CSV parser, OpenRouter, statement AI reader, reader coordinator,
+  statement parser and native PDF/OCR. The OCR run used the existing local
+  Tesseract container wrapper in `/tmp/finance-ocr-bin`; CI installs native tools.
+- Isolated finance_test checks passed 48 unique tests across finance, CSV import,
+  import conflicts, statements, bank statements, statement jobs, remembered
+  categories and AI settings. The additive migration applied successfully to
+  finance_test and finance_e2e; no household database was used.
+- `playwright test` on remember-category, statement-background,
+  statement-reread and ai-settings, filtered to `@remember-pdf-timing`,
+  `@statement-background`, `@statement-reread` and the AI-save journey, passed
+  80/80 cases with `--repeat-each=10 --retries=0` on desktop Chromium/mobile
+  WebKit. One worker owns the shared finance_e2e database. The existing local
+  WebKit wrapper supplies native libraries; CI installs both engines once.
+- The final affected browser suite passed 65 cases (one desktop-only sidebar
+  check intentionally skipped on mobile), with zero retries, in 4.7 minutes:
+  remember-category, category-rules, ai-settings, csv-import, csv-ai, statements,
+  statement-background, statement-reread, statement-conflicts, import-conflicts,
+  import-link-choices, review-reports and journeys. It reused the final build;
+  no application code changed after that build.
+
+The initial broad browser run found ambiguous legacy category selectors matching
+the new checkbox; selectors now require the exact category label, preserving all
+assertions. The longer AI dropdown also exposed mobile scroll-button focus
+restoration; its native scrolling fix passed both browsers and the repeated runs.
+Desktop/mobile review screenshots were inspected for the category tint/badge and
+layout. Full CI, audit and candidate image smoke/security checks run in GitHub on
+the final pushed commit and again through the repository-local release workflow.

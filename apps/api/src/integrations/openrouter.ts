@@ -8,7 +8,11 @@ const catalogueSchema = z.object({
   provider: z.literal("openrouter"),
   defaultModelId: z.string().nullable(),
   models: z.array(
-    z.object({ id: z.string().trim().min(1), displayName: z.string().min(1) }),
+    z.object({
+      id: z.string().trim().min(1),
+      provider: z.string().min(1),
+      displayName: z.string().min(1),
+    }),
   ),
 });
 export const approvedModels = catalogueSchema.parse(catalogue);

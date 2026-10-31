@@ -59,7 +59,8 @@ export const transferSchema = z
     "Choose two different accounts",
   );
 export const ruleSchema = z.object({
-  pattern: z.string().trim().min(1).max(120),
+  pattern: z.string().trim().min(1).max(250),
+  matchMode: z.enum(["contains", "exact"]).default("contains"),
   categoryId: id,
   priority: z.number().int().min(0).max(10000).default(100),
   enabled: z.boolean().default(true),
@@ -150,6 +151,7 @@ export const previewSchema = csvUploadSchema.extend({
   mapping: mappingSchema,
 });
 export const importRowSchema = z.object({
+  rememberCategory: z.boolean().optional(),
   linkExisting: z
     .object({ id, version: z.number().int().positive() })
     .optional(),
