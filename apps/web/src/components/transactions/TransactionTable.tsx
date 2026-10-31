@@ -323,8 +323,10 @@ export function TransactionTable({
                             : "")
                         }
                       >
-                        {row.amountCents > 0 ? "+" : ""}
-                        {money(row.amountCents)}
+                        <span>
+                          {row.amountCents > 0 ? "+" : ""}
+                          {money(row.amountCents)}
+                        </span>
                         <div className="mt-2 sm:hidden">
                           <RememberButton
                             row={row}

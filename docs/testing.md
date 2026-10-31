@@ -316,3 +316,12 @@ transfer integration suites passed again (14 cases), including real future CSV
 and PDF review and rule pausing. Web typecheck, focused lint, guardrails and diff
 checks passed. This is a copy/layout clarification; no matching, persistence or
 timing behaviour changed, so prior behaviour/timing evidence remains applicable.
+
+Full CI exposed two pre-existing browser locators affected by the new Remember
+button: a broad description regex matched both row actions, and the amount shared
+its text container with the mobile action. The row locator now anchors the
+description and the amount has its own span. Both original journeys passed on
+desktop and mobile (four cases, zero retries), with all financial and persistence
+assertions retained. These checks used finance_e2e and a temporary port 3002
+configuration to keep the user's preview on ports 3000/5174 running. Web build,
+typecheck, focused lint, guardrails and diff checks passed; no timing changed.
