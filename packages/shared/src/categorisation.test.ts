@@ -73,7 +73,7 @@ it("suggests familiar merchants and past categories without requiring AI", () =>
 });
 
 it("uses enabled rules in priority order before history and merchant hints", () => {
-  const rows = [row("Coles Brisbane")];
+  const rows = [row("  Coles   Brisbane receipt ")];
   const rules: Rule[] = [
     {
       id: "disabled",

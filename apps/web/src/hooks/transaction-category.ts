@@ -8,8 +8,8 @@ import { send } from "../lib/api";
 
 export function useTransactionCategory(id: string) {
   const client = useQueryClient();
-  const mutationKey = ["transaction-category", id];
-  const saving = useIsMutating({ mutationKey }) > 0;
+  const mutationKey = ["transaction", id, "category"];
+  const saving = useIsMutating({ mutationKey: ["transaction", id] }) > 0;
   const action = useMutation({
     mutationKey,
     mutationFn: ({

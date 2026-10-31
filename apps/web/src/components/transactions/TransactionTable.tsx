@@ -1,5 +1,8 @@
+import { RememberTransactionCategory } from "./RememberTransactionCategory";
 import { useState } from "react";
 import {
+  compareRules,
+  matchesRule,
   displayDate,
   identityColour,
   money,
@@ -13,6 +16,7 @@ import { Button } from "../ui/button";
 import { SelectItem } from "../ui/select";
 import { BulkDelete } from "./BulkDelete";
 import { TransactionCategory } from "./TransactionCategory";
+import { TransactionType } from "./TransactionType";
 
 export function TransactionTable({
   data,
@@ -23,6 +27,35 @@ export function TransactionTable({
   rows: Transaction[];
   onOpen: (row: Transaction) => void;
 }) {
+  const [remembering, setRemembering] = useState<string>();
+  const rememberedRow = data.transactions.find((row) => row.id === remembering);
+  const rules = data.rules
+    .filter(
+      (rule) =>
+        rule.enabled &&
+        data.categories.some(
+          (category) => category.id === rule.categoryId && !category.archived,
+        ),
+    )
+    .sort(compareRules);
+  const ruleMatches = new Set(
+    rows
+      .filter(
+        (row) =>
+          row.kind !== "transfer" &&
+          row.categoryId &&
+          rules.find(
+            (rule) =>
+              data.categories.some(
+                (category) =>
+                  category.id === rule.categoryId &&
+                  category.kind ===
+                    (row.kind === "income" ? "income" : "expense"),
+              ) && matchesRule(row.description, rule),
+          )?.categoryId === row.categoryId,
+      )
+      .map((row) => row.id),
+  );
   const [selected, setSelected] = useState(new Set<string>());
   const [page, setPage] = useState(0);
   const [bulk, setBulk] = useState("");
@@ -48,6 +81,14 @@ export function TransactionTable({
     setSelected(all ? new Set() : new Set(rows.map((row) => row.id)));
   return (
     <>
+      {rememberedRow && (
+        <RememberTransactionCategory
+          key={rememberedRow.id}
+          row={rememberedRow}
+          data={data}
+          close={() => setRemembering(undefined)}
+        />
+      )}
       <div className="mb-3 flex flex-wrap items-center gap-3 text-xs">
         <p>
           {rows.length} transaction{rows.length === 1 ? "" : "s"}
@@ -162,6 +203,7 @@ export function TransactionTable({
                   </th>
                   <th className="p-3">Transaction</th>
                   <th className="hidden p-3 md:table-cell">Account</th>
+                  <th className="hidden p-3 sm:table-cell">Type</th>
                   <th className="hidden p-3 sm:table-cell">Category</th>
                   <th className="hidden p-3 xl:table-cell">Belongs to</th>
                   <th className="p-3 text-right">Amount</th>
@@ -171,7 +213,14 @@ export function TransactionTable({
                 {rows
                   .slice(currentPage * 50, currentPage * 50 + 50)
                   .map((row) => (
-                    <tr key={row.id} className="hover:bg-[#fafbfc]">
+                    <tr
+                      key={row.id}
+                      className={
+                        ruleMatches.has(row.id)
+                          ? "bg-emerald-50/60 hover:bg-emerald-50"
+                          : "hover:bg-[#fafbfc]"
+                      }
+                    >
                       <td className="p-3">
                         <input
                           type="checkbox"
@@ -201,11 +250,20 @@ export function TransactionTable({
                           </span>
                         </button>
                         <div className="mt-2 flex flex-wrap gap-1 sm:hidden">
+                          <TransactionType
+                            row={row}
+                            data={data}
+                            disabled={action.isPending}
+                          />
                           <TransactionCategory
                             row={row}
                             categories={data.categories}
+                            onRemember={(item) => setRemembering(item.id)}
                             disabled={action.isPending}
                           />
+                          {ruleMatches.has(row.id) && (
+                            <Pill tone="positive">Matches saved rule</Pill>
+                          )}
                           <PersonChip owner={row.owner} people={data.people} />
                         </div>
                       </td>
@@ -220,11 +278,22 @@ export function TransactionTable({
                         </Pill>
                       </td>
                       <td className="hidden p-3 sm:table-cell">
+                        <TransactionType
+                          row={row}
+                          data={data}
+                          disabled={action.isPending}
+                        />
+                      </td>
+                      <td className="hidden p-3 sm:table-cell">
                         <TransactionCategory
                           row={row}
                           categories={data.categories}
+                          onRemember={(item) => setRemembering(item.id)}
                           disabled={action.isPending}
                         />
+                        {ruleMatches.has(row.id) && (
+                          <Pill tone="positive">Matches saved rule</Pill>
+                        )}
                       </td>
                       <td className="hidden p-3 xl:table-cell">
                         <PersonChip owner={row.owner} people={data.people} />

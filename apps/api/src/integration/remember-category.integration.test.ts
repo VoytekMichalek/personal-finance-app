@@ -159,3 +159,53 @@ it("serialises remembered rules from concurrent imports into different accounts"
   expect(await prisma.transaction.count()).toBe(4);
   expect(await prisma.rule.count()).toBe(1);
 });
+
+it("saves changing bank references as one contains rule and rejects non-matching remembered text atomically", async () => {
+  const accountId = await account();
+  const category = await prisma.category.findFirstOrThrow({
+    where: { name: "Salary" },
+  });
+  const csv = `Date,Description,Amount\n${today()},Direct Credit 396297 IVV PAYMENT OCT26/00823316,10.00\n${today()},Direct Credit 396297 IVV PAYMENT JUL26/00823296,20.00`;
+  const headers = await post("/imports/headers", { csv, accountId });
+  const result = await post("/imports/preview", {
+    csv,
+    accountId,
+    mapping: headers.body.mapping,
+  });
+  const rows = updateImportRows(result.body.rows, 1, {
+    categoryId: category.id,
+    rememberCategory: true,
+  });
+  const path = `/imports/${result.body.id}/commit`;
+  expect(
+    (
+      await post(path, {
+        rows: rows.map((row, i) =>
+          i ? row : { ...row, rememberPattern: "Different issuer" },
+        ),
+      })
+    ).status,
+  ).toBe(400);
+  expect(await prisma.transaction.count()).toBe(0);
+  expect(await prisma.rule.count()).toBe(0);
+  expect((await post(path, { rows })).status).toBe(200);
+  expect(await prisma.rule.findMany()).toMatchObject([
+    {
+      pattern: "direct credit 396297 ivv payment",
+      matchMode: "contains",
+      categoryId: category.id,
+    },
+  ]);
+  const future = csv
+    .replace("OCT26/00823316", "JAN27/00823999")
+    .replace("JUL26/00823296", "APR27/00824444");
+  const next = await post("/imports/preview", {
+    csv: future,
+    accountId,
+    mapping: headers.body.mapping,
+  });
+  expect(next.body.rows).toMatchObject([
+    { categoryId: category.id, categorySource: "rule" },
+    { categoryId: category.id, categorySource: "rule" },
+  ]);
+});

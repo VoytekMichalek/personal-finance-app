@@ -1,3 +1,4 @@
+import { RememberCategory } from "./RememberCategory";
 import { EditAccountButton } from "../accounts/EditAccountButton";
 import {
   memo,
@@ -20,6 +21,7 @@ import { Button } from "../ui/button";
 import { CategoryPicker } from "../categories/CategoryPicker";
 type RowProps = {
   row: ImportRow;
+  rememberedCount: number;
   focusRow?: { rowNumber: number };
   data: Snapshot;
   accountId: string;
@@ -28,6 +30,7 @@ type RowProps = {
 };
 const ReviewRow = memo(function ReviewRow({
   row,
+  rememberedCount,
   data,
   accountId,
   busy,
@@ -208,30 +211,12 @@ const ReviewRow = memo(function ReviewRow({
         </Pill>
       )}
       {row.kind !== "transfer" && !row.error && (
-        <label className="flex items-start gap-2 text-xs leading-5">
-          <input
-            type="checkbox"
-            className="mt-1"
-            aria-label={"Remember category row " + row.rowNumber}
-            disabled={
-              !!busy ||
-              !row.categoryId ||
-              !row.include ||
-              !row.description.trim()
-            }
-            checked={!!row.rememberCategory}
-            onChange={(event) =>
-              patch({ rememberCategory: event.target.checked })
-            }
-          />
-          <span>
-            Remember category
-            <span className="block text-muted-foreground">
-              Apply to matching descriptions in this upload and save a rule when
-              you import.
-            </span>
-          </span>
-        </label>
+        <RememberCategory
+          row={row}
+          count={rememberedCount}
+          busy={!!busy}
+          patch={patch}
+        />
       )}
       {row.linkExisting && (
         <p className="text-xs text-primary">
@@ -269,11 +254,19 @@ export function ImportRows({
   busy,
   updateRow,
   focusRow,
-}: Omit<RowProps, "row"> & {
+}: Omit<RowProps, "row" | "rememberedCount"> & {
   preview: { rows: ImportRow[] };
   page: number;
   setPage: Dispatch<SetStateAction<number>>;
 }) {
+  const rememberedCounts = new Map<number, number>();
+  for (const row of preview.rows) {
+    if (row.rememberedFrom !== undefined)
+      rememberedCounts.set(
+        row.rememberedFrom,
+        (rememberedCounts.get(row.rememberedFrom) ?? 0) + 1,
+      );
+  }
   return (
     <Card className="min-w-0 overflow-hidden p-0!">
       <div className="divide-y">
@@ -283,6 +276,7 @@ export function ImportRows({
             <ReviewRow
               key={row.rowNumber}
               row={row}
+              rememberedCount={rememberedCounts.get(row.rowNumber) ?? 0}
               focusRow={focusRow}
               data={data}
               accountId={accountId}

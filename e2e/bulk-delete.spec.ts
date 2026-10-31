@@ -61,6 +61,8 @@ test("bulk deletion respects account filters across pages, cancels safely and pe
     await page.screenshot({
       path: `artifacts/bulk-delete-${info.project.name}.png`,
       fullPage: true,
+      // Keep the full long ledger within WebKit’s 32,767-device-pixel image limit.
+      scale: "css",
     });
     const deleted = page.waitForResponse((response) =>
       response.url().endsWith("/transactions/bulk-delete"),

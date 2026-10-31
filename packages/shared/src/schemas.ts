@@ -65,6 +65,22 @@ export const ruleSchema = z.object({
   priority: z.number().int().min(0).max(10000).default(100),
   enabled: z.boolean().default(true),
 });
+export const transactionTypeSchema = z.object({
+  version: z.number().int().positive(),
+  kind: z.enum(["income", "expense", "refund", "transfer"]),
+  counterAccountId: id.optional(),
+  linkExisting: z
+    .object({ id, version: z.number().int().positive() })
+    .optional(),
+  createCounterpart: z.boolean().default(false),
+  unlinkCounterpart: z
+    .object({
+      id,
+      version: z.number().int().positive(),
+      kind: z.enum(["income", "expense", "refund"]),
+    })
+    .optional(),
+});
 export const budgetSchema = z.object({
   categoryId: id,
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
@@ -152,6 +168,8 @@ export const previewSchema = csvUploadSchema.extend({
 });
 export const importRowSchema = z.object({
   rememberCategory: z.boolean().optional(),
+  rememberPattern: z.string().max(250).optional(),
+  rememberMatchMode: z.enum(["exact", "contains"]).optional(),
   linkExisting: z
     .object({ id, version: z.number().int().positive() })
     .optional(),
@@ -233,4 +251,11 @@ export const bulkDeleteSchema = z.object({
 });
 export const bulkCategorySchema = bulkDeleteSchema.extend({
   categoryId: z.uuid().nullable(),
+});
+
+export const rememberTransactionCategorySchema = bulkDeleteSchema.extend({
+  source: z.object({ id, version: z.number().int().positive() }),
+  categoryId: id,
+  pattern: z.string().trim().min(1).max(250),
+  matchMode: z.enum(["exact", "contains"]),
 });

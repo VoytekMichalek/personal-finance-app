@@ -1,4 +1,6 @@
+import { rememberTransactionCategory } from "./remember-category.js";
 import { bulkCategory } from "./bulk-category.js";
+import { changeTransactionType } from "./transaction-type.js";
 import { bulkDelete } from "./bulk-delete.js";
 import { deleteTransaction } from "./delete-transaction.js";
 import { Router } from "express";
@@ -119,9 +121,17 @@ financeRouter.delete("/transactions/:id", async (req, res) => {
   const id = z.uuid().parse((req.params as Record<string, string>).id);
   res.json(await deleteTransaction(id));
 });
+financeRouter.post("/transactions/remember-category", async (req, res) => {
+  res.json(await rememberTransactionCategory(req.body));
+});
 financeRouter.post("/transactions/bulk-category", async (req, res) => {
   await bulkCategory(req.body);
   res.json({ ok: true });
+});
+financeRouter.put("/transactions/:id/type", async (req, res) => {
+  res.json(
+    await changeTransactionType(z.uuid().parse(req.params.id), req.body),
+  );
 });
 financeRouter.post("/transactions/bulk-delete", async (req, res) => {
   res.json(await bulkDelete(req.body));

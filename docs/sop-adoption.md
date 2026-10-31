@@ -502,3 +502,53 @@ runtime validation, metadata, bundle secret checks, 401/403/400/404 responses,
 quiet polls, diagnostic redaction and controlled unexpected faults. Its exact
 commit/run identity supplies image evidence before publication/deployment;
 source inspection alone is not recorded as an image-verification pass.
+
+## Transaction review follow-up — 31 October 2026
+
+Current main was retrieved read-only once with the installed policy helper:
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, retrieved
+`2026-10-31T09:30:15.202Z`. Policy loading, relevant architecture/UI, testing,
+user-documentation, environment/deployment and logging guidance were read at that
+fixed revision alongside the adopted local standards. The adopted baseline stays
+`9335fad26de93124a891f6c6544bb388aa366084`. Current upstream testing permits focused
+local verification and reserves complete validation for GitHub on the final commit;
+this task follows that execution model. Personal repository CI, immutable metadata
+names and the authorised automatic rollout retain their documented exceptions.
+
+The owner reported changing IVV period/reference suffixes prevented immediate
+remembering. CSV/PDF reviews now suggest a contains rule after stripping only a
+recognisable trailing month/year/reference code; other descriptions remain exact.
+The text/match mode are visible and editable, immediate updates show a count,
+and approval persists that same rule atomically. Both matching modes normalise
+case and whitespace. No AI call is needed. Rules are labelled Category rules in
+Categories and linked from review. Existing exact-rule priority remains unchanged.
+
+The transaction list now edits type inline on desktop/mobile and uses one coloured
+bubble with its arrow inside for editable type/category values. Transfer conversion
+requires the other account plus confirmation, links an explicitly selected existing
+opposite payment or creates its balanced counterpart, and preserves original IDs,
+receipts, source attribution and notes. Unlinking keeps both historical entries.
+Version checks, consistent lock ordering, account/date validation and scheduled-item
+protection are enforced in the service through shared Zod validation. The route
+is thin; hooks own mutations and cross-disable type/category edits during saves.
+
+User documentation describes these behaviours and where to manage rules. No database
+migration, dependency, deployment input, logging sink, diagnostic switch, auth policy
+or CI/release configuration changes are needed. R17/R18 source inspection confirms
+the existing single API/web image and environment ownership/phases remain unchanged.
+R19 inspection confirms new expected validation/conflict errors use HttpError and
+remain quiet through existing middleware; no transaction descriptions are logged.
+Exact-candidate GitHub image smoke/scan evidence is required before the authorised
+patch release and production rollout. Local test evidence is recorded in testing.md.
+
+The owner expanded this follow-up to the approximately 800 already imported rows.
+Category bubbles now offer Remember & apply to similar, including uncategorised
+rows; an inline-save shortcut improves discovery. The dialog previews the full
+ledger across accounts/dates/filters, shows replacement counts and matching records,
+and confirms the exact versioned set before atomically saving its rule and applying
+categories. Server validation rejects stale, missing, added or mismatching records;
+500-row chunks share one database transaction with rule persistence. Import approval
+and ledger application use the same idempotent rule-storage helper. A derived
+Matches saved rule marker highlights agreement with the highest-priority eligible
+saved rule after paging/reload without claiming false application provenance or
+adding a database field. No household data is modified by development tests.

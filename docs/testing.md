@@ -188,3 +188,67 @@ restoration; its native scrolling fix passed both browsers and the repeated runs
 Desktop/mobile review screenshots were inspected for the category tint/badge and
 layout. Full CI, audit and candidate image smoke/security checks run in GitHub on
 the final pushed commit and again through the repository-local release workflow.
+
+Transaction review follow-up (31 October): shared tests cover changing bank
+month/reference suffixes, editable exact/contains matching, whitespace, undo and
+non-matching issuers. Real PostgreSQL integration tests own inline type changes,
+receipt/source preservation, balanced counterpart creation, linking without
+replication, concurrent opposite-side links, unlinking without deleting history,
+account/date guards, category compatibility and scheduled-payment protection.
+
+Ledger categorisation tests apply one rule to 800 existing payments across accounts,
+exclude income/transfers when remembering an expense category, preserve dates/cents/
+notes/receipts, and verify future application. Versioned full-set confirmation rejects
+stale/incomplete/invalid requests. An injected rule-write failure inside a real
+620-row database transaction proves rollback of every category chunk and successful
+recovery without duplicate rules. Import and ledger persistence share one helper;
+the existing CSV/native-PDF approval/concurrency tests continue to run.
+
+Desktop/mobile browser coverage checks compact type/category bubbles, inline transfer
+link/create/unlink, cancellation, reload persistence, stale edit recovery, immediate
+cross-page IVV categorisation and future rule matches. The ledger journey reviews
+800 matches despite a one-row/account filter, exposes category replacements, verifies
+cancellation, applies all matches, pages through highlights and reloads them. A held
+response proves pending state before a real stale write, then refresh and recovery.
+Clocks are installed before navigation for timing cases; response waits precede
+mutations. Browser runs remain sequential with one finance_e2e worker, reuse the
+production build, and never reset household data. Integration uses finance_test.
+
+Local v0.0.7 checks use Node 24.21.0/pnpm 10.34.6 and the existing temporary
+WebKit library launcher. Shared categorisation/import-review/finance units passed
+25 tests. The final focused API suite passed 27 tests in five files: ledger
+categories, transaction types, remembered import categories, finance and import
+conflicts. `ci:prepare`, production build, all workspace typechecks, lint, guardrails
+and diff whitespace checks passed. No schema migration or dependency changes are
+required.
+
+Initial browser runs caught two fixture/assertion issues: the new synthetic PDF
+credits needed explicit plus signs for the reader's existing sign-safety check,
+and the rule-management locator needed the displayed Contains label around its
+pattern. Both were corrected without changing source-value safeguards, deadlines,
+retries or assertions about the complete transaction set. The 800-row desktop/
+mobile workflow then passed with cancellation, replacement counts, cross-filter
+application and reload persistence intact. Screenshots of the ledger, compact
+bubbles and matching-rule dialog were inspected on both viewports.
+
+Ten consecutive no-retry runs passed on both browsers for each affected timing
+flow. The first 60-case run covered PDF remembering, inline category pending state
+and inline type pending state. After the ledger scope was added, the final 60-case
+run covered PDF remembering, inline category pending state and ledger remembering
+(`--grep '@remember-pdf-timing|@timing' --repeat-each=10 --retries=0`, 4.8 minutes).
+The inline type implementation was unchanged between those runs. Each run used
+one finance_e2e worker and a reused production build; no retries, sleeps or weakened
+assertions were introduced.
+
+The final affected browser suite covered 14 files (78 scheduled cases). It passed
+76 cases with one intentional desktop-only skip; the remaining mobile bulk-delete
+case stopped solely at WebKit's 32,767-device-pixel screenshot limit on the longer
+50-row ledger. Its full-page capture now uses CSS-pixel scale, retaining all content
+and functional assertions. Both bulk-delete journeys were rerun on both browsers:
+4/4 passed. This completes 77 unique applicable affected cases with zero retries.
+The suite covered ledger categories, transaction types/categories, remembered
+categories, category rules, CSV import/AI, transaction forms/detail deletion,
+account insights, bulk deletion, review reports, AI settings and core journeys.
+No application code changed after the final production build. Full repository CI,
+audit and exact-candidate image smoke/security checks remain owned by GitHub
+Validate and the repository-local Release workflow.

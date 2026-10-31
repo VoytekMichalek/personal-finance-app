@@ -102,11 +102,13 @@ export function Categories({ data }: { data: Snapshot }) {
             </Button>
           }
         >
-          A little help with categorising
+          Category rules
         </SectionTitle>
         <p className="mb-5 text-xs leading-5 text-muted-foreground">
-          Rules ignore case. Exact descriptions run before contains rules, then
-          lower priorities run first. Your chosen category takes precedence.
+          Rules saved during import review or from the transaction table appear
+          here. Rules ignore case and extra spaces. Exact descriptions run
+          before contains rules, then lower priorities run first. Your chosen
+          category takes precedence.
         </p>
         <div className="divide-y">
           {data.rules.map((item) => (

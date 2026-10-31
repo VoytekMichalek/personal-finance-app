@@ -104,6 +104,8 @@ export type Snapshot = {
 };
 export type ImportRow = {
   rememberCategory?: boolean;
+  rememberPattern?: string;
+  rememberMatchMode?: "exact" | "contains";
   categorySource?: "rule" | "remembered";
   rememberedFrom?: number;
   previousCategory?: Pick<

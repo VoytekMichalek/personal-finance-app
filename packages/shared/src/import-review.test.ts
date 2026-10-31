@@ -149,3 +149,45 @@ it("keeps uncategorised description edits eligible for later AI suggestions", ()
   expect(result?.categoryId).toBeNull();
   expect(result?.categoryChosen).toBeUndefined();
 });
+
+it("matches changing bank period/reference suffixes immediately and supports narrowing or undo", () => {
+  const descriptions = [
+    "Direct Credit 396297 IVV PAYMENT OCT26/00823316",
+    "Direct Credit 396297 IVV PAYMENT JUL26/00823296",
+    "Direct Credit 396298 IVV PAYMENT JUL26/00823296",
+    "Direct Credit 396297 VAS PAYMENT JUL26/00823296",
+  ];
+  let rows = descriptions.map((description, index) =>
+    row(index + 1, {
+      description,
+      kind: "income",
+      amountCents: 100,
+      categoryId: index === 0 ? "investments" : null,
+    }),
+  );
+  rows = updateImportRows(rows, 1, { rememberCategory: true });
+  expect(rows[0]).toMatchObject({
+    rememberPattern: "direct credit 396297 ivv payment",
+    rememberMatchMode: "contains",
+  });
+  expect(rows[1]).toMatchObject({
+    categoryId: "investments",
+    categorySource: "remembered",
+    rememberedFrom: 1,
+  });
+  expect(rows.slice(2).map((r) => r.categoryId)).toEqual([null, null]);
+  rows = updateImportRows(rows, 1, {
+    rememberPattern: descriptions[0],
+    rememberMatchMode: "exact",
+  });
+  expect(rows[1]?.categoryId).toBeNull();
+  rows = updateImportRows(rows, 1, {
+    rememberPattern: "Direct Credit 396297 IVV PAYMENT",
+    rememberMatchMode: "contains",
+  });
+  expect(rows[1]?.categoryId).toBe("investments");
+  rows = updateImportRows(rows, 1, { rememberPattern: "" });
+  expect(rows[1]?.categoryId).toBeNull();
+  rows = updateImportRows(rows, 1, { rememberPattern: "Another merchant" });
+  expect(rows[1]?.categoryId).toBeNull();
+});

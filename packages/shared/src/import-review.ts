@@ -1,4 +1,5 @@
-import { normaliseDescription } from "./categorisation.js";
+import { matchesRule } from "./categorisation.js";
+import { rememberedRule, suggestRememberedRule } from "./remembered-rule.js";
 import type { ImportRow } from "./types.js";
 
 const categoryKind = (row: ImportRow) =>
@@ -18,6 +19,8 @@ export function updateImportRows(
   const changesRule =
     categoryEdit ||
     Object.hasOwn(patch, "rememberCategory") ||
+    Object.hasOwn(patch, "rememberPattern") ||
+    Object.hasOwn(patch, "rememberMatchMode") ||
     patch.include === false;
   let updated = rows.map((row) => {
     if (changesRule && row.rememberedFrom === rowNumber) {
@@ -36,6 +39,16 @@ export function updateImportRows(
       : {
           ...row,
           ...patch,
+          ...(patch.rememberCategory === true
+            ? {
+                rememberPattern:
+                  row.rememberPattern ??
+                  suggestRememberedRule(row.description).pattern,
+                rememberMatchMode:
+                  row.rememberMatchMode ??
+                  suggestRememberedRule(row.description).matchMode,
+              }
+            : {}),
           ...(categoryEdit || patch.rememberCategory === true
             ? {
                 ...(Object.hasOwn(patch, "categoryId") ||
@@ -51,7 +64,11 @@ export function updateImportRows(
           Object.hasOwn(patch, "kind") ||
           Object.hasOwn(patch, "description") ||
           patch.categoryId === null
-            ? { rememberCategory: false }
+            ? {
+                rememberCategory: false,
+                rememberPattern: undefined,
+                rememberMatchMode: undefined,
+              }
             : {}),
         },
   );
@@ -65,15 +82,15 @@ export function updateImportRows(
     chosen.kind === "transfer"
   )
     return updated;
-  const description = normaliseDescription(chosen.description);
-  if (!description) return updated;
+  const rule = rememberedRule(chosen);
+  if (!rule.pattern || !matchesRule(chosen.description, rule)) return updated;
   return updated.map((row) => {
     if (
       row.rowNumber === rowNumber ||
       row.error ||
       row.kind === "transfer" ||
       categoryKind(row) !== categoryKind(chosen) ||
-      normaliseDescription(row.description) !== description
+      !matchesRule(row.description, rule)
     )
       return row;
     return {

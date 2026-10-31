@@ -17,6 +17,7 @@ type Props = {
   className?: string;
   disabled?: boolean;
   scrollButtons?: boolean;
+  chip?: { colour: string; label: string };
   id?: string;
   "aria-label"?: string;
   "aria-labelledby"?: string;
@@ -32,6 +33,7 @@ export function Select({
   className,
   disabled,
   scrollButtons = true,
+  chip,
   id,
   onBlur,
   ref,
@@ -55,22 +57,51 @@ export function Select({
         ref={ref}
         className={cn(
           "group flex h-11 w-full min-w-0 max-w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-3.5 text-left text-base font-normal shadow-sm transition hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/20 data-[state=open]:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          chip &&
+            "h-11 w-auto rounded-full border-0 bg-none p-0 shadow-none hover:shadow-none data-[state=open]:border-transparent",
           className,
         )}
       >
-        <span className="min-w-0 flex-1 truncate">
-          <Radix.Value placeholder="Choose an option" />
+        <span
+          className={cn(
+            "flex min-w-0 flex-1 items-center justify-between gap-3",
+            chip &&
+              "gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium",
+          )}
+          style={
+            chip
+              ? {
+                  backgroundColor: `color-mix(in srgb, ${chip.colour} 13%, white)`,
+                  color: `color-mix(in srgb, ${chip.colour} 55%, black)`,
+                  borderColor: `color-mix(in srgb, ${chip.colour} 28%, white)`,
+                }
+              : undefined
+          }
+        >
+          <span className="min-w-0 flex-1 truncate">
+            <Radix.Value placeholder="Choose an option">
+              {chip?.label}
+            </Radix.Value>
+          </span>
+          <Radix.Icon className="shrink-0">
+            <ChevronDown
+              className={cn(
+                "size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180",
+                !chip && "text-slate-400",
+              )}
+            />
+          </Radix.Icon>
         </span>
-        <Radix.Icon className="shrink-0">
-          <ChevronDown className="size-4 shrink-0 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
-        </Radix.Icon>
       </Radix.Trigger>
       <Radix.Portal>
         <Radix.Content
           position="popper"
           sideOffset={6}
           collisionPadding={12}
-          className="select-popup z-[80] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-content-available-width)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_12px_40px_#1e293b20] backdrop-blur-xl"
+          className={cn(
+            chip && "min-w-52",
+            "select-popup z-[80] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-content-available-width)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_12px_40px_#1e293b20] backdrop-blur-xl",
+          )}
         >
           {scrollButtons && (
             <Radix.ScrollUpButton className="flex justify-center p-1">

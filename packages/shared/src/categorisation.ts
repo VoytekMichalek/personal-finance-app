@@ -8,7 +8,9 @@ export const matchesRule = (
 ) =>
   rule.matchMode === "exact"
     ? normaliseDescription(description) === normaliseDescription(rule.pattern)
-    : description.toLowerCase().includes(rule.pattern.toLowerCase());
+    : normaliseDescription(description).includes(
+        normaliseDescription(rule.pattern),
+      );
 export const compareRules = (a: Rule, b: Rule) =>
   Number(b.matchMode === "exact") - Number(a.matchMode === "exact") ||
   a.priority - b.priority ||

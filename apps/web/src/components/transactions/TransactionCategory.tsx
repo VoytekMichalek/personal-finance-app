@@ -1,4 +1,11 @@
-import type { Category, Transaction } from "@finance/shared";
+import { Button } from "../ui/button";
+import {
+  categoryColour,
+  categoryLabel,
+  identityColour,
+  type Category,
+  type Transaction,
+} from "@finance/shared";
 import { useTransactionCategory } from "../../hooks/transaction-category";
 import { CategoryChip } from "../common/EntityChip";
 import { Select, SelectItem } from "../ui/select";
@@ -7,12 +14,18 @@ export function TransactionCategory({
   row,
   categories,
   disabled = false,
+  onRemember,
 }: {
   row: Transaction;
   categories: Category[];
   disabled?: boolean;
+  onRemember: (row: Transaction) => void;
 }) {
   const action = useTransactionCategory(row.id);
+  const selectedId = action.isPending
+    ? action.variables?.categoryId
+    : row.categoryId;
+  const selected = categories.find((item) => item.id === selectedId);
   if (row.kind === "transfer")
     return <CategoryChip categoryId={null} categories={categories} transfer />;
   const kind = row.kind === "income" ? "income" : "expense";
@@ -22,10 +35,17 @@ export function TransactionCategory({
       category.id === row.categoryId,
   );
   return (
-    <div className="w-40 max-w-full space-y-1 sm:w-52">
+    <div className="max-w-full space-y-1">
       <Select
         aria-label={`Category for ${row.description}`}
-        className="h-11 gap-1 px-2 text-xs shadow-none sm:h-9"
+        chip={{
+          colour: selected
+            ? categoryColour(selected, categories)
+            : identityColour("category:none"),
+          label: selected
+            ? categoryLabel(selected, categories)
+            : "Uncategorised",
+        }}
         value={
           action.isPending
             ? (action.variables?.categoryId ?? "")
@@ -33,10 +53,17 @@ export function TransactionCategory({
         }
         disabled={disabled || action.isPending || action.saving}
         onValueChange={(value) => {
+          if (value === "__remember_category__") {
+            onRemember(row);
+            return;
+          }
           if ((value || null) !== row.categoryId)
             action.mutate({ categoryId: value || null, version: row.version });
         }}
       >
+        <SelectItem value="__remember_category__">
+          Remember & apply to similar…
+        </SelectItem>
         <SelectItem value="">
           <CategoryChip categoryId={null} categories={categories} />
         </SelectItem>
@@ -51,6 +78,18 @@ export function TransactionCategory({
           </SelectItem>
         ))}
       </Select>
+      {action.isSuccess && row.categoryId && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="block px-0 text-[11px] text-primary"
+          disabled={disabled || action.saving}
+          aria-label={`Remember category for ${row.description}`}
+          onClick={() => onRemember(row)}
+        >
+          Remember & apply…
+        </Button>
+      )}
       {action.saving && (
         <p role="status" className="text-[10px] text-muted-foreground">
           Saving category…

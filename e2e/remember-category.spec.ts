@@ -20,7 +20,11 @@ for (const format of ["CSV", "PDF"]) {
     expect(created.ok()).toBe(true);
     const account = await created.json();
     const descriptions = Array.from({ length: 21 }, (_, i) =>
-      i === 0 || i === 20 ? "Local Shop" : "Other purchase " + i,
+      i === 0
+        ? "Direct Credit 396297 IVV PAYMENT OCT26/00823316"
+        : i === 20
+          ? "Direct Credit 396297 IVV PAYMENT JUL26/00823296"
+          : "Other payment " + i,
     );
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
@@ -45,21 +49,18 @@ for (const format of ["CSV", "PDF"]) {
           page.getByLabel("Import into"),
           "Remember categories",
         );
-        await page
-          .getByLabel("Choose bank CSV")
-          .setInputFiles({
-            name: "remember.csv",
-            mimeType: "text/csv",
-            buffer: Buffer.from(
-              "Date,Description,Amount\n" +
-                descriptions
-                  .map(
-                    (description, i) =>
-                      `2026-01-02,${description},-${i + 1}.00`,
-                  )
-                  .join("\n"),
-            ),
-          });
+        await page.getByLabel("Choose bank CSV").setInputFiles({
+          name: "remember.csv",
+          mimeType: "text/csv",
+          buffer: Buffer.from(
+            "Date,Description,Amount\n" +
+              descriptions
+                .map(
+                  (description, i) => `2026-01-02,${description},${i + 1}.00`,
+                )
+                .join("\n"),
+          ),
+        });
         await page
           .getByRole("button", { name: "Review transactions", exact: true })
           .click();
@@ -69,22 +70,20 @@ for (const format of ["CSV", "PDF"]) {
             response.url().endsWith("/api/statements") &&
             response.request().method() === "POST",
         );
-        await page
-          .getByLabel("PDF statement", { exact: true })
-          .setInputFiles({
-            name: "remember.pdf",
-            mimeType: "application/pdf",
-            buffer: statementPdf([
-              [
-                "Bank statement 2026",
-                "Opening balance 1000.00",
-                ...descriptions.map(
-                  (description, i) => `02/01/2026 ${description} -${i + 1}.00`,
-                ),
-                "Closing balance 769.00",
-              ],
-            ]),
-          });
+        await page.getByLabel("PDF statement", { exact: true }).setInputFiles({
+          name: "remember.pdf",
+          mimeType: "application/pdf",
+          buffer: statementPdf([
+            [
+              "Bank statement 2026",
+              "Opening balance 1000.00",
+              ...descriptions.map(
+                (description, i) => `02/01/2026 ${description} +${i + 1}.00`,
+              ),
+              "Closing balance 1231.00",
+            ],
+          ]),
+        });
         const saved = await (await uploaded).json();
         await expect(
           page.getByText("Your statement is saved.", { exact: false }),
@@ -114,16 +113,24 @@ for (const format of ["CSV", "PDF"]) {
       await choose(
         page,
         page.getByLabel("Category row 1", { exact: true }),
-        "Dining",
+        "Salary",
       );
       await page.getByLabel("Remember category row 1", { exact: true }).check();
+      await expect(
+        page.getByLabel("Remembered text row 1", { exact: true }),
+      ).toHaveValue("direct credit 396297 ivv payment");
+      await expect(
+        page.getByText("Updated 1 other transaction in this upload.", {
+          exact: true,
+        }),
+      ).toBeVisible();
       expect(
         (await (await page.request.get("/api/snapshot")).json()).rules,
       ).toHaveLength(0);
       await page.getByRole("button", { name: "Next", exact: true }).click();
       await expect(
         page.getByLabel("Category row 21", { exact: true }),
-      ).toHaveText("Dining");
+      ).toHaveText("Salary");
       await expect(
         page.getByText("Auto categorised · remembered in this upload", {
           exact: true,
@@ -177,33 +184,31 @@ for (const format of ["CSV", "PDF"]) {
       const saved = await (await page.request.get("/api/snapshot")).json();
       expect(saved.rules).toHaveLength(1);
       expect(saved.rules[0]).toMatchObject({
-        pattern: "local shop",
-        matchMode: "exact",
+        pattern: "direct credit 396297 ivv payment",
+        matchMode: "contains",
       });
       expect(
         saved.transactions
-          .filter(
-            (row: { description: string }) => row.description === "Local Shop",
+          .filter((row: { description: string }) =>
+            row.description.startsWith("Direct Credit 396297 IVV PAYMENT"),
           )
           .map((row: { categoryId: string }) => row.categoryId),
       ).toEqual([saved.rules[0].categoryId, saved.rules[0].categoryId]);
       await page.goto("/imports");
       await choose(page, page.getByLabel("Import into"), "Remember categories");
-      await page
-        .getByLabel("Choose bank CSV")
-        .setInputFiles({
-          name: "future.csv",
-          mimeType: "text/csv",
-          buffer: Buffer.from(
-            "Date,Description,Amount\n2026-02-01,LOCAL SHOP,-25.00",
-          ),
-        });
+      await page.getByLabel("Choose bank CSV").setInputFiles({
+        name: "future.csv",
+        mimeType: "text/csv",
+        buffer: Buffer.from(
+          "Date,Description,Amount\n2026-02-01,Direct Credit 396297 IVV PAYMENT JAN27/00823500,25.00",
+        ),
+      });
       await page
         .getByRole("button", { name: "Review transactions", exact: true })
         .click();
       await expect(
         page.getByLabel("Category row 1", { exact: true }),
-      ).toHaveText("Dining");
+      ).toHaveText("Salary");
       await expect(
         page.getByText("Auto categorised · saved rule", { exact: true }),
       ).toBeVisible();
