@@ -38,7 +38,7 @@ test("accounts and CSV review work across screen sizes", async ({ page }) => {
     "Groceries",
   );
   await page.getByRole("button", { name: "Approve & import (3)" }).click();
-  await expect(page.getByText("3 transactions imported")).toBeVisible();
+  await expect(page.getByText("3 statement rows processed")).toBeVisible();
   await page.goto("/transactions");
   await expect(
     page.getByText("Returned groceries", { exact: true }),

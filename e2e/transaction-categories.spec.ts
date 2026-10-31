@@ -227,3 +227,41 @@ test("transaction searches and optional dates clear without leaving the account"
     await db.$disconnect();
   }
 });
+
+test("creates and immediately applies a category from the transaction bubble", async ({
+  page,
+}) => {
+  const { db, account, rows } = await seedRows(page);
+  try {
+    await page.goto("/transactions?account=" + account.id);
+    const picker = page.getByRole("combobox", {
+      name: "Category for Inline expense",
+    });
+    await choose(page, picker, "+ Create category");
+    const dialog = page.getByRole("dialog", { name: "Add category" });
+    await dialog.getByLabel("Name", { exact: true }).fill("Home maintenance");
+    await expect(
+      dialog.getByRole("combobox", { name: "Type", exact: true }),
+    ).toBeDisabled();
+    const applied = savedCategory(page);
+    await dialog.getByRole("button", { name: "Save category" }).click();
+    expect((await applied).ok()).toBe(true);
+    await expect(dialog).toBeHidden();
+    await expect(picker).toHaveText("Home maintenance");
+    await page.reload();
+    await expect(picker).toHaveText("Home maintenance");
+    const category = await db.category.findFirstOrThrow({
+      where: { name: "Home maintenance" },
+    });
+    expect(category.kind).toBe("expense");
+    expect(
+      await db.transaction.findUniqueOrThrow({ where: { id: rows[0].id } }),
+    ).toMatchObject({
+      categoryId: category.id,
+      amountCents: -100n,
+      date: "2026-10-01",
+    });
+  } finally {
+    await db.$disconnect();
+  }
+});

@@ -8,18 +8,14 @@ import type { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma, json, type DB } from "../../lib/db.js";
 import { HttpError } from "../../lib/errors.js";
-import {
-  validateAccount,
-  validateCategory,
-  validateOwner,
-} from "../finance/service.js";
+import { validateAccount } from "../finance/service.js";
+import { validateSchedule } from "../finance/schedules.js";
 import { recurringMerchant, recurringSuggestions } from "./suggestions.js";
 export async function saveSuggestions(
   tx: Prisma.TransactionClient,
   accountId: string,
-  rows: (Pick<ImportRow, "rowNumber" | "include"> & {
-    kind?: ImportRow["kind"];
-  })[],
+  rows: (Pick<ImportRow, "rowNumber" | "include" | "amountCents"> &
+    Partial<Pick<ImportRow, "kind">>)[],
   suggestions: RecurringSuggestion[],
   choices: z.output<typeof statementRecurringSchema>["schedules"],
 ) {
@@ -32,11 +28,18 @@ export async function saveSuggestions(
         "Choose each recurring suggestion at most once.",
       );
     keys.add(accepted.key);
+    const incoming =
+      suggestion.schedule.kind === "income" ||
+      (suggestion.schedule.kind === "transfer" &&
+        suggestion.schedule.counterAccountId === accountId);
     if (
       suggestion.evidence.filter((n) =>
         rows.some(
           (r) =>
-            r.rowNumber === n && r.include && r.kind === accepted.schedule.kind,
+            r.rowNumber === n &&
+            r.include &&
+            r.kind !== "refund" &&
+            r.amountCents > 0 === incoming,
         ),
       ).length < 2
     )
@@ -45,19 +48,24 @@ export async function saveSuggestions(
         "A recurring suggestion needs at least two accepted matching transactions.",
       );
     const schedule = accepted.schedule;
-    if (schedule.accountId !== accountId || schedule.startDate <= today())
+    const matchesAccount =
+      schedule.kind === "transfer" && incoming
+        ? schedule.counterAccountId === accountId
+        : schedule.accountId === accountId;
+    if (!matchesAccount || schedule.startDate <= today())
       throw new HttpError(
         400,
         "Recurring items must start in the future on this account.",
       );
-    await validateOwner(tx, schedule.owner);
-    await validateCategory(tx, schedule.categoryId, schedule.kind);
+    await validateSchedule(tx, schedule);
     if (
       await tx.schedule.findFirst({
         where: {
-          accountId: accountId,
+          OR: [
+            { accountId },
+            { kind: "transfer", counterAccountId: accountId },
+          ],
           name: { equals: schedule.name, mode: "insensitive" },
-          kind: schedule.kind,
           cancelled: false,
         },
       })
@@ -106,8 +114,37 @@ async function savedEvidence(db: DB, id: string) {
       error: null,
     }),
   );
+  const groups = entries.flatMap((row) =>
+    row.transferGroupId ? [row.transferGroupId] : [],
+  );
+  const peers = groups.length
+    ? await db.transaction.findMany({
+        where: { transferGroupId: { in: groups } },
+      })
+    : [];
+  for (const row of rows.filter((row) => row.kind === "transfer")) {
+    const source = entries.find((entry) => entry.sourceRow === row.rowNumber)!;
+    const pair = peers.filter(
+      (peer) => peer.transferGroupId === source.transferGroupId,
+    );
+    const other = pair.find((peer) => peer.id !== source.id);
+    if (
+      pair.length === 2 &&
+      other?.kind === "transfer" &&
+      other.accountId !== source.accountId &&
+      other.amountCents === -source.amountCents &&
+      other.date === source.date
+    )
+      row.counterAccountId = other.accountId;
+  }
   const existing = await db.schedule.findMany({
-    where: { accountId: statement.accountId, cancelled: false },
+    where: {
+      OR: [
+        { accountId: statement.accountId },
+        { kind: "transfer", counterAccountId: statement.accountId },
+      ],
+      cancelled: false,
+    },
   });
   const suggestions = recurringSuggestions(
     rows,
@@ -117,11 +154,10 @@ async function savedEvidence(db: DB, id: string) {
     (candidate) =>
       !existing.some(
         (schedule) =>
-          schedule.kind === candidate.schedule.kind &&
           recurringMerchant(schedule.provider || schedule.name) ===
-            recurringMerchant(
-              candidate.schedule.provider || candidate.schedule.name,
-            ),
+          recurringMerchant(
+            candidate.schedule.provider || candidate.schedule.name,
+          ),
       ),
   );
   return { accountId: statement.accountId, rows, suggestions };

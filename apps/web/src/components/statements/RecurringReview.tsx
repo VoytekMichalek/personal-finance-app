@@ -10,17 +10,20 @@ import {
   type Snapshot,
 } from "@finance/shared";
 import { Card, Field, Input, Select, Pill } from "../common/primitives";
+import { RecurringTypeFields } from "./RecurringTypeFields";
 export type AcceptedRecurring = { key: string; schedule: ScheduleInput };
 export function RecurringReview({
   suggestions,
   accepted,
   setAccepted,
   data,
+  accountId,
 }: {
   suggestions: RecurringSuggestion[];
   accepted: AcceptedRecurring[];
   setAccepted: (items: AcceptedRecurring[]) => void;
   data: Snapshot;
+  accountId: string;
 }) {
   function patch(key: string, values: Partial<ScheduleInput>) {
     setAccepted(
@@ -68,22 +71,33 @@ export function RecurringReview({
               </span>
               <Pill
                 colour={identityColour(
-                  schedule.kind === "income"
-                    ? "type:income"
-                    : schedule.subscription
-                      ? "type:subscription"
-                      : "type:bill",
+                  schedule.kind === "transfer"
+                    ? "type:transfer"
+                    : schedule.kind === "income"
+                      ? "type:income"
+                      : schedule.subscription
+                        ? "type:subscription"
+                        : "type:bill",
                 )}
               >
-                {schedule.kind === "income"
-                  ? "Income"
-                  : schedule.subscription
-                    ? "Subscription"
-                    : "Bill"}
+                {schedule.kind === "transfer"
+                  ? "Transfer"
+                  : schedule.kind === "income"
+                    ? "Income"
+                    : schedule.subscription
+                      ? "Subscription"
+                      : "Bill"}
               </Pill>
             </label>
             {selected && (
               <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <RecurringTypeFields
+                  item={item}
+                  schedule={schedule}
+                  accountId={accountId}
+                  data={data}
+                  patch={(values) => patch(item.key, values)}
+                />
                 <Field label="Recurring name">
                   <Input
                     value={schedule.name}
@@ -133,14 +147,18 @@ export function RecurringReview({
                     ))}
                   </Select>
                 </Field>
-                <Field label="Category">
-                  <CategoryPicker
-                    categories={data.categories}
-                    kind={schedule.kind}
-                    value={schedule.categoryId ?? null}
-                    onChange={(value) => patch(item.key, { categoryId: value })}
-                  />
-                </Field>
+                {schedule.kind !== "transfer" && (
+                  <Field label="Category">
+                    <CategoryPicker
+                      categories={data.categories}
+                      kind={schedule.kind}
+                      value={schedule.categoryId ?? null}
+                      onChange={(value) =>
+                        patch(item.key, { categoryId: value })
+                      }
+                    />
+                  </Field>
+                )}
                 {schedule.kind === "expense" && (
                   <label className="flex items-center gap-2 text-sm">
                     <input

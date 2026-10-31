@@ -101,7 +101,7 @@ export function Imports() {
           </div>
           <h2 className="text-xl font-semibold">Import complete</h2>
           <p className="mt-2 mb-6 break-all text-sm text-muted-foreground">
-            {flow.completed} transactions imported from {flow.filename}.
+            {flow.completed} statement rows processed from {flow.filename}.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild>

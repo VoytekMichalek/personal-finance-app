@@ -189,11 +189,13 @@ export function Categories({ data }: { data: Snapshot }) {
 }
 export function CategoryForm({
   defaultKind = "expense",
+  fixedKind = false,
   category,
   categories,
   done,
 }: {
   defaultKind?: "expense" | "income";
+  fixedKind?: boolean;
   category?: Category;
   categories: Category[];
   done: (result: unknown) => void;
@@ -228,7 +230,7 @@ export function CategoryForm({
         <Input {...form.register("name")} />
       </Field>
       <Field label="Type">
-        <FormSelect control={form.control} name={"kind"}>
+        <FormSelect control={form.control} name={"kind"} disabled={fixedKind}>
           <SelectItem value="expense">Expense</SelectItem>
           <SelectItem value="income">Income</SelectItem>
         </FormSelect>

@@ -9,6 +9,7 @@ import type {
   Transaction,
 } from "./types.js";
 import { addDays, monthEnd } from "./money.js";
+import { scheduleImpact } from "./schedules.js";
 export function accountBalance(
   account: Account,
   transactions: Transaction[],
@@ -201,7 +202,11 @@ export function forecast(snapshot: Snapshot, days = 90): ForecastPoint[] {
       )
       .reduce(
         (s, o) =>
-          s + (o.schedule.kind === "income" ? 1 : -1) * o.schedule.amountCents,
+          s +
+          snapshot.accounts.reduce(
+            (sum, account) => sum + scheduleImpact(o.schedule, account.id),
+            0,
+          ),
         0,
       );
     balance += scheduled - variable;

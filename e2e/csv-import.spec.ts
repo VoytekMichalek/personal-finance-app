@@ -36,7 +36,9 @@ test("split-column CSV suggests mappings, reviews and saves only after approval"
   await page.getByRole("button", { name: "Review transactions" }).click();
   await expect(page.getByText("2 valid", { exact: false })).toBeVisible();
   await expect(
-    page.getByText("2 selected · $500.01 money in · $19.99 money out"),
+    page.getByText(
+      "2 selected · 0 reconciliations · $500.01 new money in · $19.99 new money out",
+    ),
   ).toBeVisible();
   const db = await database();
   try {
@@ -105,7 +107,9 @@ test("headerless CSV preserves its first transaction and supports reversed bank 
   await page.getByLabel("Reverse amount signs", { exact: false }).check();
   await page.getByRole("button", { name: "Review transactions" }).click();
   await expect(
-    page.getByText("2 selected · $2.01 money in · $19.99 money out"),
+    page.getByText(
+      "2 selected · 0 reconciliations · $2.01 new money in · $19.99 new money out",
+    ),
   ).toBeVisible();
   await expect(page.getByLabel("Category row 1", { exact: true })).toHaveText(
     "Groceries",
@@ -113,7 +117,7 @@ test("headerless CSV preserves its first transaction and supports reversed bank 
   await choose(page, page.getByLabel("Type row 2"), "Refund");
   await page.getByRole("button", { name: "Approve & import (2)" }).click();
   await expect(
-    page.getByText("2 transactions imported", { exact: false }),
+    page.getByText("2 statement rows processed", { exact: false }),
   ).toBeVisible();
   const db = await database();
   try {

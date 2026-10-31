@@ -1,10 +1,19 @@
 import { useState } from "react";
 import type { Snapshot } from "@finance/shared";
+import { scheduleSchema } from "@finance/shared";
 import { useSavedRecurring } from "../../hooks/statements";
 import { Card, ErrorState, Loading } from "../common/primitives";
 import { Button } from "../ui/button";
 import { RecurringReview, type AcceptedRecurring } from "./RecurringReview";
-export function SavedRecurring({ id, data }: { id: string; data: Snapshot }) {
+export function SavedRecurring({
+  id,
+  accountId,
+  data,
+}: {
+  id: string;
+  accountId: string;
+  data: Snapshot;
+}) {
   const { query, save } = useSavedRecurring(id);
   const [accepted, setAccepted] = useState<AcceptedRecurring[]>([]);
   if (query.isPending) return <Loading />;
@@ -21,7 +30,7 @@ export function SavedRecurring({ id, data }: { id: string; data: Snapshot }) {
         <h2 className="font-semibold">Recurring items from this statement</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           {query.data.length
-            ? "Select any additional bills, subscriptions or income to track."
+            ? "Select any additional bills, income or transfers to track. Choose each type and the accounts for transfers."
             : "No additional recurring items found."}
         </p>
       </Card>
@@ -31,6 +40,7 @@ export function SavedRecurring({ id, data }: { id: string; data: Snapshot }) {
           accepted={accepted}
           setAccepted={setAccepted}
           data={data}
+          accountId={accountId}
         />
       )}
       {save.error && (
@@ -45,7 +55,13 @@ export function SavedRecurring({ id, data }: { id: string; data: Snapshot }) {
       )}
       {query.data.length > 0 && (
         <Button
-          disabled={!accepted.length || save.isPending}
+          disabled={
+            !accepted.length ||
+            save.isPending ||
+            accepted.some(
+              (item) => !scheduleSchema.safeParse(item.schedule).success,
+            )
+          }
           onClick={() =>
             save.mutate(
               { reviewed: true, schedules: accepted },

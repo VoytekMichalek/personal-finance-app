@@ -27,12 +27,16 @@ export function recurringSuggestions(
   today: string,
 ): RecurringSuggestion[] {
   const groups = new Map<string, ImportRow[]>();
-  for (const row of rows.filter(
-    (r) => !r.error && r.kind !== "transfer" && r.kind !== "refund",
-  )) {
+  for (const row of rows.filter((r) => !r.error && r.kind !== "refund")) {
     const merchant = recurringMerchant(row.description);
     if (!merchant) continue;
-    const key = row.kind + ":" + merchant;
+    const key =
+      row.kind +
+      (row.kind === "transfer"
+        ? `:${row.amountCents < 0 ? "out" : "in"}:${row.counterAccountId ?? ""}`
+        : "") +
+      ":" +
+      merchant;
     groups.set(key, [...(groups.get(key) ?? []), row]);
   }
   const result: RecurringSuggestion[] = [];
@@ -88,16 +92,32 @@ export function recurringSuggestions(
     if (amounts.some((a) => a < median * 0.5 || a > median * 1.5)) continue;
     const schedule = {
       name: last.description.slice(0, 100),
-      accountId,
-      kind: last.amountCents > 0 ? ("income" as const) : ("expense" as const),
+      accountId:
+        last.kind === "transfer" && last.amountCents > 0
+          ? (last.counterAccountId ?? "")
+          : accountId,
+      counterAccountId:
+        last.kind === "transfer"
+          ? last.amountCents > 0
+            ? accountId
+            : last.counterAccountId
+          : null,
+      kind:
+        last.kind === "transfer"
+          ? ("transfer" as const)
+          : last.amountCents > 0
+            ? ("income" as const)
+            : ("expense" as const),
       amountCents: median,
-      categoryId: last.categoryId,
+      categoryId: last.kind === "transfer" ? null : last.categoryId,
       owner: last.owner,
       startDate: last.date,
       frequency,
-      subscription: /netflix|spotify|subscription|disney|prime video/i.test(
-        last.description,
-      ),
+      subscription:
+        last.kind !== "transfer" &&
+        /netflix|spotify|subscription|disney|prime video/i.test(
+          last.description,
+        ),
       provider: last.description.slice(0, 100),
       cancelled: false,
       endDate: null,

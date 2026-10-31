@@ -13,6 +13,7 @@ import {
   validateOwner,
 } from "../finance/service.js";
 import { checkImportConflicts, type ApprovedImportRow } from "./conflicts.js";
+import { reconcileImports } from "./reconcile.js";
 import { linkImportedPayment } from "./link-payment.js";
 import { rememberCategories } from "./remember-categories.js";
 export async function commitRows(
@@ -61,8 +62,14 @@ export async function commitRows(
     throw new HttpError(400, "Select at least one valid row to import.");
 
   // Collect every existing-payment conflict before any ledger entry is changed.
-  await checkImportConflicts(tx, batch, approved);
+  await reconcileImports(tx, batch, approved);
+  await checkImportConflicts(
+    tx,
+    batch,
+    approved.filter((row) => !row.reconcileExisting),
+  );
   for (const row of approved) {
+    if (row.reconcileExisting) continue;
     const kind = row.kind!;
     if (kind === "transfer" && row.linkExisting) {
       await linkImportedPayment(tx, batch, row);
@@ -100,6 +107,9 @@ export async function commitRows(
       );
     }
   }
-  await rememberCategories(tx, approved);
+  await rememberCategories(
+    tx,
+    approved.filter((row) => !row.reconcileExisting),
+  );
   return approved.length;
 }

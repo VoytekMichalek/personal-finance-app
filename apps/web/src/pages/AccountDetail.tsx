@@ -19,6 +19,7 @@ import {
   accountBalance,
   addDays,
   forecast,
+  scheduleImpact,
   occurrences,
   money,
   displayDate,
@@ -75,15 +76,17 @@ export function AccountDetail() {
       </Card>
     );
   const transactions = data.transactions.filter((t) => t.accountId === id);
-  const schedules = data.schedules.filter((s) => s.accountId === id);
+  const schedules = data.schedules.filter(
+    (s) => s.accountId === id || s.counterAccountId === id,
+  );
   const upcoming = occurrences(
     schedules,
-    transactions,
+    data.transactions,
     data.today,
     addDays(data.today, 90),
   ).filter((o) => !o.matched);
   const points = forecast(
-    { ...data, accounts: [account], transactions, schedules, budgets: [] },
+    { ...data, accounts: [account], schedules, budgets: [] },
     90,
   );
   const balance = accountBalance(account, transactions, data.today);
@@ -233,12 +236,12 @@ export function AccountDetail() {
             <SectionTitle>The next 90 days</SectionTitle>
             <BalanceChart
               points={points}
-              label="Account forecast from accepted scheduled bills and income"
+              label="Account forecast from accepted scheduled bills, income and transfers"
             />
             <p className="mt-3 text-xs text-muted-foreground">
-              Includes this account’s balance and scheduled bills/income.
-              Household budget allowances are not assigned to individual
-              accounts.
+              Includes this account’s balance, scheduled bills, income and
+              transfers. Household budget allowances are not assigned to
+              individual accounts.
             </p>
           </Card>
           <Card>
@@ -262,12 +265,7 @@ export function AccountDetail() {
                     {displayDate(o.date)}
                   </span>
                 </span>
-                <span>
-                  {money(
-                    o.schedule.amountCents *
-                      (o.schedule.kind === "expense" ? -1 : 1),
-                  )}
-                </span>
+                <span>{money(scheduleImpact(o.schedule, account.id))}</span>
               </div>
             ))}
             {!upcoming.length && (

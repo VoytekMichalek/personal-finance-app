@@ -14,7 +14,7 @@ export type ImportConflictMatch = Pick<
 
 export type ImportConflict = {
   rowNumber: number;
-  reason: "duplicate" | "counterpart" | "stale-link";
+  reason: "duplicate" | "counterpart" | "stale-link" | "stale-reconciliation";
   matches: ImportConflictMatch[];
 };
 

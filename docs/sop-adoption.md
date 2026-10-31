@@ -591,3 +591,36 @@ are sanitised, Better Auth logging stays disabled, and SIGUSR2 diagnostics still
 use an allowlist and exclude health polls. The existing personal CI/release and
 automatic rollout exceptions remain applicable; no upstream wrapper or runner
 migration is included. Production-image smoke evidence is recorded in testing.md.
+
+## Statement transfers and reconciliation — 1 November 2026
+
+Current SOP main was retrieved read-only with the installed helper at
+`2026-10-31T22:57:39.967Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, fixed for this task.
+Policy loading, application UI, testing, user documentation, environment/deployment
+and logging were read against the adopted baseline. Existing personal ownership,
+repository-local CI and authorised automatic rollout exceptions remain in force.
+Current testing guidance permits focused local verification with full exact-commit
+validation in GitHub; no unrelated SOP migration is included.
+
+PDF recurring suggestions now support transfer type and directional account choice
+before and after import. An additive nullable Schedule counter-account migration
+preserves existing schedules and constrains transfer pairs. Recording a transfer
+occurrence is atomic; account forecasts include either side without adding household
+income/spending or counting matched occurrences twice.
+
+CSV/PDF reviews offer one acceptance for unambiguous, previously generated transfer
+entries. Approval checks both versions and complete balanced pairs under ordered
+row locks, then attaches import provenance without changing financial fields or
+counterpart provenance. Ambiguity, reuse or stale matches cannot silently duplicate
+payments. Existing opening balances/history take precedence over stale PDF opening
+choices. The table category picker creates and immediately assigns compatible
+categories. User guides cover all four requested changes.
+
+R17/R18 source inspection retains the single API/web production image, runtime-only
+inputs, separate local example, secret-free build context and automatic committed
+migrations before serving. No dependency, configuration or deployment-policy inputs
+change. R19 inspection confirms expected reconciliation/schedule errors use the
+existing quiet validation/conflict handling; no descriptions or financial values
+are logged. Production-image smoke and exact-candidate CI/release evidence are
+recorded in testing.md and release verification artifacts.

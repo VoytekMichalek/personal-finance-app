@@ -39,17 +39,19 @@ export function ReviewStage({
   );
   const { accountId, filename, busy, page, setPage, updateRow } = flow;
   const selected = preview.rows.filter((row) => row.include && !row.error);
-  const moneyIn = selected.reduce(
+  const newRows = selected.filter((row) => !row.reconcileExisting);
+  const moneyIn = newRows.reduce(
     (sum, row) => sum + Math.max(0, row.amountCents),
     0,
   );
-  const moneyOut = selected.reduce(
+  const moneyOut = newRows.reduce(
     (sum, row) => sum + Math.max(0, -row.amountCents),
     0,
   );
   return (
     <>
       <ImportConflicts
+        accountId={accountId}
         conflicts={conflicts}
         rows={preview.rows}
         data={data}
@@ -77,12 +79,17 @@ export function ReviewStage({
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
               {preview.validCount} valid · {preview.invalidCount} need
-              correction · {preview.rows.filter((r) => r.duplicate).length}{" "}
+              correction ·{" "}
+              {
+                preview.rows.filter((r) => r.duplicate && !r.reconcileExisting)
+                  .length
+              }{" "}
               possible duplicates
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              {selected.length} selected · {money(moneyIn)} money in ·{" "}
-              {money(moneyOut)} money out
+              {selected.length} selected · {selected.length - newRows.length}{" "}
+              reconciliations · {money(moneyIn)} new money in ·{" "}
+              {money(moneyOut)} new money out
             </p>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
               {selected.filter((row) => row.categoryId).length} categorised.
@@ -163,8 +170,8 @@ export function ReviewStage({
       <p className="mt-4 text-xs leading-5 text-muted-foreground">
         Amounts and dates remain tied to your source rows. Correct their mapping
         if needed. Mark refunds and transfers before approving. Transfers create
-        both linked account entries; a later import will flag the other entry as
-        a possible duplicate. Identical legitimate payments can be retained
+        both linked account entries; a later import can reconcile the other
+        entry with one acceptance. Identical legitimate payments can be retained
         explicitly. Only selected valid rows are saved when you approve.
       </p>
     </>

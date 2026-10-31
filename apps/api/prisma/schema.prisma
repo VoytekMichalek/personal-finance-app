@@ -106,7 +106,8 @@ model Account {
   openingBalanceCents BigInt
   archived Boolean @default(false)
   transactions Transaction[]
-  schedules Schedule[]
+  schedules Schedule[] @relation("ScheduleAccount")
+  incomingSchedules Schedule[] @relation("ScheduleCounterAccount")
   imports ImportBatch[]
   statements Statement[]
   rules Rule[] @relation("RuleAccount")
@@ -185,7 +186,9 @@ model Schedule {
   id String @id @default(uuid())
   name String
   accountId String
-  account Account @relation(fields:[accountId],references:[id])
+  account Account @relation("ScheduleAccount", fields:[accountId],references:[id])
+  counterAccountId String?
+  counterAccount Account? @relation("ScheduleCounterAccount", fields:[counterAccountId],references:[id],onDelete:Restrict)
   kind String
   amountCents BigInt
   categoryId String?

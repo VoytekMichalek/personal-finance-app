@@ -38,6 +38,8 @@ export type Transaction = {
   scheduleId: string | null;
   occurrenceDate: string | null;
   createdAt: string;
+  importBatchId?: string | null;
+  sourceRow?: number | null;
 };
 export type Rule = {
   id: string;
@@ -61,7 +63,8 @@ export type Schedule = {
   id: string;
   name: string;
   accountId: string;
-  kind: "income" | "expense";
+  kind: "income" | "expense" | "transfer";
+  counterAccountId?: string | null;
   amountCents: number;
   categoryId: string | null;
   owner: string;
@@ -117,6 +120,13 @@ export type ImportRow = {
     "categoryId" | "categoryChosen" | "categorySource"
   >;
   linkExisting?: { id: string; version: number };
+  reconciliationDismissed?: boolean;
+  reconcileExisting?: {
+    id: string;
+    version: number;
+    counterpartId: string;
+    counterpartVersion: number;
+  };
   categoryChosen?: boolean;
   kind: "income" | "expense" | "refund" | "transfer";
   counterAccountId: string | null;

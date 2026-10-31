@@ -15,7 +15,7 @@ export function importBalance(
   const projected =
     accountBalance(account, data.transactions, end) +
     selected
-      .filter((row) => row.date <= end)
+      .filter((row) => row.date <= end && !row.reconcileExisting)
       .reduce((sum, row) => sum + row.amountCents, 0);
   const difference =
     source?.balanceVerified && source.bankClosingCents !== null

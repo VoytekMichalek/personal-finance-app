@@ -1,5 +1,11 @@
 import { useMemo } from "react";
-import type { ImportConflict, ImportRow, Snapshot } from "@finance/shared";
+import {
+  importReconciliations,
+  sameReconciliation,
+  type ImportConflict,
+  type ImportRow,
+  type Snapshot,
+} from "@finance/shared";
 import { ApiError } from "../lib/api";
 
 export function useImportConflicts(
@@ -10,6 +16,11 @@ export function useImportConflicts(
 ) {
   return useMemo(() => {
     const conflicts: ImportConflict[] = [];
+    const reconciliations = importReconciliations(
+      accountId,
+      rows.filter((row) => !row.error),
+      data.transactions,
+    );
     const bySignature = new Map<string, Snapshot["transactions"]>();
     const chosen = new Map<string, number>();
     for (const item of data.transactions) {
@@ -27,6 +38,18 @@ export function useImportConflicts(
     }
     for (const row of rows) {
       if (!row.include || row.error) continue;
+      if (row.reconcileExisting) {
+        const candidate = reconciliations.find(
+          (item) => item.rowNumber === row.rowNumber,
+        );
+        if (!sameReconciliation(candidate?.choice, row.reconcileExisting))
+          conflicts.push({
+            rowNumber: row.rowNumber,
+            reason: "stale-reconciliation",
+            matches: candidate ? [candidate.match] : [],
+          });
+        continue;
+      }
       const matches =
         bySignature.get(`${accountId}|${row.date}|${row.amountCents}`) ?? [];
       if (matches.length && !row.allowDuplicate)

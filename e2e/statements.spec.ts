@@ -128,7 +128,7 @@ test("statement account detail includes forecast, original downloads and net wor
   await page.getByRole("tab", { name: "Upcoming & forecast" }).click();
   await expect(
     page.getByRole("img", {
-      name: "Account forecast from accepted scheduled bills and income",
+      name: "Account forecast from accepted scheduled bills, income and transfers",
     }),
   ).toBeVisible();
   await page.getByRole("tab", { name: "Statements", exact: true }).click();

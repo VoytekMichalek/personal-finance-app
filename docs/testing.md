@@ -325,3 +325,48 @@ desktop and mobile (four cases, zero retries), with all financial and persistenc
 assertions retained. These checks used finance_e2e and a temporary port 3002
 configuration to keep the user's preview on ports 3000/5174 running. Web build,
 typecheck, focused lint, guardrails and diff checks passed; no timing changed.
+
+Statement transfer/reconciliation follow-up (1 November): shared tests own unique
+account/date/signed-amount matching, ambiguity and complete balanced-pair checks,
+plus account-specific and household-neutral recurring-transfer forecasts. Real
+PostgreSQL tests own incoming/outgoing schedule choices before and after import,
+posted transfer evidence, occurrence concurrency, existing-pair matching, invalid
+accounts and atomic rejection. Reconciliation checks retain source amounts/dates,
+notes, owners, receipts and counterpart provenance, reject changed/reused/already
+claimed entries, and roll back accepted matches when another row fails. Opening
+balance tests cover both existing balances and history added after review began.
+
+Desktop/mobile journeys cover bulk acceptance across review pages, undo, ambiguous
+rows, accurate projected balances, PDF reconciliation, preserving opening balances,
+transfer type/account controls before and after import, Plan editing, and creating
+and immediately applying a category from the transaction bubble. They use observable
+UI/API completion with no new sleeps or relaxed assertions. Existing PDF remembering
+and category pending-state timing cases run ten consecutive no-retry invocations,
+then the full affected browser suite. One worker owns finance_e2e; independent API
+checks use finance_test. The user's preview stays on 3000/5174, while a temporary
+port-only copy of the tests runs on 3002 using the same production build and original
+assertions. Temporary native WebKit/OCR launchers are local-only; CI installs the
+required tools normally. No household database or shared object storage is changed.
+
+R17/R18 source inspection confirms unchanged runtime input ownership, separate local
+configuration, build-context exclusions and automatic migration-before-serving.
+R19 inspection covers the existing quiet expected-error handler, disabled Better
+Auth logger, sanitised unexpected errors and allowlisted SIGUSR2 diagnostics.
+The exact final commit must pass the repository's GitHub Validate workflow, including
+isolated production-image smoke checks and security scanning, before the annotated
+patch tag. Release repeats those gates before publication and verifies live rollout.
+This reuses exact-candidate CI evidence for R17–R19 rather than requiring registry
+publication or household data for application verification.
+
+Local follow-up evidence: 38 focused unit cases and 53 distinct PostgreSQL
+integration cases passed. The affected PDF remembering and inline category
+pending-state cases passed ten consecutive invocations on desktop and mobile
+(40 cases, zero retries). All workspace typechecks, lint, source/file guardrails,
+production builds and diff checks passed. Browser coverage exposed a missing
+accessible account label, which was fixed, plus stale summary/forecast text
+locators and an overly broad checkbox locator; the locators now target the
+updated copy and the named confirmation control without weakening persistence
+or balance assertions.
+The final full affected browser suite passed all 76 desktop/mobile cases with
+zero retries (4.9 minutes), using the same production build. Logs and screenshots
+are retained locally under ignored `artifacts/v0.0.9-*` and the browser report.

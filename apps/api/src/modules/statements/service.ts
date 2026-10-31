@@ -111,14 +111,12 @@ export async function commitStatement(id: string, body: unknown) {
       );
       const account = await validateAccount(tx, statement.accountId);
       recoverBalances(details, sourceRows, account.type);
-      if (input.applyOpening) {
+      const keepOpening =
+        account.openingBalanceCents !== 0n ||
+        !!(await tx.transaction.count({ where: { accountId: account.id } }));
+      if (input.applyOpening && !keepOpening) {
         if (!input.opening || input.opening.date > today())
           throw new HttpError(400, "Confirm an opening date and balance.");
-        if (await tx.transaction.count({ where: { accountId: account.id } }))
-          throw new HttpError(
-            409,
-            "Opening balance can only be imported into an empty account. Existing history is preserved.",
-          );
         if (
           details.opening &&
           input.opening.amountCents !== details.opening.amountCents

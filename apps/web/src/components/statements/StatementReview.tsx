@@ -13,6 +13,7 @@ import {
   moneyInput,
   parseMoney,
   updateImportRows,
+  scheduleSchema,
   type Account,
   type ImportRow,
   type Snapshot,
@@ -40,7 +41,9 @@ export function StatementReview({
   const [accepted, setAccepted] = useState<AcceptedRecurring[]>([]);
   const [reviewed, setReviewed] = useState(false);
   const empty = !data.transactions.some((t) => t.accountId === account.id);
-  const [applyOpening, setApplyOpening] = useState(empty);
+  const canApplyOpening = empty && account.openingBalanceCents === 0;
+  const [openingRequested, setApplyOpening] = useState(canApplyOpening);
+  const applyOpening = openingRequested && canApplyOpening;
   const [openingDate, setOpeningDate] = useState(
     [preview.details.opening?.date, ...rows.map((r) => r.date)]
       .filter((d): d is string => !!d)
@@ -59,6 +62,7 @@ export function StatementReview({
   const [focusRow, setFocusRow] = useState<{ rowNumber: number }>();
   const clearError = commit.reset;
   const selected = rows.filter((r) => r.include && !r.error);
+  const reconciledCount = selected.filter((r) => r.reconcileExisting).length;
   const updateRow = useCallback(
     (n: number, patch: Partial<ImportRow>) => {
       clearError();
@@ -83,7 +87,9 @@ export function StatementReview({
         <Card>
           <h2 className="text-xl font-semibold">Statement imported</h2>
           <p className="my-4 text-sm text-muted-foreground">
-            {commit.data ? `${commit.data.imported} transactions saved. ` : ""}
+            {commit.data
+              ? `${commit.data.imported} statement rows processed. `
+              : ""}
             Your account activity and accepted recurring items are ready.
           </p>
           <Button asChild>
@@ -96,12 +102,13 @@ export function StatementReview({
             Download original PDF
           </a>
         </Card>
-        <SavedRecurring id={preview.id} data={data} />
+        <SavedRecurring id={preview.id} accountId={account.id} data={data} />
       </>
     );
   return (
     <>
       <ImportConflicts
+        accountId={account.id}
         conflicts={conflicts}
         rows={rows}
         data={data}
@@ -128,7 +135,8 @@ export function StatementReview({
             <strong className="break-all text-sm">{preview.filename}</strong>
             <span className="mt-1 block text-xs text-muted-foreground">
               {preview.pages} pages read · {rows.length} transaction lines ·{" "}
-              {rows.filter((r) => r.duplicate).length} possible duplicates
+              {rows.filter((r) => r.duplicate && !r.reconcileExisting).length}{" "}
+              possible duplicates
             </span>
           </span>
           <div className="flex flex-wrap items-center gap-3">
@@ -176,15 +184,15 @@ export function StatementReview({
               <input
                 type="checkbox"
                 checked={applyOpening}
-                disabled={!empty}
+                disabled={!canApplyOpening}
                 onChange={(e) => setApplyOpening(e.target.checked)}
               />
               Use the statement’s opening balance
             </label>
-            {!empty && (
+            {!canApplyOpening && (
               <p className="mb-4 text-xs text-muted-foreground">
-                This account already has transactions. Its opening balance will
-                be preserved.
+                This account already has a balance or transactions. Its opening
+                balance will be preserved.
               </p>
             )}
             {!preview.details.opening && applyOpening && (
@@ -265,13 +273,15 @@ export function StatementReview({
       {step === 2 && (
         <>
           <p className="mb-4 text-sm text-muted-foreground">
-            Select the bills, subscriptions and income you want to track.
+            Select the bills, income and transfers you want to track. Choose
+            each type and the other account for transfers.
           </p>
           <RecurringReview
             suggestions={preview.details.recurring}
             accepted={accepted}
             setAccepted={setAccepted}
             data={data}
+            accountId={account.id}
           />
         </>
       )}
@@ -293,6 +303,12 @@ export function StatementReview({
               }{" "}
               uncategorised
             </p>
+            {reconciledCount > 0 && (
+              <p>
+                {selected.length - reconciledCount} new payments ·{" "}
+                {reconciledCount} existing transfers to reconcile
+              </p>
+            )}
             <p>{accepted.length} recurring items accepted</p>
             <p>
               {applyOpening
@@ -310,6 +326,14 @@ export function StatementReview({
             I have checked all statement pages, amounts, opening balance,
             categorisations and recurring items. I accept the selected entries.
           </label>
+          {accepted.some(
+            (item) => !scheduleSchema.safeParse(item.schedule).success,
+          ) && (
+            <p role="alert" className="mb-4 text-sm text-destructive">
+              Complete the type and accounts for each accepted item in Recurring
+              suggestions.
+            </p>
+          )}
           {transferProblems && (
             <p role="alert" className="mb-4 text-sm text-destructive">
               Check the transfer accounts and their opening dates in Review
@@ -323,6 +347,9 @@ export function StatementReview({
           )}
           <Button
             disabled={
+              accepted.some(
+                (item) => !scheduleSchema.safeParse(item.schedule).success,
+              ) ||
               conflicts.length > 0 ||
               !reviewed ||
               !selected.length ||

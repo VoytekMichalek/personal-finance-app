@@ -1,3 +1,4 @@
+import { matchOccurrence, saveSchedule } from "./schedules.js";
 import { rememberTransaction } from "./remember-transaction.js";
 import { saveRule } from "./rules.js";
 import { bulkCategory } from "./bulk-category.js";
@@ -9,7 +10,6 @@ import { z } from "zod";
 import {
   accountSchema,
   budgetSchema,
-  scheduleSchema,
   assetSchema,
   valuationSchema,
   forecast,
@@ -22,12 +22,10 @@ import { HttpError } from "../../lib/errors.js";
 import {
   snapshot,
   validateOwner,
-  validateAccount,
   validateCategory,
   createTransaction,
   createTransfer,
   updateTransaction,
-  matchOccurrence,
 } from "./service.js";
 import { saveCategory, removeCategory } from "./categories.js";
 export const financeRouter = Router();
@@ -166,21 +164,14 @@ for (const method of ["post", "put"] as const) {
   financeRouter[method](
     method === "post" ? "/schedules" : "/schedules/:id",
     async (req, res) => {
-      const input = scheduleSchema.parse(req.body);
-      await validateAccount(prisma, input.accountId);
-      await validateOwner(prisma, input.owner);
-      await validateCategory(prisma, input.categoryId, input.kind);
-      const data = { ...input, amountCents: BigInt(input.amountCents) };
       res.json(
         json(
-          await (method === "post"
-            ? prisma.schedule.create({ data })
-            : prisma.schedule.update({
-                where: {
-                  id: z.uuid().parse((req.params as Record<string, string>).id),
-                },
-                data,
-              })),
+          await saveSchedule(
+            req.body,
+            method === "put"
+              ? z.uuid().parse((req.params as Record<string, string>).id)
+              : undefined,
+          ),
         ),
       );
     },

@@ -15,6 +15,11 @@ import type { StatementPreview } from "@finance/shared";
 
 async function preview() {
   const accountId = await account();
+  // This fixture represents a new account awaiting its first opening balance.
+  await prisma.account.update({
+    where: { id: accountId },
+    data: { openingBalanceCents: 0n },
+  });
   const uploaded = await request(app)
     .post("/api/statements")
     .set("Origin", origin)

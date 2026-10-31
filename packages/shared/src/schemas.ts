@@ -122,7 +122,8 @@ export const scheduleSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
     accountId: id,
-    kind: z.enum(["income", "expense"]),
+    kind: z.enum(["income", "expense", "transfer"]),
+    counterAccountId: id.nullable().default(null),
     amountCents: positiveCents,
     categoryId: id.nullable().default(null),
     owner,
@@ -142,7 +143,21 @@ export const scheduleSchema = z
   .refine(
     (v) => !v.endDate || v.endDate >= v.startDate,
     "End date must follow start date",
-  );
+  )
+  .refine(
+    (v) =>
+      v.kind === "transfer"
+        ? !!v.counterAccountId && v.counterAccountId !== v.accountId
+        : v.counterAccountId === null,
+    {
+      message: "Choose a different receiving account for a transfer.",
+      path: ["counterAccountId"],
+    },
+  )
+  .refine((v) => v.kind !== "transfer" || (!v.categoryId && !v.subscription), {
+    message: "Transfers have no spending category or subscription.",
+    path: ["kind"],
+  });
 export const assetSchema = z.object({
   name: z.string().trim().min(1).max(100),
   kind: z.enum(["asset", "liability"]),
@@ -199,6 +214,14 @@ export const previewSchema = csvUploadSchema.extend({
   mapping: mappingSchema,
 });
 export const importRowSchema = z.object({
+  reconcileExisting: z
+    .object({
+      id,
+      version: z.number().int().positive(),
+      counterpartId: id,
+      counterpartVersion: z.number().int().positive(),
+    })
+    .optional(),
   rememberCategory: z.boolean().optional(),
   rememberPattern: z.string().max(250).optional(),
   rememberMatchMode: z.enum(["exact", "contains"]).optional(),

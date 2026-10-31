@@ -63,6 +63,39 @@ const ReviewRow = memo(function ReviewRow({
   const patch = (values: Partial<ImportRow>) =>
     updateRow(row.rowNumber, values);
   const other = data.accounts.find((a) => a.id === row.counterAccountId);
+  if (row.reconcileExisting && row.include)
+    return (
+      <article
+        ref={articleRef}
+        tabIndex={-1}
+        aria-label={"Transaction row " + row.rowNumber}
+        className="space-y-3 bg-emerald-50/60 p-4 sm:p-5"
+      >
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <Pill tone="positive">Reconciliation accepted</Pill>
+          <span>{displayDate(row.date)}</span>
+          <strong className="ml-auto tabular-nums">
+            {money(row.amountCents)}
+          </strong>
+        </div>
+        <p className="break-words text-sm">{row.description}</p>
+        <p className="text-xs text-muted-foreground">
+          Already recorded as a transfer with{" "}
+          {other?.name ?? "the other account"}. Approval links this source row
+          without adding another payment or changing the existing transfer.
+        </p>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={!!busy}
+          onClick={() =>
+            patch({ reconcileExisting: undefined, include: !row.duplicate })
+          }
+        >
+          Undo reconciliation for row {row.rowNumber}
+        </Button>
+      </article>
+    );
   return (
     <article
       ref={articleRef}

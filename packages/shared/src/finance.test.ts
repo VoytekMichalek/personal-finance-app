@@ -257,3 +257,46 @@ describe("dated net worth", () => {
     );
   });
 });
+
+it("forecasts recurring transfers on each account while keeping household totals and spending neutral", () => {
+  const target = { ...account, id: "savings", openingBalanceCents: 10000 };
+  const recurring = schedule({
+    kind: "transfer",
+    counterAccountId: target.id,
+    categoryId: null,
+    amountCents: 2501,
+  });
+  const data = snapshot({
+    accounts: [account, target],
+    transactions: [],
+    schedules: [recurring],
+    budgets: [],
+  });
+  expect(forecast(data, 30).at(-1)?.balanceCents).toBe(510000);
+  expect(
+    forecast({ ...data, accounts: [account] }, 30).at(-1)?.balanceCents,
+  ).toBe(497499);
+  expect(
+    forecast({ ...data, accounts: [target] }, 30).at(-1)?.balanceCents,
+  ).toBe(12501);
+  data.transactions = [
+    transaction({
+      kind: "transfer",
+      categoryId: null,
+      amountCents: -2501,
+      scheduleId: recurring.id,
+      occurrenceDate: recurring.startDate,
+    }),
+    transaction({
+      id: "other",
+      kind: "transfer",
+      categoryId: null,
+      accountId: target.id,
+      amountCents: 2501,
+    }),
+  ];
+  expect(
+    forecast({ ...data, accounts: [target] }, 30).at(-1)?.balanceCents,
+  ).toBe(12501);
+  expect(Math.abs(overview(data, "all").spent)).toBe(0);
+});

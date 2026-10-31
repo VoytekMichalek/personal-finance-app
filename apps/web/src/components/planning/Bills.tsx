@@ -7,6 +7,7 @@ import {
   annualSubscriptionCost,
   displayDate,
   money,
+  canMatchSchedule,
   type Snapshot,
   type Schedule,
   type Occurrence,
@@ -50,7 +51,7 @@ export function Bills({
         <p className="text-xs text-muted-foreground">
           {subscriptions
             ? "Know what renews. Keep what you love."
-            : "Your regular income and bills, thoughtfully organised."}
+            : "Your regular income, bills and transfers, thoughtfully organised."}
         </p>
         <Button onClick={create}>
           <Plus size={15} />
@@ -96,12 +97,19 @@ export function Bills({
                     <p className="text-sm font-medium">{o.schedule.name}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="text-[10px] text-muted-foreground">
-                        {o.schedule.kind === "income" ? "Income" : "Expense"} ·{" "}
+                        {o.schedule.kind === "transfer"
+                          ? "Transfer"
+                          : o.schedule.kind === "income"
+                            ? "Income"
+                            : "Expense"}{" "}
+                        ·{" "}
                         {
                           data.accounts.find(
                             (a) => a.id === o.schedule.accountId,
                           )?.name
                         }
+                        {o.schedule.kind === "transfer" &&
+                          ` → ${data.accounts.find((a) => a.id === o.schedule.counterAccountId)?.name}`}
                       </span>
                       {o.date < data.today && (
                         <Pill tone="warning">Unrecorded</Pill>
@@ -228,12 +236,8 @@ export function Bills({
             >
               <SelectItem value="">Choose transaction</SelectItem>
               {data.transactions
-                .filter(
-                  (t) =>
-                    !t.scheduleId &&
-                    t.accountId === match.schedule.accountId &&
-                    t.kind === match.schedule.kind &&
-                    Math.abs(t.amountCents) === match.schedule.amountCents,
+                .filter((t) =>
+                  canMatchSchedule(t, match.schedule, data.transactions),
                 )
                 .map((t) => (
                   <SelectItem key={t.id} value={t.id}>

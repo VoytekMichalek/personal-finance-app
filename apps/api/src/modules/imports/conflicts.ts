@@ -55,6 +55,7 @@ export async function checkImportConflicts(
   batch: { id: string; accountId: string },
   rows: ApprovedImportRow[],
 ) {
+  if (!rows.length) return;
   const accountIds = new Set([batch.accountId]);
   const linkIds = new Set<string>();
   const repeatedLinks = new Set<string>();

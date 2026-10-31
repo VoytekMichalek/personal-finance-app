@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Dialog } from "../ui/dialog";
+import { CategoryForm } from "../categories/Categories";
 import {
   categoryColour,
   categoryLabel,
@@ -19,6 +22,7 @@ export function TransactionCategory({
   disabled?: boolean;
 }) {
   const action = useTransactionCategory(row.id);
+  const [creating, setCreating] = useState(false);
   const selectedId = action.isPending
     ? action.variables?.categoryId
     : row.categoryId;
@@ -50,10 +54,15 @@ export function TransactionCategory({
         }
         disabled={disabled || action.isPending || action.saving}
         onValueChange={(value) => {
+          if (value === "__new_category__") {
+            setCreating(true);
+            return;
+          }
           if ((value || null) !== row.categoryId)
             action.mutate({ categoryId: value || null, version: row.version });
         }}
       >
+        <SelectItem value="__new_category__">+ Create category</SelectItem>
         <SelectItem value="">
           <CategoryChip categoryId={null} categories={categories} />
         </SelectItem>
@@ -68,6 +77,20 @@ export function TransactionCategory({
           </SelectItem>
         ))}
       </Select>
+      <Dialog open={creating} onOpenChange={setCreating} title="Add category">
+        <CategoryForm
+          categories={categories}
+          defaultKind={kind}
+          fixedKind
+          done={(result) => {
+            setCreating(false);
+            action.mutate({
+              categoryId: (result as Category).id,
+              version: row.version,
+            });
+          }}
+        />
+      </Dialog>
       {action.saving && (
         <p role="status" className="text-[10px] text-muted-foreground">
           Saving category…

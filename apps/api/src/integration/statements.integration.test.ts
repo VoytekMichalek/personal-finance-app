@@ -26,6 +26,11 @@ async function finish(id: string) {
 }
 async function preview() {
   const accountId = await account();
+  // This fixture represents a new account awaiting its first opening balance.
+  await prisma.account.update({
+    where: { id: accountId },
+    data: { openingBalanceCents: 0n },
+  });
   const result = await request(app)
     .post("/api/statements")
     .set("Origin", origin)
@@ -337,6 +342,10 @@ it("identifies the other account in an early card repayment and succeeds after f
 
 it("accepts a reviewed quarterly insurance candidate with two payments and rejects insufficient selected evidence", async () => {
   const accountId = await account();
+  await prisma.account.update({
+    where: { id: accountId },
+    data: { openingBalanceCents: 0n },
+  });
   const upload = await request(app)
     .post("/api/statements")
     .set("Origin", origin)

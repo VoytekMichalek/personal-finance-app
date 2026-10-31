@@ -22,9 +22,16 @@ const schema = z
       "Enter a positive amount",
     ),
   })
-  .refine((value) => !value.endDate || value.endDate >= value.startDate, {
-    message: "End date must follow start date",
-    path: ["endDate"],
+  .transform((value, context) => {
+    const result = scheduleSchema.safeParse(value);
+    if (result.success) return result.data;
+    for (const issue of result.error.issues)
+      context.addIssue({
+        code: "custom",
+        path: issue.path,
+        message: issue.message,
+      });
+    return z.NEVER;
   });
 export function ScheduleForm({
   schedule,
@@ -48,6 +55,7 @@ export function ScheduleForm({
       accountId:
         schedule?.accountId ?? data.accounts.find((a) => !a.archived)?.id ?? "",
       kind: schedule?.kind ?? "expense",
+      counterAccountId: schedule?.counterAccountId ?? null,
       amountCents: moneyInput(schedule?.amountCents ?? 0),
       categoryId: schedule?.categoryId ?? null,
       owner: schedule?.owner ?? "household",
@@ -82,10 +90,19 @@ export function ScheduleForm({
       </Field>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Type">
-          <FormSelect control={form.control} name={"kind"}>
+          <Select
+            value={kind}
+            onValueChange={(value) => {
+              form.setValue("kind", value as Schedule["kind"]);
+              form.setValue("counterAccountId", null);
+              form.setValue("categoryId", null);
+              if (value !== "expense") form.setValue("subscription", false);
+            }}
+          >
             <SelectItem value="expense">Expense</SelectItem>
             <SelectItem value="income">Income</SelectItem>
-          </FormSelect>
+            <SelectItem value="transfer">Transfer</SelectItem>
+          </Select>
         </Field>
         <Field
           label="Amount (AUD)"
@@ -94,7 +111,10 @@ export function ScheduleForm({
           <Input inputMode="decimal" {...form.register("amountCents")} />
         </Field>
       </div>
-      <Field label="Account" error={form.formState.errors.accountId?.message}>
+      <Field
+        label={kind === "transfer" ? "From account" : "Account"}
+        error={form.formState.errors.accountId?.message}
+      >
         <FormSelect control={form.control} name={"accountId"}>
           <SelectItem value="">Choose account</SelectItem>
           {data.accounts
@@ -106,6 +126,27 @@ export function ScheduleForm({
             ))}
         </FormSelect>
       </Field>
+      {kind === "transfer" && (
+        <Field
+          label="To account"
+          error={form.formState.errors.counterAccountId?.message}
+        >
+          <FormSelect control={form.control} name="counterAccountId">
+            <SelectItem value="">Choose receiving account</SelectItem>
+            {data.accounts
+              .filter(
+                (a) =>
+                  (!a.archived || a.id === schedule?.counterAccountId) &&
+                  a.id !== form.watch("accountId"),
+              )
+              .map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.name}
+                </SelectItem>
+              ))}
+          </FormSelect>
+        </Field>
+      )}
       <div className="grid grid-cols-2 gap-4">
         <Field label="Starts / next renewal">
           <Input type="date" {...form.register("startDate")} />
@@ -130,30 +171,39 @@ export function ScheduleForm({
           onChange={(e) => form.setValue("endDate", e.target.value || null)}
         />
       </Field>
-      <Field label="Category">
-        <Select
-          value={form.watch("categoryId") ?? ""}
-          onValueChange={(value) => form.setValue("categoryId", value || null)}
-        >
-          <SelectItem value="">Uncategorised</SelectItem>
-          {data.categories
-            .filter((c) => !c.archived && c.kind === kind)
-            .map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                <CategoryChip categoryId={c.id} categories={data.categories} />
-              </SelectItem>
-            ))}
-        </Select>
-      </Field>
+      {kind !== "transfer" && (
+        <Field label="Category">
+          <Select
+            value={form.watch("categoryId") ?? ""}
+            onValueChange={(value) =>
+              form.setValue("categoryId", value || null)
+            }
+          >
+            <SelectItem value="">Uncategorised</SelectItem>
+            {data.categories
+              .filter((c) => !c.archived && c.kind === kind)
+              .map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  <CategoryChip
+                    categoryId={c.id}
+                    categories={data.categories}
+                  />
+                </SelectItem>
+              ))}
+          </Select>
+        </Field>
+      )}
       <Field label="Belongs to">
         <FormSelect control={form.control} name={"owner"}>
           <OwnerOptions people={data.people} />
         </FormSelect>
       </Field>
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" {...form.register("subscription")} />
-        This is a subscription
-      </label>
+      {kind === "expense" && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" {...form.register("subscription")} />
+          This is a subscription
+        </label>
+      )}
       {form.watch("subscription") && (
         <Field label="Provider">
           <Input {...form.register("provider")} />

@@ -4,11 +4,8 @@ import {
   matchesRule,
   compareRules,
   type Snapshot,
-  type Transaction,
   transactionSchema,
   transferSchema,
-  scheduleDates,
-  type Schedule,
 } from "@finance/shared";
 import { type DB, prisma, json } from "../../lib/db.js";
 import { HttpError } from "../../lib/errors.js";
@@ -140,9 +137,11 @@ export async function createTransfer(
   body: unknown,
   source?: {
     accountId: string;
-    importBatchId: string;
-    sourceRow: number;
+    importBatchId?: string;
+    sourceRow?: number;
     owner: string;
+    scheduleId?: string;
+    occurrenceDate?: string;
   },
 ) {
   const input = transferSchema.parse(body);
@@ -158,7 +157,12 @@ export async function createTransfer(
     await db.transaction.create({
       data: {
         ...(source && account.id === source.accountId
-          ? { importBatchId: source.importBatchId, sourceRow: source.sourceRow }
+          ? {
+              importBatchId: source.importBatchId,
+              sourceRow: source.sourceRow,
+              scheduleId: source.scheduleId,
+              occurrenceDate: source.occurrenceDate,
+            }
           : {}),
         accountId: account.id,
         kind: "transfer",
@@ -206,47 +210,4 @@ export async function updateTransaction(
       "This transaction changed. Refresh before editing it again.",
     );
   return db.transaction.findUnique({ where: { id } });
-}
-export async function matchOccurrence(
-  db: DB,
-  id: string,
-  date: string,
-  transactionId?: string,
-) {
-  const record = await db.schedule.findUnique({ where: { id } });
-  if (!record) throw new HttpError(404, "Schedule not found.");
-  const schedule = json<Schedule>(record);
-  if (!scheduleDates(schedule, date, date).includes(date))
-    throw new HttpError(400, "This date is not a scheduled occurrence.");
-  if (!transactionId)
-    return createTransaction(
-      db,
-      { ...schedule, date, description: schedule.name },
-      { scheduleId: id, occurrenceDate: date },
-    );
-  const existing = await db.transaction.findUnique({
-    where: { id: transactionId },
-  });
-  if (!existing || existing.scheduleId)
-    throw new HttpError(409, "Choose an unmatched transaction.");
-  const transaction = json<Transaction>(existing);
-  if (
-    transaction.accountId !== schedule.accountId ||
-    transaction.kind !== schedule.kind ||
-    Math.abs(transaction.amountCents) !== schedule.amountCents
-  )
-    throw new HttpError(
-      400,
-      "Match a transaction with the same account, type and amount.",
-    );
-  const matched = await db.transaction.updateMany({
-    where: { id: transactionId, scheduleId: null, version: existing.version },
-    data: { scheduleId: id, occurrenceDate: date, version: { increment: 1 } },
-  });
-  if (!matched.count)
-    throw new HttpError(
-      409,
-      "This transaction was matched or edited. Refresh and try again.",
-    );
-  return { ok: true };
 }

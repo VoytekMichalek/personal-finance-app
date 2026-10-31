@@ -43,7 +43,7 @@ export async function processStatement(
       }
     }
     details.warnings.push(
-      "Credit card balances owed are negative. Review credits as refunds or repayments. For repayments, choose the bank account that paid the card; both sides are recorded as a transfer. If that payment is already recorded, leave its duplicate unchecked.",
+      "Credit card balances owed are negative. Review credits as refunds or repayments. For repayments, choose the bank account that paid the card; both sides are recorded as a transfer. If both transfer entries are already recorded, accept the suggested reconciliation. Ambiguous matches need individual review.",
     );
   }
   applyTransferRules(rows, rules as Rule[], accountId, accounts);

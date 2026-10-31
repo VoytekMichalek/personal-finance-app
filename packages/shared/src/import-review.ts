@@ -42,6 +42,12 @@ export function updateImportRows(
       : {
           ...row,
           ...patch,
+          ...(!Object.hasOwn(patch, "reconcileExisting") &&
+          (categoryEdit ||
+            patch.include === false ||
+            Object.hasOwn(patch, "owner"))
+            ? { reconcileExisting: undefined }
+            : {}),
           ...(patch.rememberCategory === true
             ? {
                 rememberPattern:
