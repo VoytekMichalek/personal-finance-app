@@ -4,6 +4,8 @@ import { useState } from "react";
 import {
   compareRules,
   matchesRule,
+  matchingTransferTransactions,
+  suggestRememberedRule,
   displayDate,
   identityColour,
   money,
@@ -32,8 +34,25 @@ export function TransactionTable({
   filters: TransactionFilters;
   onOpen: (row: Transaction) => void;
 }) {
-  const [remembering, setRemembering] = useState<string>();
-  const rememberedRow = data.transactions.find((row) => row.id === remembering);
+  const [remembering, setRemembering] = useState<{
+    id: string;
+    afterVersion?: number;
+  }>();
+  const rememberedRow = data.transactions.find(
+    (row) =>
+      row.id === remembering?.id &&
+      (!remembering.afterVersion ||
+        (row.version > remembering.afterVersion && row.kind === "transfer")),
+  );
+  const offerSimilarTransfers = (row: Transaction) => {
+    const matches = matchingTransferTransactions(
+      rows,
+      row,
+      suggestRememberedRule(row.description),
+    );
+    if (matches.some((item) => item.id !== row.id && item.kind !== "transfer"))
+      setRemembering({ id: row.id, afterVersion: row.version });
+  };
   const rules = data.rules
     .filter(
       (rule) =>
@@ -99,6 +118,7 @@ export function TransactionTable({
         <RememberTransaction
           key={rememberedRow.id}
           row={rememberedRow}
+          afterTypeChange={!!remembering?.afterVersion}
           data={data}
           rows={rows}
           filters={filters}
@@ -270,6 +290,7 @@ export function TransactionTable({
                         </button>
                         <div className="mt-2 flex flex-wrap gap-1 sm:hidden">
                           <TransactionType
+                            onTransferred={() => offerSimilarTransfers(row)}
                             row={row}
                             data={data}
                             disabled={action.isPending}
@@ -297,6 +318,7 @@ export function TransactionTable({
                       </td>
                       <td className="hidden p-3 sm:table-cell">
                         <TransactionType
+                          onTransferred={() => offerSimilarTransfers(row)}
                           row={row}
                           data={data}
                           disabled={action.isPending}
@@ -331,7 +353,7 @@ export function TransactionTable({
                           <RememberButton
                             row={row}
                             disabled={action.isPending}
-                            onClick={() => setRemembering(row.id)}
+                            onClick={() => setRemembering({ id: row.id })}
                           />
                         </div>
                       </td>
@@ -339,7 +361,7 @@ export function TransactionTable({
                         <RememberButton
                           row={row}
                           disabled={action.isPending}
-                          onClick={() => setRemembering(row.id)}
+                          onClick={() => setRemembering({ id: row.id })}
                         />
                       </td>
                     </tr>

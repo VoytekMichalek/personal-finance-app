@@ -29,12 +29,14 @@ export function RememberTransaction({
   rows,
   filters,
   close,
+  afterTypeChange = false,
 }: {
   row: Transaction;
   data: Snapshot;
   rows: Transaction[];
   filters: TransactionFilters;
   close: () => void;
+  afterTypeChange?: boolean;
 }) {
   const [rule, setRule] = useState(() =>
     suggestRememberedRule(row.description),
@@ -89,6 +91,12 @@ export function RememberTransaction({
       description="Review the matches in your current filters, then apply the change and save a rule for future imports."
     >
       <div className="space-y-4">
+        {afterTypeChange && (
+          <p className="rounded-xl bg-blue-50 p-3 text-sm">
+            Your transaction is now a transfer. Apply it to the similar
+            transactions below? Cancelling keeps only the change you just saved.
+          </p>
+        )}
         <p className="text-sm [overflow-wrap:anywhere]">
           Starting from: <strong>{row.description}</strong>
         </p>

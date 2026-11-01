@@ -624,3 +624,25 @@ change. R19 inspection confirms expected reconciliation/schedule errors use the
 existing quiet validation/conflict handling; no descriptions or financial values
 are logged. Production-image smoke and exact-candidate CI/release evidence are
 recorded in testing.md and release verification artifacts.
+
+## Transfer classification follow-up — 1 November 2026
+
+This continuation uses the same fixed SOP revision and retrieval time recorded
+above (`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`,
+`2026-10-31T22:57:39.967Z`). Existing exceptions and deployment authority remain
+unchanged. Uncategorised ledger filters exclude transfers. Saving an ordinary
+transaction as a transfer offers the existing filtered-match confirmation
+automatically, without applying other rows before confirmation. The converted
+source may leave a category/type filter; it remains a version-checked, locked
+template, while only the recomputed, explicitly confirmed matches are updated.
+The template's counterpart is also locked and version checked. User-guide changes
+explain automatic prompting, filter boundaries and cancellation.
+
+No schema, dependency, runtime input or deployment configuration changes are
+required. R17/R18 configuration ownership and image boundaries remain as inspected
+above; R19 uses the existing quiet conflict handling without additional logging.
+Focused local tests plus exact-candidate CI image smoke/scanning provide release
+evidence. The overall CI job allowance increases from 30 to 45 minutes for added
+regression coverage over the measured 26-minute baseline; individual test deadlines
+and all gates remain unchanged. The owner explicitly requested this fix and patch
+release.

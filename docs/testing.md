@@ -370,3 +370,42 @@ or balance assertions.
 The final full affected browser suite passed all 76 desktop/mobile cases with
 zero retries (4.9 minutes), using the same production build. Logs and screenshots
 are retained locally under ignored `artifacts/v0.0.9-*` and the browser report.
+
+Transfer classification follow-up (v0.0.10): shared unit checks own Uncategorised
+filter semantics for income, expenses, refunds and both sides of transfers, plus
+intersection with account/type filters. Expense report fixtures explicitly include
+an uncategorised transfer to protect its existing exclusion. PostgreSQL integration
+checks own filtered remembering after the converted source leaves the category/type
+filter, preserving its original pair, rejecting confirmation sets that include
+excluded transfers, and keeping ordinary category remembering unchanged.
+
+Desktop/mobile journeys own automatic discovery after saving a type, confirmation
+before any other payment changes, cancellation, exact account/month/category/type
+scope, pairing existing entries without duplication, future-rule persistence,
+Uncategorised counts/selection and persistence after reload. A response barrier
+holds the type save to prove the pending state before the confirmation can appear;
+the browser clock is installed before navigation. No arbitrary waits are added.
+The two automatic-confirmation contexts and existing type pending/stale recovery
+cases run ten consecutive times with retries disabled, then the full affected
+transaction suite. Mutable finance_e2e fixtures retain one worker; independent
+finance_test integration and pure unit/typecheck work run concurrently. The same
+production build and port-only local test harness described above are reused.
+
+The fixed SOP revision, configuration/logging inspection and exact-candidate image
+smoke/scan requirements remain as recorded above. The patch changes no runtime
+inputs, schema, deployment policy or dependencies. The previous exact-commit
+Validate job took approximately 26 minutes; this patch adds 40 timing repetitions
+and ten browser cases. The overall CI job budget is therefore 45 minutes instead
+of 30. Individual test deadlines, zero retries, assertions, thresholds, worker
+isolation and all release gates stay unchanged. Local logs use ignored
+`artifacts/v0.0.10-*`; full main and release workflows validate the final commit
+before publication and verify its production rollout.
+
+Local v0.0.10 evidence: 13 focused unit cases and 22 PostgreSQL integration
+cases passed. All 60 timing cases passed across ten repetitions on desktop/mobile
+with zero retries (4.4 minutes), followed by all 46 affected browser cases
+(3.7 minutes). All workspace typechecks, lint, guardrails, production build and
+diff checks passed. Desktop/mobile confirmation screenshots were inspected.
+An initial global-list reload assertion matched both sides of a valid transfer;
+the test now restores its account filter before asserting the original row,
+retaining the balance, persistence and hidden-record assertions.

@@ -91,7 +91,10 @@ it("searches descriptions consistently across totals and groups while retaining 
         description: "Funky shop",
         date: "2025-12-31",
       }),
-      row("transfer", "transfer", -4000, { description: "Funky shop" }),
+      row("transfer", "transfer", -4000, {
+        description: "Funky shop",
+        categoryId: null,
+      }),
     ],
   };
   const filters = {

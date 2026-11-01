@@ -188,6 +188,76 @@ it.each(["missing", "outside", "stale", "scheduled", "reused"])(
     ).toBe(2);
   },
 );
+it("rejects a confirmation that includes transfers excluded by the uncategorised filter", async () => {
+  const { input } = await setup();
+  const original = await prisma.transaction.findMany({
+    orderBy: { id: "asc" },
+  });
+  const result = await post("/transactions/remember", {
+    ...input,
+    filters: { ...input.filters, categoryId: "none" },
+  });
+  expect(result.status).toBe(409);
+  expect(await prisma.rule.count()).toBe(0);
+  expect(await prisma.transaction.findMany({ orderBy: { id: "asc" } })).toEqual(
+    original,
+  );
+});
+it.each(["uncategorised", "category"])(
+  "applies the remaining %s matches after the source leaves the filter",
+  async (filter) => {
+    const { input, first, peer, second, third, from, to } = await setup();
+    const category = await prisma.category.findFirstOrThrow({
+      where: { name: "Dining" },
+    });
+    if (filter === "category")
+      await prisma.transaction.updateMany({
+        where: { id: { in: [second.id, third.id] } },
+        data: { categoryId: category.id },
+      });
+    const before = await prisma.transaction.findMany({
+      where: { transferGroupId: first.transferGroupId },
+      orderBy: { id: "asc" },
+    });
+    const result = await post("/transactions/remember", {
+      ...input,
+      filters: {
+        ...input.filters,
+        kind: "expense",
+        categoryId: filter === "category" ? category.id : "none",
+      },
+      records: input.records.filter((row) => row.id !== first.id),
+      transferChoices: input.transferChoices.filter(
+        (row) => row.id !== first.id,
+      ),
+    });
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({
+      matched: 2,
+      changed: 2,
+      rule: {
+        enabled: true,
+        kind: "transfer",
+        accountId: from,
+        counterAccountId: to,
+      },
+    });
+    expect(
+      await prisma.transaction.findMany({
+        where: { id: { in: [first.id, peer.id] } },
+        orderBy: { id: "asc" },
+      }),
+    ).toEqual(before);
+    expect(
+      await prisma.transaction.count({ where: { kind: "transfer" } }),
+    ).toBe(6);
+    expect(
+      await prisma.transaction.count({
+        where: { kind: { not: "transfer" }, version: 1 },
+      }),
+    ).toBe(3);
+  },
+);
 it("rolls back transfer changes when saving the rule fails", async () => {
   const { input } = await setup();
   const original = prisma.$transaction.bind(prisma);

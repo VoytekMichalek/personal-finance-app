@@ -19,12 +19,14 @@ export function TransactionType({
   row,
   data,
   disabled = false,
+  onTransferred,
 }: {
   row: Transaction;
   data: Snapshot;
   disabled?: boolean;
+  onTransferred?: () => void;
 }) {
-  const action = useTransactionType(row.id);
+  const action = useTransactionType(row.id, onTransferred);
   const [choice, setChoice] = useState<{
     kind: Transaction["kind"];
     version: number;

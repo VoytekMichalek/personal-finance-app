@@ -45,7 +45,7 @@ export async function rememberTransaction(body: unknown) {
         );
         // Recompute the current filters on the server; never expand to hidden matches.
         if (
-          !matches.some((row) => row.id === source.id) ||
+          (!transfer && !matches.some((row) => row.id === source.id)) ||
           matches.length !== confirmed.size ||
           matches.some((row) => confirmed.get(row.id) !== row.version)
         )
@@ -70,6 +70,10 @@ export async function rememberTransaction(body: unknown) {
           const versions = new Map(
             input.records.map((row) => [row.id, row.version]),
           );
+          // A converted source can leave an Expense/Uncategorised filter. It is
+          // only a template here; lock its pair too so that template cannot change.
+          versions.set(source.id, source.version);
+          versions.set(counterpart.id, counterpart.version);
           const linked = new Set<string>();
           for (const row of matches) {
             const choice = choices.get(row.id);

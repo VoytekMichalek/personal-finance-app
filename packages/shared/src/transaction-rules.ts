@@ -34,7 +34,7 @@ export function filterTransactions<
       (filters.owner === "all" || row.owner === filters.owner) &&
       (!filters.categoryId ||
         (filters.categoryId === "none"
-          ? !row.categoryId
+          ? row.kind !== "transfer" && !row.categoryId
           : row.categoryId === filters.categoryId)) &&
       (!filters.kind ||
         (filters.kind === "expense"

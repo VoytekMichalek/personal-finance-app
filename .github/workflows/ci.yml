@@ -13,7 +13,8 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # Full browser coverage plus ten-run timing checks share isolated databases.
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:16.10-alpine

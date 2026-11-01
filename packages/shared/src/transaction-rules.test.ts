@@ -57,6 +57,39 @@ it("intersects ledger filters and includes refunds under expenses without changi
     "refund",
   ]);
 });
+it("uncategorised filters retain income, expenses and refunds but exclude both transfer directions", () => {
+  const records = [
+    row({ id: "expense" }),
+    row({ id: "income", kind: "income", amountCents: 2000 }),
+    row({ id: "refund", kind: "refund", amountCents: 500 }),
+    row({ id: "out", kind: "transfer", transferGroupId: "pair" }),
+    row({
+      id: "in",
+      kind: "transfer",
+      accountId: "savings",
+      amountCents: 1000,
+      transferGroupId: "pair",
+    }),
+    row({ id: "categorised", categoryId: "groceries" }),
+  ];
+  const all = transactionFiltersSchema.parse({});
+  const unclassified = { ...all, categoryId: "none" };
+  expect(filterTransactions(records, unclassified).map((r) => r.id)).toEqual([
+    "expense",
+    "income",
+    "refund",
+  ]);
+  expect(
+    filterTransactions(records, { ...unclassified, accountId: "savings" }),
+  ).toEqual([]);
+  expect(
+    filterTransactions(records, { ...unclassified, kind: "transfer" }),
+  ).toEqual([]);
+  expect(filterTransactions(records, all)).toEqual(records);
+  expect(
+    filterTransactions(records, { ...all, kind: "transfer" }).map((r) => r.id),
+  ).toEqual(["out", "in"]);
+});
 it("matches only the source account and direction and validates linked pairs and candidates", () => {
   const source = row({ kind: "transfer", transferGroupId: "pair" });
   const peer = row({
