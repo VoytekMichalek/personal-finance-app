@@ -1,6 +1,7 @@
+import { useDialogViewport } from "../../hooks/dialog-viewport";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import { useRef, type ReactNode } from "react";
+import { useRef, type ComponentProps, type ReactNode } from "react";
 import { cn } from "./button";
 export function Dialog({
   open,
@@ -22,7 +23,7 @@ export function Dialog({
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" />
-        <DialogPrimitive.Content
+        <ViewportContent
           onOpenAutoFocus={() => {
             returnFocus.current =
               document.activeElement instanceof HTMLElement
@@ -36,7 +37,7 @@ export function Dialog({
             }
           }}
           className={cn(
-            "fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border bg-white p-6 shadow-2xl md:p-8",
+            "fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden rounded-2xl border bg-white p-5 shadow-2xl md:p-6",
             className,
           )}
         >
@@ -52,9 +53,18 @@ export function Dialog({
           >
             <X size={18} />
           </DialogPrimitive.Close>
-          {children}
-        </DialogPrimitive.Content>
+          <div className="dialog-body min-h-0 overflow-y-auto overscroll-contain px-1 pb-1">
+            {children}
+          </div>
+        </ViewportContent>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
   );
+}
+
+function ViewportContent(
+  props: ComponentProps<typeof DialogPrimitive.Content>,
+) {
+  const style = useDialogViewport();
+  return <DialogPrimitive.Content {...props} style={style} />;
 }

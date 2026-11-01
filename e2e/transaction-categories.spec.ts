@@ -1,5 +1,12 @@
 import type { Page } from "@playwright/test";
-import { test, expect, session, database, choose } from "./fixtures";
+import {
+  chooseDate,
+  test,
+  expect,
+  session,
+  database,
+  choose,
+} from "./fixtures";
 
 async function seedRows(page: Page) {
   await session(page);
@@ -115,6 +122,7 @@ test("inline categories save on both transaction views and respect transaction t
 test("inline category pending state recovers from a stale transaction @timing", async ({
   page,
 }) => {
+  await page.clock.install();
   const { db, account, rows } = await seedRows(page);
   let release!: () => void;
   const barrier = new Promise<void>((resolve) => {
@@ -142,7 +150,7 @@ test("inline category pending state recovers from a stale transaction @timing", 
     await choose(page, expense, "Groceries");
     await expect(expense).toBeDisabled();
     await expect(
-      page.getByRole("status").filter({ hasText: "Saving category…" }),
+      page.getByRole("status").filter({ hasText: "Saving…" }),
     ).toBeVisible();
     release();
     expect((await rejected).status()).toBe(409);
@@ -152,9 +160,14 @@ test("inline category pending state recovers from a stale transaction @timing", 
         .filter({ hasText: "A selected transaction changed" }),
     ).toBeVisible();
     await expect(expense).toBeEnabled();
-    await expect(expense).toHaveText("Dining");
+    await expect(expense).toHaveText("Groceries");
+    await expect(
+      page.getByText(
+        "Currently saved: Dining. Retry applies your displayed choice.",
+      ),
+    ).toBeVisible();
     const recovered = savedCategory(page);
-    await choose(page, expense, "Groceries");
+    await page.getByRole("button", { name: "Retry save", exact: true }).click();
     expect((await recovered).ok()).toBe(true);
     await expect(expense).toHaveText("Groceries");
     await expect(
@@ -192,25 +205,45 @@ test("transaction searches and optional dates clear without leaving the account"
     await expect(
       page.getByRole("button", { name: "Select all 4 matching transactions" }),
     ).toBeVisible();
-    await page.getByLabel("From date", { exact: true }).fill("2026-10-02");
+    await chooseDate(
+      page,
+      page.getByLabel("From date", { exact: true }),
+      "2026-10-02",
+    );
     await expect(
       page.getByText("No transactions match.", { exact: false }),
     ).toBeVisible();
+    await page.getByRole("button", { name: "Date range", exact: true }).click();
     await page
       .getByRole("button", { name: "Clear from date", exact: true })
       .click();
-    await expect(page.getByLabel("From date", { exact: true })).toHaveValue("");
-    await page.getByLabel("To date", { exact: true }).fill("2026-09-30");
+    await expect(page.getByLabel("From date", { exact: true })).toContainText(
+      "Choose date",
+    );
+    await page
+      .getByRole("button", { name: "Apply dates", exact: true })
+      .click();
+    await chooseDate(
+      page,
+      page.getByLabel("To date", { exact: true }),
+      "2026-09-30",
+    );
     await expect(
       page.getByText("No transactions match.", { exact: false }),
     ).toBeVisible();
+    await page.getByRole("button", { name: "Date range", exact: true }).click();
     await page
       .getByRole("button", { name: "Clear to date", exact: true })
       .click();
-    await expect(page.getByLabel("To date", { exact: true })).toHaveValue("");
+    await expect(page.getByLabel("To date", { exact: true })).toContainText(
+      "Choose date",
+    );
+    await page
+      .getByRole("button", { name: "Apply dates", exact: true })
+      .click();
     await choose(
       page,
-      page.getByRole("combobox", { name: "Filter type" }),
+      page.getByRole("button", { name: "Filter type" }),
       "Income",
     );
     await expect(

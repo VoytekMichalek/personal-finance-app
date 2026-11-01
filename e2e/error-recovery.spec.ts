@@ -177,9 +177,7 @@ test("release notes show every version and fit on a phone", async ({
 }, info) => {
   await session(page);
   await page.goto("/settings");
-  await page
-    .getByRole("button", { name: "Release notes", exact: true })
-    .click();
+  await page.getByRole("link", { name: /^Release notes/ }).click();
   await expect(page).toHaveURL(/\/settings\/releases$/);
   await expect(
     page.getByRole("heading", { name: "Release notes", exact: true }),

@@ -674,3 +674,66 @@ existing validation/publication gates remain, with release highlights now checke
 before publication. R17–R19 source inspection and exact-candidate image evidence
 follow the testing record; local checks plus full main/release CI retain the
 existing isolation, timing repetition and desktop/mobile requirements.
+
+
+## Expenses layout preview — 2 November 2026
+
+For the owner-approved Expenses redesign, loaded current central `main` once
+using the installed read-only helper at `2026-11-01T19:14:29.061Z`, resolving
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`. Relevant application UI, testing and
+user-documentation guidance was reviewed at that fixed revision against the
+adopted local baseline. Current testing guidance favours focused local checks and
+full CI on GitHub; this task uses the affected report journeys and timing repeats,
+not a full local CI run. Personal repository-owned CI/release exceptions remain
+in force. No unrelated SOP migration, version bump, publication or deployment is
+part of this local-preview request. User-guide changes explain the layout,
+expanded category lists, exact chart values and filtered transfer confirmation.
+The owner’s subsequent request moves saved-rule status into the shared rule action
+on Transactions/account ledgers and Expenses; existing rule matching semantics
+and confirmation controls are retained.
+
+The same preview task also includes the owner-requested compact account cards and
+local sample accounts. Owner bubbles use a shared roster-based colour assignment with widely spaced hues, avoiding similar colours from hashed IDs. The full roster keeps colours consistent through filtering, sorting and renaming; Household has its own fixed colour.
+The owner rejected side accents and excess colour; the final cards use white
+surfaces, neutral icons and colour only in the named owner bubble. No authentication or persistence schema changes apply.
+
+
+## Household UX and dashboard preview — 2 November 2026
+
+The owner approved all fourteen proposed page-flow improvements, requested enough
+local test data, then refined the dashboard, filter bars, chart controls, asset
+headers and category colours during the preview. This continuation retains the
+fixed current-SOP revision and retrieval time recorded above. The adopted baseline
+and personal CI/release exceptions remain unchanged.
+
+The scope includes compact page headings; attention shortcuts; URL-preserved
+filters, pagination and Back position; multiselect transaction filters; a common
+PDF/CSV import chooser; separate searchable Categories/Rules tabs; import review
+status filters and a persistent action bar; Upcoming/Recurring planning views;
+inline budgets; grouped assets/debts and valuation/movement explanations; net-worth
+ranges and Graph/Table views; inline save/retry feedback; mobile dialog sizing;
+and a Settings directory. The dashboard now combines six months of recorded cash
+history with three calendar months of existing-model projections, past spending
+and category summaries. It omits recent transactions at the owner's request.
+
+Later refinements consolidate date presets/custom dates into a compact filter
+control, align chart switches on the right, move explanatory context into
+keyboard/touch-accessible tips and separate asset group headings from entries.
+An atomic category-colour action and guarded undo change only category colours.
+Both use the existing category-edit lock and reject stale colours as a whole.
+No ledger semantics, schema, runtime inputs or deployment configuration change.
+
+Additional sample data is insert-only in an explicitly named local finance_preview_*
+database. The seeder refuses production/ordinary databases and non-local database
+hosts. Existing user edits are preserved. No authentication bypass is introduced.
+The user guide and testing record cover the new flows. The owner subsequently
+authorised committing the completed work and releasing the next patch with release
+notes on 2 November 2026. The resulting candidate is v0.0.12. Main validation must
+pass on the exact final commit before the annotated tag; the existing repository-owned
+release workflow retains validation, image smoke/scan, publication and verified rollout.
+
+The date-range refinement uses an anchored Radix Popover, with anchored calendars,
+left-aligned text and Escape/outside-click dismissal. Added `@radix-ui/react-popover`
+1.1.23 to match the installed Radix generation; its 24 July 2026 publication predates
+the unchanged 2880-minute age gate. No package-age exclusion or other dependency
+upgrade was introduced.

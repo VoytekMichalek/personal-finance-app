@@ -1,9 +1,11 @@
+import { reviewStatus, type ReviewStatus } from "./review-status";
 import { accountLabel } from "@finance/shared";
 import { TransferValueNote } from "../assets/TransferValueNote";
 import { RememberCategory } from "./RememberCategory";
 import { EditAccountButton } from "../accounts/EditAccountButton";
 import {
   memo,
+  useState,
   useLayoutEffect,
   useRef,
   type Dispatch,
@@ -303,11 +305,29 @@ export function ImportRows({
   updateRow,
   focusRow,
   repairError,
+  conflictRows = [],
 }: Omit<RowProps, "row" | "rememberedCount"> & {
   preview: { rows: ImportRow[] };
+  conflictRows?: number[];
   page: number;
   setPage: Dispatch<SetStateAction<number>>;
 }) {
+  const [selection, setSelection] = useState<{
+    filter: ReviewStatus | "all";
+    focus: typeof focusRow;
+  }>({ filter: "all", focus: focusRow });
+  const filter = selection.focus === focusRow ? selection.filter : "all";
+  const statusRows = preview.rows.map((row) => ({
+    row,
+    status: reviewStatus(row, data, accountId, conflictRows),
+  }));
+  const visible = statusRows
+    .filter((item) => filter === "all" || item.status === filter)
+    .map((item) => item.row);
+  const currentPage = Math.min(
+    page,
+    Math.max(0, Math.ceil(visible.length / PAGE_SIZE) - 1),
+  );
   const rememberedCounts = new Map<number, number>();
   for (const row of preview.rows) {
     if (row.rememberedFrom !== undefined)
@@ -318,9 +338,53 @@ export function ImportRows({
   }
   return (
     <Card className="min-w-0 overflow-hidden p-0!">
+      <div
+        role="group"
+        aria-label="Review status"
+        className="flex flex-wrap gap-1 border-b p-3"
+      >
+        {(
+          [
+            ["all", "All"],
+            ["attention", "Needs attention"],
+            ["ready", "Ready"],
+            ["reconciled", "Reconciled"],
+            ["excluded", "Excluded"],
+          ] as const
+        ).map(([value, label]) => (
+          <Button
+            key={value}
+            size="sm"
+            variant={filter === value ? "default" : "ghost"}
+            aria-pressed={filter === value}
+            onClick={() => {
+              setSelection({ filter: value, focus: focusRow });
+              setPage(0);
+            }}
+          >
+            {label} (
+            {value === "all"
+              ? preview.rows.length
+              : statusRows.filter((item) => item.status === value).length}
+            )
+          </Button>
+        ))}
+      </div>
+      {filter === "attention" && (
+        <p className="border-b p-3 text-xs text-muted-foreground">
+          Check errors, transfer details and uncategorised payments. Valid
+          uncategorised payments can still be imported.
+        </p>
+      )}
+      {!visible.length && (
+        <p className="p-5 text-sm text-muted-foreground">
+          No transactions in this view. Choose All to see the complete
+          statement.
+        </p>
+      )}
       <div className="divide-y">
-        {preview.rows
-          .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+        {visible
+          .slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
           .map((row) => (
             <ReviewRow
               key={row.rowNumber}
@@ -339,20 +403,20 @@ export function ImportRows({
         <Button
           variant="ghost"
           size="sm"
-          disabled={!page}
-          onClick={() => setPage((p) => p - 1)}
+          disabled={!currentPage}
+          onClick={() => setPage(currentPage - 1)}
         >
           Previous
         </Button>
         <span className="text-xs text-muted-foreground">
-          Page {page + 1} of{" "}
-          {Math.max(1, Math.ceil(preview.rows.length / PAGE_SIZE))}
+          Page {currentPage + 1} of{" "}
+          {Math.max(1, Math.ceil(visible.length / PAGE_SIZE))}
         </span>
         <Button
           variant="ghost"
           size="sm"
-          disabled={(page + 1) * PAGE_SIZE >= preview.rows.length}
-          onClick={() => setPage((p) => p + 1)}
+          disabled={(currentPage + 1) * PAGE_SIZE >= visible.length}
+          onClick={() => setPage(currentPage + 1)}
         >
           Next
         </Button>

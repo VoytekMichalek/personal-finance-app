@@ -28,6 +28,7 @@ import {
   updateTransaction,
 } from "./service.js";
 import { saveCategory, removeCategory } from "./categories.js";
+import { saveCategoryColours } from "./category-colours.js";
 export const financeRouter = Router();
 financeRouter.get("/snapshot", async (_req, res) => res.json(await snapshot()));
 financeRouter.get("/forecast", async (req, res) =>
@@ -138,6 +139,9 @@ financeRouter.put("/transactions/:id/type", async (req, res) => {
 });
 financeRouter.post("/transactions/bulk-delete", async (req, res) => {
   res.json(await bulkDelete(req.body));
+});
+financeRouter.put("/categories/colours", async (req, res) => {
+  res.json(await saveCategoryColours(req.body));
 });
 for (const method of ["post", "put"] as const) {
   financeRouter[method](

@@ -1,10 +1,10 @@
+import { matchingSavedRules } from "./matched-rules";
 import { ActionError } from "../common/ActionError";
 import { RememberTransaction } from "./RememberTransaction";
 import { RememberButton } from "./RememberButton";
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
-  compareRules,
-  matchesRule,
   matchingTransferTransactions,
   suggestRememberedRule,
   displayDate,
@@ -13,7 +13,6 @@ import {
   type Snapshot,
   type Transaction,
   type TransactionFilters,
-  transferCounterpart,
 } from "@finance/shared";
 import { useAction } from "../../hooks/data";
 import { Card, Pill, Select } from "../common/primitives";
@@ -54,44 +53,20 @@ export function TransactionTable({
     if (matches.some((item) => item.id !== row.id && item.kind !== "transfer"))
       setRemembering({ id: row.id, afterVersion: row.version });
   };
-  const rules = data.rules
-    .filter(
-      (rule) =>
-        rule.enabled &&
-        (rule.kind === "transfer" ||
-          data.categories.some(
-            (category) => category.id === rule.categoryId && !category.archived,
-          )),
-    )
-    .sort(compareRules);
-  const ruleMatches = new Set(
-    rows
-      .filter((row) =>
-        row.kind === "transfer"
-          ? rules.find(
-              (rule) =>
-                rule.kind === "transfer" &&
-                rule.accountId === row.accountId &&
-                rule.direction === (row.amountCents < 0 ? "out" : "in") &&
-                matchesRule(row.description, rule),
-            )?.counterAccountId ===
-              transferCounterpart(row, data.transactions)?.accountId &&
-            !!transferCounterpart(row, data.transactions)
-          : row.categoryId &&
-            rules.find(
-              (rule) =>
-                data.categories.some(
-                  (category) =>
-                    category.id === rule.categoryId &&
-                    category.kind ===
-                      (row.kind === "income" ? "income" : "expense"),
-                ) && matchesRule(row.description, rule),
-            )?.categoryId === row.categoryId,
-      )
-      .map((row) => row.id),
-  );
+  const ruleMatches = matchingSavedRules(data, rows);
   const [selected, setSelected] = useState(new Set<string>());
-  const [page, setPage] = useState(0);
+  const [params, setParams] = useSearchParams();
+  const page = Math.max(0, Number(params.get("page")) || 0);
+  const setPage = (nextPage: number) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (nextPage) next.set("page", String(nextPage));
+        else next.delete("page");
+        return next;
+      },
+      { replace: true },
+    );
   const [bulk, setBulk] = useState("");
   const action = useAction(() => setSelected(new Set()));
   // Resolve against the current filtered snapshot, including refreshed/deleted rows.
@@ -297,9 +272,6 @@ export function TransactionTable({
                             categories={data.categories}
                             disabled={action.isPending}
                           />
-                          {ruleMatches.has(row.id) && (
-                            <Pill tone="positive">Matches saved rule</Pill>
-                          )}
                           <PersonChip owner={row.owner} people={data.people} />
                         </div>
                       </td>
@@ -327,9 +299,6 @@ export function TransactionTable({
                           categories={data.categories}
                           disabled={action.isPending}
                         />
-                        {ruleMatches.has(row.id) && (
-                          <Pill tone="positive">Matches saved rule</Pill>
-                        )}
                       </td>
                       <td className="hidden p-3 xl:table-cell">
                         <PersonChip owner={row.owner} people={data.people} />
@@ -348,6 +317,7 @@ export function TransactionTable({
                         </span>
                         <div className="mt-2 sm:hidden">
                           <RememberButton
+                            matchesRule={ruleMatches.has(row.id)}
                             row={row}
                             disabled={action.isPending}
                             onClick={() => setRemembering({ id: row.id })}
@@ -356,6 +326,7 @@ export function TransactionTable({
                       </td>
                       <td className="hidden p-3 text-right sm:table-cell">
                         <RememberButton
+                          matchesRule={ruleMatches.has(row.id)}
                           row={row}
                           disabled={action.isPending}
                           onClick={() => setRemembering({ id: row.id })}

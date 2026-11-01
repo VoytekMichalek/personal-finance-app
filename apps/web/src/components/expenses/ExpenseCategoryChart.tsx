@@ -1,4 +1,6 @@
-import { ChartViewTabs } from "./ChartViewTabs";
+import { VisualTitle } from "../common/VisualTitle";
+import { expenseChartGroups, chartGroupAmount } from "./chart-groups";
+import { ChartViewTabs } from "../common/ChartViewTabs";
 import { useId, useMemo, useState } from "react";
 import {
   Bar,
@@ -38,6 +40,7 @@ export function ExpenseCategoryChart({
 }) {
   const viewId = useId();
   const [view, setView] = useState<"graph" | "table">("graph");
+  const [expanded, setExpanded] = useState(false);
   const [interval, setInterval] = useState<ExpenseInterval>("month");
   const { categoryIds, points } = useMemo(
     () => expenseCategoryTrend(rows, from, to, interval),
@@ -55,6 +58,9 @@ export function ExpenseCategoryChart({
         : identityColour("category:none"),
     };
   });
+  const groups = expenseChartGroups(series, points, expanded);
+  const grouped =
+    series.filter((item) => item.id !== "uncategorised").length > 5;
   const period = (date: string) =>
     new Intl.DateTimeFormat("en-AU", {
       ...(interval === "month"
@@ -68,15 +74,12 @@ export function ExpenseCategoryChart({
       : `${displayDate(point.from)} – ${displayDate(point.to)}`;
 
   return (
-    <Card className="mb-5 min-w-0">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="font-semibold">Expenses over time</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Stacked by category · refunds deducted
-            {interval === "week" ? " · weeks start Monday" : ""}
-          </p>
-        </div>
+    <Card className="min-w-0">
+      <VisualTitle
+        title="Expenses over time"
+        context="Recorded expenses by category, less refunds. Weeks start Monday. Scroll across the chart for longer periods; use Table for exact values."
+      />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div
           role="group"
           aria-label="Chart interval"
@@ -94,8 +97,6 @@ export function ExpenseCategoryChart({
             </Button>
           ))}
         </div>
-      </div>
-      <div className="mb-4">
         <ChartViewTabs id={viewId} value={view} onChange={setView} />
       </div>
       {!rows.length ? (
@@ -163,9 +164,11 @@ export function ExpenseCategoryChart({
                                 <p className="mb-2 font-medium">
                                   {range(point)}
                                 </p>
-                                {series.map(
-                                  (item, index) =>
-                                    point.amounts[index] !== 0 && (
+                                {groups.map(
+                                  (item) =>
+                                    item.indexes.some(
+                                      (index) => point.amounts[index] !== 0,
+                                    ) && (
                                       <div
                                         key={item.id}
                                         className="flex items-start justify-between gap-4 py-1"
@@ -178,7 +181,7 @@ export function ExpenseCategoryChart({
                                           {item.name}
                                         </span>
                                         <span className="shrink-0 tabular-nums">
-                                          {money(point.amounts[index] ?? 0)}
+                                          {money(chartGroupAmount(point, item))}
                                         </span>
                                       </div>
                                     ),
@@ -191,19 +194,24 @@ export function ExpenseCategoryChart({
                             );
                           }}
                         />
-                        {series.map((item, index) => (
-                          <Bar
-                            key={item.id}
-                            name={item.name}
-                            dataKey={(point: ExpenseCategoryPoint) =>
-                              point.amounts[index]
-                            }
-                            stackId="expenses"
-                            fill={item.colour}
-                            maxBarSize={44}
-                            isAnimationActive={false}
-                          />
-                        ))}
+                        {groups.flatMap((item) =>
+                          (item.indexes.length > 1
+                            ? (["positive", "negative"] as const)
+                            : [undefined]
+                          ).map((sign) => (
+                            <Bar
+                              key={item.id + (sign ?? "")}
+                              name={item.name}
+                              dataKey={(point: ExpenseCategoryPoint) =>
+                                chartGroupAmount(point, item, sign)
+                              }
+                              stackId="expenses"
+                              fill={item.colour}
+                              maxBarSize={44}
+                              isAnimationActive={false}
+                            />
+                          )),
+                        )}
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -215,12 +223,12 @@ export function ExpenseCategoryChart({
                 )}
                 <ul
                   aria-label="Chart categories"
-                  className="mt-4 grid max-h-40 grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-2 overflow-y-auto text-xs text-muted-foreground"
+                  className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground"
                 >
-                  {series.map((item) => (
+                  {groups.map((item) => (
                     <li
                       key={item.id}
-                      className="flex items-start gap-2.5 rounded-lg bg-muted/50 px-3 py-2"
+                      className="flex min-w-0 max-w-full items-start gap-2"
                     >
                       <span
                         className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm"
@@ -232,6 +240,19 @@ export function ExpenseCategoryChart({
                     </li>
                   ))}
                 </ul>
+                {grouped && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-3 px-0 text-primary"
+                    aria-expanded={expanded}
+                    onClick={() => setExpanded(!expanded)}
+                  >
+                    {expanded
+                      ? "Show top 5 categories"
+                      : "Show all chart categories"}
+                  </Button>
+                )}
               </>
             )}
           </div>

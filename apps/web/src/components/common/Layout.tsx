@@ -1,3 +1,4 @@
+import { useScrollRestoration } from "../../hooks/scroll-restoration";
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { useState } from "react";
 import "./sidebar.css";
@@ -23,10 +24,11 @@ const items = [
   ["/expenses", "Expenses", ChartPie],
   ["/plan", "Plan", CalendarDays],
   ["/assets", "Assets & Liabilities", Building2],
-  ["/categories", "Categories", Tags],
+  ["/categories", "Categories & rules", Tags],
   ["/net-worth", "Net Worth", ChartNoAxesCombined],
 ] as const;
 export function Layout({ user }: { user: Person }) {
+  useScrollRestoration();
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("finance-sidebar-collapsed") === "true",
   );

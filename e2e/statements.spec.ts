@@ -142,7 +142,7 @@ test("statement account detail includes forecast, original downloads and net wor
   );
   await page.getByRole("link", { name: "Manage assets & liabilities" }).click();
   await expect(
-    page.getByRole("heading", { name: "Assets & Liabilities", exact: true }),
+    page.getByRole("heading", { name: "Assets & liabilities", exact: true }),
   ).toBeVisible();
 });
 test("category hierarchy, styled keyboard dropdown and sidebar branding", async ({
@@ -231,7 +231,7 @@ test("credit card setup shows debt and includes it once in net worth", async ({
     page.getByText("Credit card · $500.00 owed", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Upload statement" }),
+    page.getByRole("button", { name: "Import transactions" }),
   ).toBeVisible();
   await page.goto("/net-worth");
   await expect(page.getByRole("link", { name: /CBA Card/ })).toContainText(

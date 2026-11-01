@@ -1,4 +1,4 @@
-import { test, expect, session, tickFilter } from "./fixtures";
+import { test, expect, session, tickFilter, choosePeriod } from "./fixtures";
 
 test("expense search filters totals, charts and drill-downs and clears with keyboard focus", async ({
   page,
@@ -41,7 +41,7 @@ test("expense search filters totals, charts and drill-downs and clears with keyb
     expect(response.ok()).toBe(true);
   }
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "All history", exact: true }).click();
+  await choosePeriod(page, "All history");
   const search = page.getByRole("searchbox", { name: "Search expenses" });
   const clear = page.getByRole("button", { name: "Clear search", exact: true });
   const included = page.getByRole("heading", {

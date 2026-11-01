@@ -23,3 +23,5 @@ export * from "./schedules.js";
 export * from "./import-reconciliations.js";
 export * from "./statement-dates.js";
 export * from "./accounts.js";
+export * from "./overview-history.js";
+export * from "./category-colours.js";

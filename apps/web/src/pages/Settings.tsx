@@ -26,7 +26,7 @@ export function SettingsPage({ user }: { user: Person }) {
   const { status: integrations } = useAiSettings();
   const location = useLocation();
   const navigate = useNavigate();
-  const tab = location.pathname.split("/")[2] ?? "system";
+  const tab = location.pathname.split("/")[2] ?? "";
   const system = useQuery({
     queryKey: ["system"],
     queryFn: () => api<Metadata>("/system"),
@@ -49,24 +49,64 @@ export function SettingsPage({ user }: { user: Person }) {
     <>
       <PageHeading
         eyebrow="Just the essentials"
-        title="Make yourself at home."
+        title="Settings"
         description="Your people, preferences and the details behind your app."
       />
-      <div className="mb-7 flex flex-wrap gap-1 border-b pb-3">
-        {tabs.map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => navigate("/settings/" + id)}
-            className={cn(
-              "rounded-lg px-4 py-2.5 text-xs font-medium",
-              tab === id ? "bg-white shadow-sm" : "text-muted-foreground",
-            )}
+      {tab && (
+        <div className="mb-5 flex flex-wrap gap-1 border-b pb-3">
+          <Link
+            to="/settings"
+            className="rounded-lg px-3 py-2.5 text-xs text-primary"
           >
-            {label}
-          </button>
-        ))}
-      </div>
-      {tab === "users" && user.role === "admin" ? (
+            All settings
+          </Link>
+          {tabs.map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => navigate("/settings/" + id)}
+              className={cn(
+                "rounded-lg px-4 py-2.5 text-xs font-medium",
+                tab === id ? "bg-white shadow-sm" : "text-muted-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {!tab ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            ...(user.role === "admin"
+              ? [
+                  [
+                    "users",
+                    "People",
+                    "Invite household members and manage access.",
+                  ],
+                ]
+              : []),
+            ["ai", "AI", "Choose a model and manage its connection."],
+            ["releases", "Release notes", "See what changed in each release."],
+            [
+              "system",
+              "System details",
+              "Version, build and service information.",
+            ],
+          ].map(([path, title, description]) => (
+            <Link
+              key={path}
+              to={`/settings/${path}`}
+              className="rounded-xl border bg-white p-5 hover:bg-muted/50"
+            >
+              <h2 className="font-semibold">{title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {description}
+              </p>
+            </Link>
+          ))}
+        </div>
+      ) : tab === "users" && user.role === "admin" ? (
         <Users />
       ) : tab === "ai" ? (
         <AiSettings admin={user.role === "admin"} />

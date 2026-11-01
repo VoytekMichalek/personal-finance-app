@@ -187,3 +187,11 @@ it("future transfer suggestions respect account, direction, enabled state and co
     expect(untouched.kind).toBe("expense");
   }
 });
+
+it("intersects multiselects with locked account, date and type constraints", () => {
+  const records=[row({id:"expense"}),row({id:"refund",kind:"refund"}),row({id:"other-owner",owner:"person"}),row({id:"other-account",accountId:"savings"}),row({id:"categorized",categoryId:"food"}),row({id:"transfer",kind:"transfer"}),row({id:"old",date:"2026-09-30"})];
+  const filters={...transactionFiltersSchema.parse({}),accountIds:["bank","savings"],owners:["household"],categoryIds:["none","food"],kinds:["expense" as const],from:"2026-10-01",to:"2026-10-31"};
+  expect(filterTransactions(records,filters).map(r=>r.id)).toEqual(["expense","refund","other-account","categorized"]);
+  expect(filterTransactions(records,{...filters,accountId:"bank"}).map(r=>r.id)).toEqual(["expense","refund","categorized"]);
+  expect(filterTransactions(records,{...filters,categoryIds:["none"],kinds:["transfer"]})).toEqual([]);
+});

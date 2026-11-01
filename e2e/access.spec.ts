@@ -19,7 +19,9 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
     isUserVerified: true,
     automaticPresenceSimulation: true,
   };
-  const primary = await cdp.send("WebAuthn.addVirtualAuthenticator", { options });
+  const primary = await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options,
+  });
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   // Two simultaneous completion requests must create exactly one first admin.
   await page.route(
@@ -40,9 +42,7 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
     .getByLabel("First-user token")
     .fill(environment().FIRST_USER_TOKEN);
   await page.getByRole("button", { name: "Create first admin" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Everything, in balance." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   const db = await database();
   expect(
     await db.user.count({ where: { role: "admin", state: "active" } }),
@@ -57,10 +57,12 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
   // Use a different device: WebAuthn excludes credentials already registered
   // for this user, so the primary authenticator cannot register itself again.
   await cdp.send("WebAuthn.removeVirtualAuthenticator", primary);
-  const backup = await cdp.send("WebAuthn.addVirtualAuthenticator", { options });
+  const backup = await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options,
+  });
   await page.getByLabel("New passkey name").fill("Backup device");
-  const registered = page.waitForResponse(
-    (response) => response.url().endsWith("/passkey/verify-registration"),
+  const registered = page.waitForResponse((response) =>
+    response.url().endsWith("/passkey/verify-registration"),
   );
   await page.getByRole("button", { name: "Add passkey", exact: true }).click();
   expect((await registered).status()).toBe(200);
@@ -107,9 +109,7 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
   await cdp.send("WebAuthn.addVirtualAuthenticator", { options });
   await page.goto(link);
   await page.getByRole("button", { name: "Create passkey" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Everything, in balance." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   await page.getByRole("button", { name: "Account menu" }).click();
   await page.getByRole("menuitem", { name: "Log out" }).click();
   await expect(
@@ -120,8 +120,8 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
   await expect(
     page.getByRole("button", { name: "Sign in with a passkey" }),
   ).toBeVisible();
-  const signedIn = page.waitForResponse(
-    (response) => response.url().endsWith("/passkey/verify-authentication"),
+  const signedIn = page.waitForResponse((response) =>
+    response.url().endsWith("/passkey/verify-authentication"),
   );
   await page.getByRole("button", { name: "Sign in with a passkey" }).click();
   expect((await signedIn).status()).toBe(200);
@@ -129,7 +129,5 @@ test("real passkey bootstrap, spouse invitation, sign-in and logout", async ({
     "anna@example.test",
   );
   await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: "Everything, in balance." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
 });

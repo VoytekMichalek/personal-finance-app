@@ -69,3 +69,12 @@
     animation: none;
   }
 }
+
+@media (max-width: 639px) {
+  .dialog-body form > button[type="submit"] {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    box-shadow: 0 0 0 6px white;
+  }
+}

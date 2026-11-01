@@ -3,7 +3,6 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { send } from "../lib/api";
 
 export function useTransactionCategory(id: string) {
@@ -23,8 +22,6 @@ export function useTransactionCategory(id: string) {
         categoryId,
         records: [{ id, version }],
       }),
-    onSuccess: () => toast.success("Category saved"),
-    onError: (error) => toast.error(error.message),
     // Refresh after a conflict as well, so the next edit uses the current version.
     onSettled: () => client.invalidateQueries({ queryKey: ["snapshot"] }),
   });

@@ -1,4 +1,11 @@
-import { test, expect, session, choose, tickFilter } from "./fixtures";
+import {
+  test,
+  expect,
+  session,
+  choose,
+  tickFilter,
+  choosePeriod,
+} from "./fixtures";
 import {
   statementPdf,
   sixMonthStatement,
@@ -133,7 +140,7 @@ test("expenses filter refunds and ownership", async ({ page }, info) => {
     expect(response.ok()).toBe(true);
   }
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "All history" }).click();
+  await choosePeriod(page, "All history");
   await expect(
     page.getByText("$125.00", { exact: true }).first(),
   ).toBeVisible();
@@ -160,7 +167,7 @@ test("expenses filter refunds and ownership", async ({ page }, info) => {
   ).toHaveCount(0);
   await page.goto("/categories");
   await expect(
-    page.getByRole("heading", { name: "Categories", exact: true }),
+    page.getByRole("heading", { name: "Categories & rules", exact: true }),
   ).toBeVisible();
 });
 test("six month review edits stay responsive across pagination", async ({
@@ -259,6 +266,7 @@ for (const kind of ["asset", "liability"] as const)
     await expect(
       page.getByText("$550,000.00", { exact: true }).first(),
     ).toBeVisible();
+    await page.getByRole("tab", { name: "Valuations", exact: true }).click();
     await page
       .getByRole("button", { name: "Edit valuation 2026-06-01" })
       .click();

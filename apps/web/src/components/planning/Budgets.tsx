@@ -1,3 +1,5 @@
+import { BudgetRow } from "./BudgetRow";
+import { useSearchParams } from "react-router-dom";
 import { ActionError } from "../common/ActionError";
 import { SelectItem, FormSelect } from "../ui/select";
 import { CategoryChip } from "../common/EntityChip";
@@ -13,7 +15,7 @@ import {
   moneyInput,
   type Snapshot,
 } from "@finance/shared";
-import { Plus, Pencil } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useAction } from "../../hooks/data";
 import { Button } from "../ui/button";
 import { Dialog } from "../ui/dialog";
@@ -26,7 +28,17 @@ const schema = budgetSchema.extend({
   ),
 });
 export function Budgets({ data }: { data: Snapshot }) {
-  const [month, setMonth] = useState(data.today.slice(0, 7));
+  const [params, setParams] = useSearchParams();
+  const month = params.get("month") ?? data.today.slice(0, 7);
+  const setMonth = (month: string) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("month", month);
+        return next;
+      },
+      { replace: true },
+    );
   const [categoryId, setCategoryId] = useState("");
   const [open, setOpen] = useState(false);
   const budgets = effectiveBudgets(data.budgets, month);
@@ -70,72 +82,40 @@ export function Budgets({ data }: { data: Snapshot }) {
         ))}
       </div>
       <Card>
-        <SectionTitle>Room for what matters</SectionTitle>
+        <SectionTitle>Monthly budgets</SectionTitle>
         {budgets.length ? (
-          <div className="grid gap-6">
+          <>
+            <div className="hidden grid-cols-[minmax(8rem,1fr)_8rem_7rem_7rem] gap-3 border-b pb-2 text-xs text-muted-foreground sm:grid">
+              <span>Category</span>
+              <span>Budget</span>
+              <span className="text-right">Spent</span>
+              <span className="text-right">Remaining</span>
+            </div>
             {budgets.map((b) => {
               const category = data.categories.find(
                 (c) => c.id === b.categoryId,
               );
-              const amount = categorySpend(
-                data.transactions,
-                b.categoryId,
-                month,
-              );
               return (
-                <div key={b.categoryId}>
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium">
-                      {category?.name}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        {money(amount)} / {money(b.amountCents)}
-                      </span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={"Edit " + category?.name + " budget"}
-                        onClick={() => {
-                          setCategoryId(b.categoryId);
-                          setOpen(true);
-                        }}
-                      >
-                        <Pencil size={13} />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{
-                        width:
-                          Math.min(
-                            100,
-                            Math.max(
-                              0,
-                              b.amountCents
-                                ? (amount / b.amountCents) * 100
-                                : 0,
-                            ),
-                          ) + "%",
-                        backgroundColor:
-                          amount > b.amountCents ? "#c63845" : category?.color,
-                      }}
-                    />
-                  </div>
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    {money(Math.abs(b.amountCents - amount))}{" "}
-                    {amount > b.amountCents ? "over budget" : "remaining"}
-                  </p>
-                </div>
+                category && (
+                  <BudgetRow
+                    key={month + category.id}
+                    category={category}
+                    month={month}
+                    budget={b.amountCents}
+                    spent={categorySpend(
+                      data.transactions,
+                      b.categoryId,
+                      month,
+                    )}
+                  />
+                )
               );
             })}
-          </div>
+          </>
         ) : (
           <Empty
-            title="A plan that fits your life"
-            description="Choose a category and give it a monthly allowance."
+            title="Set your first budget"
+            description="Choose a category and a monthly allowance."
             action={
               <Button onClick={() => setOpen(true)}>
                 Set your first budget
@@ -143,6 +123,7 @@ export function Budgets({ data }: { data: Snapshot }) {
             }
           />
         )}
+
         <p className="mt-6 border-t pt-4 text-[11px] leading-5 text-muted-foreground">
           Budgets repeat until you set a new monthly amount. Unspent amounts
           don’t roll over. All owners are included.

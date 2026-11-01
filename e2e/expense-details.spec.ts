@@ -1,4 +1,4 @@
-import { test, expect, session, tickFilter } from "./fixtures";
+import { test, expect, session, tickFilter, choosePeriod } from "./fixtures";
 const headers = { Origin: "http://localhost:3000" };
 test("expense breakdown opens filtered transactions and a complete period trend", async ({
   page,
@@ -48,7 +48,7 @@ test("expense breakdown opens filtered transactions and a complete period trend"
     expect(response.ok()).toBe(true);
   }
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "All history" }).click();
+  await choosePeriod(page, "All history");
   await tickFilter(page, "Person", ["Voytek"]);
   const trigger = page.getByRole("button", {
     name: "View Groceries transactions",

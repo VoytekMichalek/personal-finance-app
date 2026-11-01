@@ -481,3 +481,189 @@ interruptions produced no failed product assertions and are retained in the loca
 evidence rather than reported as clean combined process exits. Logs/screenshots
 remain under ignored `artifacts/v0.0.11-*`. Desktop/mobile screenshots and overflow
 checks cover the new editing, repair, asset-transfer and release-history surfaces.
+
+## Expenses layout and saved-rule actions — 2 November 2026
+
+The local-preview change keeps report filtering and financial calculations intact,
+while moving the filters into a compact toolbar, placing the chart and breakdown
+side by side on wide screens, and giving transactions the full width. The chart
+starts with five named categories, Uncategorised and Remaining categories; pure
+unit checks prove exact cent totals, refund activity, deterministic ordering and
+separate positive/negative grouped stacks. The exact-value table retains every
+category. Browser checks expand/collapse chart categories and the top-eight
+breakdown, retain drill-down focus, and verify desktop positioning and mobile
+page overflow. This replaces the old internal-breakdown-scroll assertion with
+coverage for reaching every item through Show all.
+
+Expense transaction rows reuse the existing type/category mutations and filtered
+remember confirmation. The new type journey holds the save response, proves the
+pending controls are disabled, then verifies that removing the source expense
+from the report does not dismiss the confirmation. It checks the remaining match,
+future transfer rule, balanced counterpart entries, and unchanged rows excluded
+by account, date and category. The browser clock is installed before navigation;
+network response waits are registered before clicks and the response barrier is
+released in cleanup. Real database writes retain their integration boundary.
+
+Saved-rule status is now the clickable row action in Transactions, account ledgers
+and Expenses. The existing matching logic is shared without changing its rule
+priority or eligibility. Ledger/category journeys verify the green action replaces
+Remember, still opens the confirmation, survives pagination/reload and retains
+mobile overflow checks. Existing transfer-rule journeys cover its linked-account
+matching. Screenshots include desktop/mobile Expenses layouts and saved-rule actions.
+
+Local checks reuse the production build and installed Chromium/WebKit, with one
+worker because finance_e2e is mutable shared test state. A port-3002 test copy
+changes only the localhost origin, keeping the existing preview on 5174/3000.
+No household or preview database resets are used. Only affected local checks are
+run; this task does not publish a release or run full local CI.
+
+Expenses/rule-action verification passed 16 targeted unit cases, all 50 affected
+desktop/mobile browser journeys, and 20 consecutive no-retry repetitions of the new
+transfer timing case (10 per browser). Guardrails, lint, web typecheck, production
+builds and whitespace checks passed. Screenshots were inspected for the desktop
+layout, category grouping and the saved-rule action. The browser log is retained in
+ignored `artifacts/expenses-redesign-browser.log`.
+
+The subsequent compact account-card journey checks four cards per desktop row,
+compact heights, stable owner colours through filtering, credit balances, archived
+visibility, long names, phone overflow and opening/editing an account. The existing
+account-create/open/CSV journey is rerun on both browsers. Twelve clearly labelled
+sample accounts were added only to `finance_preview_0358ccf3b4`, with a display-only
+invited sample member and no session/passkey/invitation grant. Stable sample IDs
+and insert-only seeding preserve existing records and subsequent user edits.
+
+Account verification passed all four desktop/mobile card and existing account/CSV
+journeys. After the owner's colour refinement, the final white-card/neutral-icon
+version passed both card journeys again, including ownership bubbles, editing and
+mobile layout. Final screenshots were inspected; guardrails, lint, web typecheck,
+web production build and whitespace checks passed. Logs are retained under ignored
+`artifacts/account-cards-browser.log` and `artifacts/account-cards-final-browser.log`.
+The existing local API readiness and Accounts preview returned HTTP 200 at handover.
+
+
+Ownership bubbles now allocate separated hues from the full household roster,
+rather than hashing each ID independently. Unit coverage checks a minimum 90-degree
+hue separation for the household and two members, unique colours for larger
+rosters, order independence, duplicate roster entries and the fixed Household
+colour. The existing account-card browser journey also checks that the ownership
+filter uses exactly the card's bubble colour. Cards, selectors, transactions and
+the Expenses person breakdown share this assignment. This changes no timers or
+financial behavior; earlier timing evidence remains applicable.
+
+Ownership-colour verification passed all four colour unit cases, all ten affected
+account-card, Expenses chart and ledger desktop/mobile journeys with no retries,
+all workspace typechecks, lint, guardrails, shared/web builds and whitespace checks.
+Final account screenshots were inspected on both browsers. The browser evidence is
+in ignored `artifacts/owner-colours-browser.log`; the local preview remains ready.
+
+## Household UX and v0.0.12 candidate — 2 November 2026
+
+This change covers the owner-approved page-flow improvements and subsequent
+refinements to the dashboard, compact filter bars, aligned chart controls,
+asset/debt headers, anchored date controls and one-click category colours.
+Pure shared tests own historical/forecast boundaries, refund/transfer semantics,
+filter intersections and deterministic colour allocation. API integration tests
+own authenticated pending-statement summaries, filter scope enforcement and atomic
+colour assignment/undo, including stale-write rejection. Browser journeys own
+navigation, pending/error/retry state, desktop/mobile layout and accessible controls.
+
+The production build is reused by the local Chromium/WebKit journeys on port 3002;
+5174/3000 continues serving the user's preview. No browser engines are reinstalled.
+Browser tests use finance_e2e with one worker because their reset fixtures share
+mutable state. API tests use the separate finance_test database and run alongside
+independent static/unit checks. The category-colour test exposed category state
+leaking between integration runs; the integration fixture now restores the seeded
+category baseline before each test, matching E2E isolation. No preview or household
+database is reset.
+
+New coverage includes six months of recorded cash history joined to three calendar
+months of existing-model forecasts, gaps before the first account, month-end/leap-day
+boundaries, refunds, excluded transfers and owner-scoped spending links. UI checks
+cover preserved filters/pages/Back scroll, inline budgets, planning views, grouped
+net worth, asset valuation/movement explanations, import correction/status filters,
+reachable action bars, retained failed edits and retry. Category-colour journeys
+verify persistence across reload, every category including archived/search-hidden
+items, exact undo and mobile overflow. Compact filter geometry, aligned Graph/Table
+and breakdown controls, keyboard/touch tips, date-popup anchoring/collision handling,
+nested calendars, Escape and outside-click cancellation are checked on both surfaces.
+
+Timing-sensitive mutation/import journeys install the browser clock before
+navigation and use response barriers with waits registered before actions. The
+barriers prove pending/disabled state, then release the actual network boundary and
+check successful completion or recoverable failure. Real PostgreSQL writes remain
+real integration boundaries. Repetitions use zero retries and the same built bundle.
+
+Initial browser failures identified a clipped desktop clear-date control (fixed by
+letting its date button shrink beside the clear button) and test expectations for
+old labels, reset-on-reload filters and modal positioning. Assertions now check the
+intended retained filters, then explicitly clear them before verifying saved transfer
+rows; the anchored panel may flip above its trigger on phones. A multiselect helper
+now waits for the All state before choosing the requested item, preventing stale
+selection reads. Existing behavior and financial assertions are retained.
+
+The broader page run also updated legacy expectations for named multiselect
+counts, retained search/page state after reload and the new Valuations tab. The
+account archive checkbox uses click plus an awaited checked assertion because
+React Router commits its URL-backed value in a transition; the trace confirmed
+the account list and checkbox updated correctly. These corrections retain the
+underlying filtering, persisted-value and financial assertions.
+
+The mobile transfer flow then exposed a real date-filter race: the popover closed
+before React Router's pending filter transition remounted the table, so an immediate
+type edit could disappear. Date application and popover closure now share one React
+transition. The existing end-to-end transfer journey edits immediately after the
+panel closes and is included in the ten-run timing gate, along with anchored
+popover/calendar interactions. These use the real browser rendering boundary,
+observable draft values and closed surfaces, without arbitrary sleeps. The helper
+also waits for selection menus/calendars to close before starting the next action.
+
+R17–R19 source inspection: this release adds no runtime inputs, schema changes,
+credential exposure or logging sink. The API/web image still uses the documented
+root runtime example, local configuration remains separate, and the entrypoint
+applies committed migrations before serving. The two new authenticated routes use
+shared Zod/HttpError handling and quiet expected failures. Existing production-image
+smoke checks exercise minimal inputs, placeholders, migrations, log severity,
+diagnostics and redaction. Exact-candidate image/smoke/scan evidence is required in
+main CI before the annotated release tag; release repeats those gates before rollout.
+No live household data or registry publication substitutes for isolated verification.
+
+Local candidate verification has passed all 132 unit cases (25 files), all 124
+integration cases (24 files) and 140 affected timing repetitions (10 desktop and
+10 mobile runs for each of seven save/import/transfer journeys), with zero retries.
+The repeat run completed normally in 9.9 minutes. A final budget Cancel safeguard
+and right alignment on wrapped chart toolbars are covered by the subsequent page
+journeys; neither changes the repeated mutation/import logic. All workspace
+typechecks, lint, guardrails, production builds and whitespace checks pass.
+Detailed local logs are retained in ignored `artifacts/ux-final-*`,
+`artifacts/ux-timing-repeat.log` and `artifacts/ux-release-web-build.log`.
+
+Preview fixtures and manual exploration paths are documented in
+[ux-preview.md](ux-preview.md). The dedicated preview had 19 accounts, 1,115
+transactions and three ready sample PDF reviews at the final readiness check;
+API readiness and the local frontend both returned HTTP 200. Desktop/mobile
+screenshots cover filter bars, popovers, chart alignment, category colours,
+account cards, grouped assets, dashboard history, import actions and editing.
+
+The broad affected browser coverage completed 140 distinct desktop/mobile journeys
+across the recorded runs, with the two existing platform-specific skips (mobile
+WebAuthn registration and desktop-sidebar motion). Interrupted terminal runs were
+resumed for the remaining cases; successful checks were retained. The mobile run
+reported one isolated session-fixture 401 and the date-transition regression above;
+the session case passed on both focused reruns without an authentication change.
+After fixing the transition, all 40 additional date/transfer repetitions passed
+(ten per case per browser, zero retries) in 5.7 minutes. The final desktop and
+phone screenshots were inspected, including anchored/flipped date panels, aligned
+chart controls and visibly separated asset/debt totals. Evidence is retained in
+`artifacts/ux-affected-browser.log`, `artifacts/ux-browser-finish.log`,
+`artifacts/ux-mobile-recovery.log` and `artifacts/ux-date-final.log`.
+
+The post-fix 48-journey filter suite passed 47 cases and identified one remaining
+test-helper race between a preset click and opening the next date field. The preset
+helper now waits for the panel to close (different presets can represent identical
+dates, so readiness uses expanded state rather than a particular label). The
+affected Expenses chart/pagination journey then passed ten consecutive desktop and
+ten mobile runs without retries in 2.9 minutes, recorded in
+`artifacts/ux-period-helper-repeat.log`. All affected journeys consequently have
+passing evidence; no local failure remains unresolved. Final web typecheck, lint,
+guardrails, web build and whitespace checks pass. Exact committed-candidate full CI,
+image verification and release/deployment checks follow publication to main.

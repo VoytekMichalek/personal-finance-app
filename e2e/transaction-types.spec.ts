@@ -197,7 +197,7 @@ test("inline type pending state disables category edits and recovers after a sta
     await expect(typePicker(page)).toBeDisabled();
     await expect(categoryPicker(page)).toBeDisabled();
     await expect(
-      page.getByRole("status").filter({ hasText: "Saving type…" }),
+      page.getByRole("status").filter({ hasText: "Saving…" }),
     ).toBeVisible();
     release();
     expect((await rejected).status()).toBe(409);
@@ -207,9 +207,14 @@ test("inline type pending state disables category edits and recovers after a sta
         .filter({ hasText: "This transaction or its linked payment changed" }),
     ).toBeVisible();
     await expect(typePicker(page)).toBeEnabled();
-    await expect(typePicker(page)).toHaveText("Expense");
+    await expect(typePicker(page)).toHaveText("Refund");
+    await expect(
+      page.getByText(
+        "Currently saved: Expense. Review the accounts before retrying.",
+      ),
+    ).toBeVisible();
     const recovered = savedType(page);
-    await choose(page, typePicker(page), "Refund");
+    await page.getByRole("button", { name: "Retry save", exact: true }).click();
     expect((await recovered).ok()).toBe(true);
     await expect(typePicker(page)).toHaveText("Refund");
     await expect(categoryPicker(page)).toBeEnabled();

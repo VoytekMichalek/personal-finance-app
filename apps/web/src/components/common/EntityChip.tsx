@@ -2,6 +2,7 @@ import {
   categoryColour,
   categoryLabel,
   identityColour,
+  ownerColour,
   type Category,
   type Person,
 } from "@finance/shared";
@@ -40,7 +41,7 @@ export function PersonChip({
   people: Person[];
 }) {
   return (
-    <Pill colour={identityColour("person:" + owner)}>
+    <Pill colour={ownerColour(owner, people)}>
       {owner === "household"
         ? "Household"
         : (people.find((person) => person.id === owner)?.name ??

@@ -119,10 +119,29 @@ export async function account(page: Page, name = "Everyday", balance = "5000") {
 
 export async function choose(page: Page, locator: Locator, label: string) {
   await locator.click();
-  await page.getByRole("option", { name: label, exact: true }).click();
+  if (await page.getByRole("menuitemcheckbox").count()) {
+    const all = page.getByRole("menuitemcheckbox").first();
+    await all.click();
+    await expect(all).toHaveAttribute("aria-checked", "true");
+    const option = page.getByRole("menuitemcheckbox", {
+      name: label,
+      exact: true,
+    });
+    if ((await option.getAttribute("aria-checked")) !== "true")
+      await option.click();
+    await page.keyboard.press("Escape");
+  } else {
+    const option = page.getByRole("option", { name: label, exact: true });
+    await option.click();
+    await expect(option).toBeHidden();
+  }
 }
 
 export async function chooseDate(page: Page, locator: Locator, date: string) {
+  const range = page.getByRole("button", { name: "Date range", exact: true });
+  // Wait for async page data before deciding whether this is a filter or form date.
+  await expect(locator.or(range).first()).toBeVisible();
+  if (!(await locator.isVisible())) await range.click();
   await locator.click();
   const yearPicker = page.getByRole("combobox", { name: "Year", exact: true });
   if ((await yearPicker.textContent())?.trim() !== date.slice(0, 4))
@@ -144,6 +163,16 @@ export async function chooseDate(page: Page, locator: Locator, date: string) {
     timeZone: "UTC",
   }).format(new Date(date + "T00:00:00Z"));
   await page.getByRole("button", { name: label, exact: true }).click();
+  // Nested calendars commit their draft and restore focus before the next control.
+  await expect(
+    page.getByRole("dialog", { name: "Choose date", exact: true }),
+  ).toBeHidden();
+  await expect(locator).toHaveText(label);
+  const apply = page.getByRole("button", { name: "Apply dates", exact: true });
+  if (await apply.isVisible()) {
+    await apply.click();
+    await expect(apply).toBeHidden();
+  }
 }
 
 export async function tickFilter(page: Page, name: string, labels: string[]) {
@@ -159,4 +188,13 @@ export async function tickFilter(page: Page, name: string, labels: string[]) {
   }
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
+}
+
+export async function choosePeriod(page: Page, label: string) {
+  const preset = page.getByRole("button", { name: label, exact: true });
+  const trigger = page.getByRole("button", { name: "Date range", exact: true });
+  if (!(await preset.isVisible())) await trigger.click();
+  await preset.click();
+  await expect(preset).toBeHidden();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
 }

@@ -1,3 +1,4 @@
+import { ImportButton } from "../components/imports/ImportButton";
 import { FileLink } from "../components/common/FileLink";
 import { TransactionBrowser } from "../components/transactions/TransactionBrowser";
 import { AccountInsights } from "../components/accounts/AccountInsights";
@@ -10,13 +11,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  FileSpreadsheet,
-  FileText,
-  Pencil,
-  Plus,
-} from "lucide-react";
+import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import {
   accountBalance,
   addDays,
@@ -60,7 +55,12 @@ export function AccountDetail() {
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [search, setSearch] = useSearchParams();
   const tab = search.get("tab") ?? "activity";
-  const setTab = (value: string) => setSearch({ tab: value });
+  const setTab = (value: string) =>
+    setSearch((current) => {
+      const next = new URLSearchParams(current);
+      next.set("tab", value);
+      return next;
+    });
   if (query.isPending) return <Loading />;
   if (query.error && !query.data)
     return (
@@ -114,20 +114,7 @@ export function AccountDetail() {
               Edit account
             </Button>
             {!account.archived && (
-              <>
-                <Button asChild>
-                  <Link to={"/accounts/" + id + "/statement"}>
-                    <FileText size={14} />
-                    Upload statement
-                  </Link>
-                </Button>
-                <Button asChild variant="secondary">
-                  <Link to={"/imports?account=" + id}>
-                    <FileSpreadsheet size={14} />
-                    Upload CSV
-                  </Link>
-                </Button>
-              </>
+              <ImportButton data={data} accountId={account.id} />
             )}
           </div>
         }
@@ -148,23 +135,18 @@ export function AccountDetail() {
           </p>
         </Card>
       )}
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          [
-            "Current balance",
-            accountBalance(account, transactions, data.today),
-          ],
-          ["Opening balance", account.openingBalanceCents],
-          ["Forecast in 90 days", points.at(-1)!.balanceCents],
-        ].map(([label, value]) => (
-          <Card key={label}>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="mt-3 text-2xl font-semibold tabular-nums">
-              {money(Number(value))}
-            </p>
-          </Card>
-        ))}
-      </div>
+      <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-4!">
+        <div>
+          <p className="text-xs text-muted-foreground">Current balance</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {money(balance)}
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Opening balance {money(account.openingBalanceCents)} on{" "}
+          {displayDate(account.openingDate)}
+        </p>
+      </Card>
       <div
         className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1"
         role="tablist"
@@ -220,9 +202,11 @@ export function AccountDetail() {
             accountId={account.id}
             onOpen={(record) => {
               if (record.kind === "transfer") {
-                navigate(
-                  "/transactions?account=" + id + "&detail=" + record.id,
-                );
+                const next = new URLSearchParams(search);
+                next.delete("tab");
+                next.set("account", account.id);
+                next.set("detail", record.id);
+                navigate(`/transactions?${next}`);
                 return;
               }
               setTransaction(record);

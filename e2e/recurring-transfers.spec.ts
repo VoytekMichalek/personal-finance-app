@@ -142,7 +142,7 @@ test("statement suggestions choose transfer direction before and after import an
       categoryId: null,
       subscription: false,
     });
-    await page.goto("/plan?tab=bills");
+    await page.goto("/plan?tab=bills&view=recurring");
     await page
       .getByRole("button", { name: "Edit Netflix", exact: true })
       .click();

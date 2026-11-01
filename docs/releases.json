@@ -1,5 +1,18 @@
 [
   {
+    "version": "0.0.12",
+    "date": "2026-11-02",
+    "highlights": [
+      "Overview now combines six months of recorded balances with three months of dotted projections, spending trends, category summaries and attention shortcuts.",
+      "A clearer Expenses layout puts charts and breakdowns side by side, simplifies legends and gives transactions more room for inline category and type changes.",
+      "Compact filter bars support multiple choices, anchored date-range panels and saved filters, pagination and Back position.",
+      "Smaller account cards use distinct owner bubbles; matching saved rules replace the Remember action so their status and controls stay together.",
+      "Assign unique colours to all categories at once, with an Undo option and protection against overwriting newer edits.",
+      "Cleaner planning, inline budget editing, grouped assets and debts, valuation explanations and net-worth date ranges.",
+      "Import review status filters and reachable action bars, clearer save/retry feedback, aligned Graph/Table controls and mobile layout improvements."
+    ]
+  },
+  {
     "version": "0.0.11",
     "date": "2026-11-01",
     "highlights": [

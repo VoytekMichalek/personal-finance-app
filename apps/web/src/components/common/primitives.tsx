@@ -20,16 +20,16 @@ export function PageHeading({
   action?: ReactNode;
 }) {
   return (
-    <header className="mb-9 flex flex-wrap items-end justify-between gap-5">
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="mb-2 text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+        <p className="mb-1 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
           {eyebrow}
         </p>
-        <h1 className="text-3xl font-semibold tracking-[-0.035em] md:text-4xl">
+        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
           {title}
         </h1>
         {description && (
-          <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
             {description}
           </p>
         )}
@@ -191,7 +191,7 @@ export function SectionTitle({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-center justify-between gap-3">
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <h2 className="text-base font-semibold tracking-tight">{children}</h2>
       {action}
     </div>

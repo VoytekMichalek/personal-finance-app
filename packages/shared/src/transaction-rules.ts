@@ -7,6 +7,16 @@ import { expenseFiltersSchema } from "./expenses.js";
 
 export const transactionFiltersSchema = z.object({
   search: z.string().max(250).default(""),
+  accountIds: z.array(z.uuid()).max(10000).optional(),
+  owners: z.array(z.string().min(1).max(100)).max(10000).optional(),
+  categoryIds: z
+    .array(z.union([z.uuid(), z.literal("none")]))
+    .max(10000)
+    .optional(),
+  kinds: z
+    .array(z.enum(["income", "expense", "refund", "transfer"]))
+    .max(4)
+    .optional(),
   accountId: z.uuid().nullable().default(null),
   owner: z.string().max(100).default("all"),
   categoryId: z
@@ -32,6 +42,21 @@ export function filterTransactions<
       (!filters.search ||
         row.description.toLowerCase().includes(filters.search.toLowerCase())) &&
       (!filters.accountId || row.accountId === filters.accountId) &&
+      (!filters.accountIds?.length ||
+        filters.accountIds.includes(row.accountId)) &&
+      (!filters.owners?.length || filters.owners.includes(row.owner)) &&
+      (!filters.categoryIds?.length ||
+        filters.categoryIds.some((id) =>
+          id === "none"
+            ? row.kind !== "transfer" && !row.categoryId
+            : row.categoryId === id,
+        )) &&
+      (!filters.kinds?.length ||
+        filters.kinds.some((kind) =>
+          kind === "expense"
+            ? row.kind === "expense" || row.kind === "refund"
+            : row.kind === kind,
+        )) &&
       (filters.owner === "all" || row.owner === filters.owner) &&
       (!filters.categoryId ||
         (filters.categoryId === "none"

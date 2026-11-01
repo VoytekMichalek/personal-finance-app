@@ -19,7 +19,7 @@ export function CategoriesPage() {
     <>
       <PageHeading
         eyebrow="Organise your spending"
-        title="Categories"
+        title="Categories & rules"
         description="Categories, subcategories and merchant rules."
       />
       <Categories data={query.data} />

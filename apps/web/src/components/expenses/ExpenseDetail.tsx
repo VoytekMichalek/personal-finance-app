@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { ChartViewTabs } from "./ChartViewTabs";
+import { ChartViewTabs } from "../common/ChartViewTabs";
 import {
   Bar,
   BarChart,

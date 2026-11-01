@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { VisualTitle } from "../components/common/VisualTitle";
+import { useSearchParams, Link } from "react-router-dom";
 import {
   accountBalance,
   assetValue,
@@ -15,10 +16,12 @@ import {
   Loading,
   ErrorState,
 } from "../components/common/primitives";
-import { BalanceChart } from "../components/common/Chart";
+import { BalanceHistory } from "../components/common/BalanceHistory";
 import { Button } from "../components/ui/button";
 export function NetWorth() {
   const query = useSnapshot();
+  const [params, setParams] = useSearchParams();
+  const period = params.get("period") ?? "365";
   if (query.isPending) return <Loading />;
   if (query.error && !query.data)
     return (
@@ -36,6 +39,10 @@ export function NetWorth() {
       value: accountBalance(a, data.transactions, data.today),
       to: "/accounts/" + a.id,
       type: "Account",
+      group:
+        accountBalance(a, data.transactions, data.today) < 0
+          ? "Debts"
+          : "Cash & accounts",
     })),
     ...data.assets.map((a) => ({
       id: a.id,
@@ -43,6 +50,14 @@ export function NetWorth() {
       value: assetValue(a, data.today, data.transactions),
       to: "/assets/" + a.id,
       type: a.classification,
+      group:
+        assetValue(a, data.today, data.transactions) < 0
+          ? "Debts"
+          : a.classification === "property"
+            ? "Property"
+            : ["investment", "superannuation"].includes(a.classification)
+              ? "Investments"
+              : "Other assets",
     })),
   ];
   const assets = entries.reduce((s, e) => s + Math.max(0, e.value), 0);
@@ -53,8 +68,14 @@ export function NetWorth() {
       ...data.assets.flatMap((a) => a.valuations.map((v) => v.date)),
       ...data.transactions.map((row) => row.date),
     ].sort()[0] ?? data.today;
-  const start =
-    earliest > addDays(data.today, -365) ? earliest : addDays(data.today, -365);
+  const requestedStart =
+    period === "all"
+      ? earliest
+      : addDays(
+          data.today,
+          -(["30", "90", "365"].includes(period) ? Number(period) : 365),
+        );
+  const start = earliest > requestedStart ? earliest : requestedStart;
   const points = [];
   for (let date = start; date < data.today; date = addDays(date, 7))
     points.push({ date, balanceCents: netWorth(data, date) });
@@ -63,7 +84,7 @@ export function NetWorth() {
     <>
       <PageHeading
         eyebrow="The bigger picture"
-        title="See how far you’ve come."
+        title="Net worth"
         description="Your bank accounts, cash, investments and property, less everything you owe."
         action={
           <Button asChild variant="secondary">
@@ -86,34 +107,78 @@ export function NetWorth() {
         ))}
       </div>
       <Card className="mb-6">
-        <SectionTitle>Your progress</SectionTitle>
-        <BalanceChart
+        <VisualTitle
+          title="Your progress"
+          context="History includes account opening balances, transactions and recorded closing valuations, adjusted by later transfers. Values before the earliest record are not invented."
+        />
+        <BalanceHistory
+          controls={
+            <div className="flex flex-wrap gap-2">
+              {[
+                ["30", "1 month"],
+                ["90", "3 months"],
+                ["365", "1 year"],
+                ["all", "All"],
+              ].map(([value, label]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={period === value ? "default" : "secondary"}
+                  aria-pressed={period === value}
+                  onClick={() =>
+                    setParams({ period: value! }, { replace: true })
+                  }
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          }
           points={points}
           label={`Recorded net worth is ${money(total)} as of ${data.today}. History begins ${start}.`}
         />
-        <p className="mt-3 text-xs text-muted-foreground">
-          History includes dated account opening balances, transactions and
-          recorded valuations.
-        </p>
       </Card>
       <Card>
         <SectionTitle>What makes up your net worth</SectionTitle>
-        <div className="divide-y">
-          {entries.map((e) => (
-            <Link
-              key={e.id}
-              to={e.to}
-              className="flex items-center justify-between gap-4 rounded-lg px-2 py-4 hover:bg-muted"
-            >
-              <span>
-                <span className="block text-sm font-medium">{e.name}</span>
-                <span className="text-xs text-muted-foreground">{e.type}</span>
-              </span>
-              <span className="font-semibold tabular-nums">
-                {money(e.value)}
-              </span>
-            </Link>
-          ))}
+        <div className="grid gap-5 sm:grid-cols-2">
+          {[
+            "Cash & accounts",
+            "Investments",
+            "Property",
+            "Other assets",
+            "Debts",
+          ].map((group) => {
+            const items = entries.filter((e) => e.group === group);
+            return (
+              items.length > 0 && (
+                <section key={group} aria-label={group}>
+                  <div className="mb-1 flex justify-between gap-3 border-b pb-2 text-sm font-semibold">
+                    <h3>{group}</h3>
+                    <span className="tabular-nums">
+                      {money(items.reduce((sum, e) => sum + e.value, 0))}
+                    </span>
+                  </div>
+                  {items.map((e) => (
+                    <Link
+                      key={e.id}
+                      to={e.to}
+                      className="flex items-center justify-between gap-3 rounded-lg py-3 hover:bg-muted"
+                    >
+                      <span className="min-w-0 break-words text-sm">
+                        {e.name}
+                        <span className="block text-xs text-muted-foreground">
+                          {e.type}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-sm tabular-nums">
+                        {money(e.value)}
+                      </span>
+                    </Link>
+                  ))}
+                </section>
+              )
+            );
+          })}
         </div>
         <p className="mt-5 text-xs leading-5 text-muted-foreground">
           Bank and credit accounts are included automatically. Negative account

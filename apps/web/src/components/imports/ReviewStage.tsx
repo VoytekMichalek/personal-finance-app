@@ -1,3 +1,5 @@
+import { ReviewBar } from "../common/ReviewBar";
+import { reviewStatus } from "./review-status";
 import { useImportConflicts } from "../../hooks/import-conflicts";
 import { ImportConflicts } from "./ImportConflicts";
 import { importBalance } from "../../lib/import-balance";
@@ -116,17 +118,6 @@ export function ReviewStage({
             >
               Change mapping
             </Button>
-            <Button
-              disabled={
-                conflicts.length > 0 ||
-                !selected.length ||
-                Boolean(busy) ||
-                (needsCheck && acknowledged !== reviewKey)
-              }
-              onClick={() => void flow.approve()}
-            >
-              {busy || "Approve & import (" + selected.length + ")"}
-            </Button>
           </div>
         </div>
       </Card>
@@ -156,6 +147,7 @@ export function ReviewStage({
         </label>
       )}
       <ImportRows
+        conflictRows={conflicts.map((c) => c.rowNumber)}
         repairError={() => (
           <div className="space-y-2 text-xs">
             <p>
@@ -184,6 +176,31 @@ export function ReviewStage({
           focusRow,
         }}
       />
+      <ReviewBar
+        summary={`${selected.length} selected · ${
+          preview.rows.filter(
+            (row) =>
+              reviewStatus(
+                row,
+                data,
+                accountId,
+                conflicts.map((c) => c.rowNumber),
+              ) === "attention",
+          ).length
+        } need attention`}
+      >
+        <Button
+          disabled={
+            conflicts.length > 0 ||
+            !selected.length ||
+            Boolean(busy) ||
+            (needsCheck && acknowledged !== reviewKey)
+          }
+          onClick={() => void flow.approve()}
+        >
+          {busy || "Approve & import (" + selected.length + ")"}
+        </Button>
+      </ReviewBar>
       <p className="mt-4 text-xs leading-5 text-muted-foreground">
         Amounts and dates remain tied to your source rows. Correct their mapping
         if needed. Mark refunds and transfers before approving. Transfers create

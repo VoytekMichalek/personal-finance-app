@@ -1,6 +1,13 @@
-import { test, expect, session, database, choose } from "./fixtures";
+import {
+  chooseDate,
+  test,
+  expect,
+  session,
+  database,
+  choose,
+} from "./fixtures";
 
-test("Remember transfers previews all filtered pages, confirms counterparts, and leaves other months/accounts alone", async ({
+test("Remember transfers previews all filtered pages, confirms counterparts, and leaves other months/accounts alone @timing @date-filter-timing", async ({
   page,
 }, info) => {
   await session(page);
@@ -42,8 +49,18 @@ test("Remember transfers previews all filtered pages, confirms counterparts, and
       ],
     });
     await page.goto("/accounts/" + accounts[0].id);
-    await page.getByLabel("From date", { exact: true }).fill("2026-10-01");
-    await page.getByLabel("To date", { exact: true }).fill("2026-10-31");
+    await chooseDate(
+      page,
+      page.getByLabel("From date", { exact: true }),
+      "2026-10-01",
+    );
+    await chooseDate(
+      page,
+      page.getByLabel("To date", { exact: true }),
+      "2026-10-31",
+    );
+    // Exercise the real render boundary: edit immediately after the date panel closes.
+    // Closing before the URL filter committed previously discarded this type choice.
     const type = page.getByRole("combobox", {
       name: "Type for NetBank Rent October",
       exact: true,
@@ -133,6 +150,13 @@ test("Remember transfers previews all filtered pages, confirms counterparts, and
         .filter({ visible: true }),
     ).toHaveCount(5);
     await page.reload();
+    await expect(
+      page
+        .getByText("Matches saved rule", { exact: true })
+        .filter({ visible: true }),
+    ).toHaveCount(5);
+    await expect(type).toBeHidden();
+    await page.getByRole("button", { name: "Previous", exact: true }).click();
     await expect(type).toHaveText("Transfer");
     const rows = await db.transaction.findMany({ where: { kind: "transfer" } });
     expect(rows.reduce((n, r) => n + r.amountCents, 0n)).toBe(0n);
@@ -142,7 +166,7 @@ test("Remember transfers previews all filtered pages, confirms counterparts, and
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.goto("/categories");
+    await page.goto("/categories?tab=rules");
     await page
       .getByRole("button", { name: /^Contains “netbank rent”/ })
       .click();

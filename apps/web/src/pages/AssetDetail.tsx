@@ -1,6 +1,11 @@
 import { ActionError } from "../components/common/ActionError";
 import { useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   assetValue,
@@ -27,6 +32,8 @@ export function AssetDetail() {
     query = useSnapshot(),
     action = useAction();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") === "valuations" ? "valuations" : "activity";
   const [transferOpen, setTransferOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [entry, setEntry] = useState<Valuation | "new" | null>(null);
@@ -56,7 +63,8 @@ export function AssetDetail() {
       (asset.kind === "liability" ? -1 : 1);
   const points = assetHistory(asset, data.transactions, data.today);
   const hasHistory = points.length > 0;
-  const change = latest && recorded[0] ? current - recorded[0].amountCents : 0;
+  const valued = latest?.amountCents ?? 0;
+  const movements = current - valued;
   const owner =
     asset.owner === "household"
       ? "Household"
@@ -105,11 +113,9 @@ export function AssetDetail() {
         </Card>
         <Card>
           <p className="text-xs text-muted-foreground">
-            Change since first entry
+            Transfers since valuation
           </p>
-          <p className="mt-2 text-2xl font-semibold">
-            {latest ? money(change) : "—"}
-          </p>
+          <p className="mt-2 text-2xl font-semibold">{money(movements)}</p>
         </Card>
         <Card>
           <p className="text-xs text-muted-foreground">Last valued</p>
@@ -132,64 +138,100 @@ export function AssetDetail() {
             Add a value to start the graph.
           </p>
         )}
-        <p className="mt-3 text-xs text-muted-foreground">
-          Transfers after the latest valuation adjust this value automatically.
-          Each valuation is a closing value that includes all movements on or
-          before its date. A negative amount owed means a credit balance.
+        <p className="mt-3 text-sm text-muted-foreground">
+          Last recorded value {money(valued)} + subsequent transfers{" "}
+          {money(movements)} = current{" "}
+          {asset.kind === "asset" ? "value" : "amount owed"} {money(current)}.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          A valuation includes all movements on or before its date. Changes
+          include deposits and withdrawals; they are not a measure of investment
+          returns. A negative amount owed means credit.
         </p>
       </Card>
-      <Card>
-        <h2 className="mb-4 font-semibold">Past entries</h2>
-        <div className="divide-y">
-          {history.reverse().map((value) => (
-            <div
-              key={value.id}
-              className="flex flex-wrap items-center gap-3 py-4"
-            >
-              <span className="text-sm">
-                {displayDate(value.date)}
-                {value.date > data.today ? " · Future entry" : ""}
-              </span>
-              <strong className="ml-auto tabular-nums">
-                {money(value.amountCents)}
-              </strong>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={"Edit valuation " + value.date}
-                onClick={() => setEntry(value)}
+      <div
+        role="tablist"
+        aria-label="Asset details"
+        className="mb-4 flex gap-2"
+      >
+        {(["activity", "valuations"] as const).map((value) => (
+          <Button
+            key={value}
+            role="tab"
+            aria-selected={tab === value}
+            variant={tab === value ? "default" : "secondary"}
+            onClick={() =>
+              setParams((current) => {
+                const next = new URLSearchParams(current);
+                next.set("tab", value);
+                return next;
+              })
+            }
+          >
+            {value === "activity" ? "Activity" : "Valuations"}
+          </Button>
+        ))}
+      </div>
+      {tab === "valuations" && (
+        <Card>
+          <h2 className="mb-4 font-semibold">Past valuations</h2>
+          <div className="divide-y">
+            {history.reverse().map((value) => (
+              <div
+                key={value.id}
+                className="flex flex-wrap items-center gap-3 py-4"
               >
-                <Pencil size={14} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={"Delete valuation " + value.date}
-                disabled={action.isPending}
-                onClick={() => {
-                  if (window.confirm("Delete this historical valuation?"))
-                    action.mutate({
-                      path: "/assets/" + asset.id + "/valuations/" + value.id,
-                      method: "DELETE",
-                    });
-                }}
-              >
-                <Trash2 size={14} />
-              </Button>
-            </div>
-          ))}
-        </div>
-        {!history.length && (
-          <p className="text-sm text-muted-foreground">No entries yet.</p>
-        )}
-      </Card>
-      {asset.accountId && (
+                <span className="text-sm">
+                  {displayDate(value.date)}
+                  {value.date > data.today ? " · Future entry" : ""}
+                </span>
+                <strong className="ml-auto tabular-nums">
+                  {money(value.amountCents)}
+                </strong>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={"Edit valuation " + value.date}
+                  onClick={() => setEntry(value)}
+                >
+                  <Pencil size={14} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={"Delete valuation " + value.date}
+                  disabled={action.isPending}
+                  onClick={() => {
+                    if (window.confirm("Delete this historical valuation?"))
+                      action.mutate({
+                        path: "/assets/" + asset.id + "/valuations/" + value.id,
+                        method: "DELETE",
+                      });
+                  }}
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+            ))}
+          </div>
+          {!history.length && (
+            <p className="text-sm text-muted-foreground">No entries yet.</p>
+          )}
+        </Card>
+      )}
+      {tab === "activity" && asset.accountId && (
         <section className="mt-6">
           <h2 className="mb-3 font-semibold">Transactions</h2>
           <TransactionBrowser
             data={data}
             accountId={asset.accountId}
-            onOpen={(row) => navigate("/transactions?detail=" + row.id)}
+            onOpen={(row) => {
+              const next = new URLSearchParams(params);
+              next.delete("tab");
+              next.set("account", asset.accountId!);
+              next.set("detail", row.id);
+              navigate(`/transactions?${next}`);
+            }}
           />
         </section>
       )}

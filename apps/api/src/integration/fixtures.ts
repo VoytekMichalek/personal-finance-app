@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, afterAll, vi } from "vitest";
 import request from "supertest";
 import { randomUUID, randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { makeSignature } from "better-auth/crypto";
 const objects = vi.hoisted(() => new Map<string, Uint8Array>());
 const storageMock = vi.hoisted(() => ({
@@ -86,8 +87,18 @@ beforeAll(() => {
 });
 beforeEach(async () => {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE "AuditEvent","RegistrationGrant","Passkey","Session","AuthAccount","Verification","User","Receipt","Transaction","ImportBatch","Account","Budget","Rule","Schedule","Valuation","Asset","ImportMapping","Setup" RESTART IDENTITY CASCADE',
+    'TRUNCATE "AuditEvent","RegistrationGrant","Passkey","Session","AuthAccount","Verification","User","Receipt","Transaction","ImportBatch","Account","Budget","Rule","Schedule","Valuation","Asset","ImportMapping","Setup","Category" RESTART IDENTITY CASCADE',
   );
+  // Category edits must not leak into subsequent tests or repeated local runs.
+  const categorySeed = readFileSync(
+    new URL(
+      "../../prisma/migrations/20261003052000_starter_categories/migration.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  for (const statement of categorySeed.split(";").filter((sql) => sql.trim()))
+    await prisma.$executeRawUnsafe(statement);
   const admin = await identity("admin");
   const member = await identity("member");
   adminId = admin.id;

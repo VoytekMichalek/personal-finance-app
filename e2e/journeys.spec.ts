@@ -6,10 +6,11 @@ test("accounts and CSV review work across screen sizes", async ({ page }) => {
   await session(page);
   await account(page);
   await page.getByRole("button", { name: /Everyday/ }).click();
-  await expect(
-    page.getByRole("link", { name: "Upload statement" }),
-  ).toBeVisible();
-  await page.getByRole("link", { name: "Upload CSV" }).click();
+  await page
+    .getByRole("button", { name: "Import transactions", exact: true })
+    .click();
+  await expect(page.getByRole("link", { name: "PDF statement" })).toBeVisible();
+  await page.getByRole("link", { name: "CSV export" }).click();
   await expect(page.getByLabel("Import into")).toHaveText("Everyday");
   await page.getByLabel("Choose bank CSV").setInputFiles({
     name: "statement.csv",
@@ -99,11 +100,9 @@ test("budgets, net worth, overview and documentation work across screen sizes", 
     page.getByText("$6,900.00", { exact: true }).first(),
   ).toBeVisible();
   await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Everything, in balance." }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("img", { name: /Household forecast/ }),
+    page.getByRole("img", { name: /Whole-household available balance/ }),
   ).toBeVisible();
   await page.screenshot({
     path: "artifacts/overview-" + info.project.name + ".png",
@@ -188,11 +187,11 @@ test("scheduled bills can be matched once and forecast assumptions are visible",
     page.getByText("Internet", { exact: true }).first(),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Record", exact: true })
+    .getByRole("button", { name: "Record payment", exact: true })
     .first()
     .click();
   await expect(
-    page.getByRole("button", { name: "Record", exact: true }).first(),
+    page.getByRole("button", { name: "Record payment", exact: true }).first(),
   ).toBeDisabled();
   await page.getByRole("button", { name: "Forecast", exact: true }).click();
   await expect(page.getByText(/Monthly budget allowances/)).toBeVisible();

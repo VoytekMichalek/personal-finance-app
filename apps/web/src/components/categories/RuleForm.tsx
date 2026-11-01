@@ -142,12 +142,18 @@ export function RuleForm({
           </FormSelect>
         </Field>
       )}
-      <Field label="Priority">
-        <Input
-          type="number"
-          {...form.register("priority", { valueAsNumber: true })}
-        />
-      </Field>
+      <details className="rounded-xl border p-3">
+        <summary className="cursor-pointer text-sm">Advanced</summary>
+        <p className="my-2 text-xs text-muted-foreground">
+          Lower priority numbers run first when multiple rules match.
+        </p>
+        <Field label="Priority">
+          <Input
+            type="number"
+            {...form.register("priority", { valueAsNumber: true })}
+          />
+        </Field>
+      </details>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" {...form.register("enabled")} />
         Enable rule

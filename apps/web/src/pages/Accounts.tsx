@@ -1,7 +1,7 @@
-import { PersonChip } from "../components/common/EntityChip";
-import { useNavigate } from "react-router-dom";
+import { AccountCard } from "../components/accounts/AccountCard";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Wallet, Plus, ArrowUpRight, CreditCard, Banknote } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   accountBalance,
   isCashAccount,
@@ -14,7 +14,6 @@ import { Dialog } from "../components/ui/dialog";
 import {
   PageHeading,
   Card,
-  Pill,
   Empty,
   Loading,
   ErrorState,
@@ -24,8 +23,23 @@ import { AccountForm } from "../components/accounts/AccountForm";
 export function Accounts() {
   const query = useSnapshot();
   const navigate = useNavigate();
-  const [owner, setOwner] = useState("all");
-  const [showArchived, setShowArchived] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const owner = params.get("owner") ?? "all";
+  const showArchived = params.get("archived") === "1";
+  const update = (key: string, value: string) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        return next;
+      },
+      { replace: true },
+    );
+  const setOwner = (value: string) =>
+    update("owner", value === "all" ? "" : value);
+  const setShowArchived = (value: boolean) =>
+    update("archived", value ? "1" : "");
   const [editing, setEditing] = useState<Account | undefined>();
   const [open, setOpen] = useState(false);
   if (query.isPending) return <Loading />;
@@ -55,7 +69,7 @@ export function Accounts() {
     <>
       <PageHeading
         eyebrow="Your foundations"
-        title="A home for every dollar."
+        title="Accounts"
         description="See your accounts together. Keep the details simple."
         action={
           <Button onClick={create}>
@@ -64,10 +78,10 @@ export function Accounts() {
           </Button>
         }
       />
-      <Card className="mb-7 flex flex-wrap items-center justify-between gap-5">
+      <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-4!">
         <div>
           <p className="text-xs text-muted-foreground">Combined balance</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">
+          <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
             {money(total)}
           </p>
         </div>
@@ -90,53 +104,21 @@ export function Accounts() {
         </div>
       </Card>
       {accounts.length ? (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {accounts.map((account) => {
-            const Icon =
-              account.type === "credit"
-                ? CreditCard
-                : account.type === "cash"
-                  ? Banknote
-                  : Wallet;
-            const balance = accountBalance(
-              account,
-              data.transactions,
-              data.today,
-            );
-            return (
-              <button
-                onClick={() => {
-                  navigate("/accounts/" + account.id);
-                }}
-                key={account.id}
-                className="rounded-2xl border bg-white p-6 text-left transition-shadow hover:shadow-md"
-              >
-                <div className="mb-7 flex justify-between">
-                  <span className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-                    <Icon size={20} />
-                  </span>
-                  <ArrowUpRight size={17} className="text-gray-300" />
-                </div>
-                <p className="text-base font-semibold">{account.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {account.institution ||
-                    {
-                      bank: "Bank account",
-                      cash: "Cash",
-                      credit: "Credit card",
-                    }[account.type]}
-                </p>
-                <p className="mt-7 mb-4 text-3xl font-semibold tracking-tight tabular-nums">
-                  {money(balance)}
-                </p>
-                <div className="flex gap-2">
-                  <PersonChip owner={account.owner} people={data.people} />
-                  {account.archived && <Pill>Archived</Pill>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <ul
+          aria-label="Accounts"
+          className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-3"
+        >
+          {accounts.map((account) => (
+            <li key={account.id} className="min-w-0">
+              <AccountCard
+                account={account}
+                people={data.people}
+                balance={accountBalance(account, data.transactions, data.today)}
+                onOpen={() => navigate("/accounts/" + account.id)}
+              />
+            </li>
+          ))}
+        </ul>
       ) : (
         <Empty
           title="Start with an account"

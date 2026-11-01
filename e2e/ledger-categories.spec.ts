@@ -136,6 +136,21 @@ test("remembers from the ledger, reviews 800 matches across all pages and retain
         .getByText("Matches saved rule", { exact: true })
         .filter({ visible: true }),
     ).toHaveCount(50);
+    const matchingAction = page.getByRole("button", {
+      name: "Matches saved rule for " + first,
+      exact: true,
+    });
+    await expect(matchingAction).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Remember " + first, exact: true }),
+    ).toHaveCount(0);
+    await matchingAction.click();
+    await expect(dialog).toContainText("0 to update · 800 already correct.");
+    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+    await page.screenshot({
+      path: `artifacts/saved-rule-action-${info.project.name}.png`,
+      animations: "disabled",
+    });
     await page.getByRole("button", { name: "Next", exact: true }).click();
     await expect(
       page.getByText("51–100 of 800", { exact: true }),
@@ -159,7 +174,7 @@ test("remembers from the ledger, reviews 800 matches across all pages and retain
     await page.screenshot({
       path: `artifacts/ledger-categories-${info.project.name}.png`,
     });
-    await page.goto("/categories");
+    await page.goto("/categories?tab=rules");
     await expect(
       page.getByRole("heading", { name: "Transaction rules", exact: true }),
     ).toBeVisible();

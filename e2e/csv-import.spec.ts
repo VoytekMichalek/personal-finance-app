@@ -12,7 +12,10 @@ test("split-column CSV suggests mappings, reviews and saves only after approval"
   await session(page);
   await account(page);
   await page.getByRole("button", { name: /Everyday/ }).click();
-  await page.getByRole("link", { name: "Upload CSV" }).click();
+  await page
+    .getByRole("button", { name: "Import transactions", exact: true })
+    .click();
+  await page.getByRole("link", { name: "CSV export" }).click();
   await expect(page.getByLabel("Import into")).toHaveText("Everyday");
   const csv =
     "Transaction Date;Details;Money Out;Money In\n2026-10-01;Groceries;19.99;\n2026-10-02;Salary;;500.01";

@@ -15,7 +15,7 @@ export function ChartViewTabs({
     <div
       role="tablist"
       aria-label="Chart view"
-      className="flex w-fit gap-1 rounded-xl bg-muted/60 p-1"
+      className="ml-auto flex w-fit gap-1 rounded-xl bg-muted/60 p-1"
     >
       {views.map((view, index) => (
         <Button

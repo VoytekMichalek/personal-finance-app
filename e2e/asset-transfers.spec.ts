@@ -1,4 +1,11 @@
-import { test, expect, session, choose, chooseDate } from "./fixtures";
+import {
+  test,
+  expect,
+  session,
+  choose,
+  chooseDate,
+  choosePeriod,
+} from "./fixtures";
 const headers = { Origin: "http://localhost:3000" };
 
 for (const kind of ["asset", "liability"] as const) {
@@ -111,9 +118,7 @@ for (const kind of ["asset", "liability"] as const) {
       page.getByText("$900.00", { exact: true }).first(),
     ).toBeVisible();
     await page.goto("/expenses");
-    await page
-      .getByRole("button", { name: "All history", exact: true })
-      .click();
+    await choosePeriod(page, "All history");
     await expect(
       page.getByRole("heading", {
         name: "Included transactions · 0",

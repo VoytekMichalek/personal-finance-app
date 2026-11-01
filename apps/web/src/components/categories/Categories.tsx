@@ -1,3 +1,6 @@
+import { AssignColours } from "./AssignColours";
+import { useSearchParams } from "react-router-dom";
+import { SearchInput } from "../common/SearchInput";
 import { ActionError } from "../common/ActionError";
 import { RuleForm } from "./RuleForm";
 import { SelectItem, FormSelect } from "../ui/select";
@@ -25,6 +28,11 @@ import {
   Pill,
 } from "../common/primitives";
 export function Categories({ data }: { data: Snapshot }) {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") === "rules" ? "rules" : "categories";
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [archived, setArchived] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Category>();
   const [ruleOpen, setRuleOpen] = useState(false);
@@ -33,135 +41,211 @@ export function Categories({ data }: { data: Snapshot }) {
   return (
     <>
       <ActionError error={action.error} />
-      <Card className="mb-6">
-        <SectionTitle
-          action={
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setEditing(undefined);
-                setOpen(true);
-              }}
-            >
-              <Plus size={14} />
-              Add category
-            </Button>
-          }
-        >
-          A language that fits your life
-        </SectionTitle>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {data.categories.map((category) => (
-            <button
-              key={category.id}
-              className="flex items-center gap-3 rounded-xl border px-4 py-3 text-left"
-              onClick={() => {
-                setEditing(category);
-                setOpen(true);
-              }}
-            >
-              <span
-                className="size-2.5 rounded-full"
-                style={{
-                  background: categoryColour(category, data.categories),
-                }}
-              />
-              <span className="flex-1 text-xs font-medium">
-                {category.parentId
-                  ? data.categories.find((c) => c.id === category.parentId)
-                      ?.name + " / "
-                  : ""}
-                {category.name}
-              </span>
-              <Pill
-                colour={
-                  category.archived
-                    ? undefined
-                    : identityColour("type:" + category.kind)
-                }
-              >
-                {category.archived ? "Archived" : category.kind}
-              </Pill>
-              <Pencil size={12} className="text-gray-400" />
-            </button>
-          ))}
+      <div
+        role="tablist"
+        aria-label="Categories and rules"
+        className="mb-4 flex gap-2"
+      >
+        {(["categories", "rules"] as const).map((value) => (
+          <Button
+            key={value}
+            role="tab"
+            aria-selected={tab === value}
+            variant={tab === value ? "default" : "secondary"}
+            onClick={() => {
+              setParams({ tab: value });
+              setSearch("");
+            }}
+          >
+            {value === "rules" ? "Rules" : "Categories"}
+          </Button>
+        ))}
+      </div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="min-w-48 flex-1">
+          <SearchInput
+            aria-label={tab === "rules" ? "Search rules" : "Search categories"}
+            placeholder={tab === "rules" ? "Search rules" : "Search categories"}
+            value={search}
+            onValueChange={setSearch}
+          />
         </div>
-      </Card>
-      <Card>
-        <SectionTitle
-          action={
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setRule(undefined);
-                setRuleOpen(true);
-              }}
-            >
-              <Plus size={14} />
-              Rule
-            </Button>
-          }
-        >
-          Transaction rules
-        </SectionTitle>
-        <p className="mb-5 text-xs leading-5 text-muted-foreground">
-          Rules saved during import review or from the transaction table appear
-          here. Rules ignore case and extra spaces. Exact descriptions run
-          before contains rules, then lower priorities run first. Your chosen
-          category takes precedence. Transfer rules also remember the source
-          account, direction and other account.
-        </p>
-        <div className="divide-y">
-          {data.rules.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between gap-3 py-4"
-            >
-              <button
-                className="flex-1 text-left"
+        {tab === "rules" ? (
+          <Select
+            aria-label="Rule status"
+            className="w-44"
+            value={status}
+            onValueChange={setStatus}
+          >
+            <SelectItem value="all">All rules</SelectItem>
+            <SelectItem value="enabled">Enabled</SelectItem>
+            <SelectItem value="paused">Paused</SelectItem>
+          </Select>
+        ) : (
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={archived}
+              onChange={(e) => setArchived(e.target.checked)}
+            />
+            Show archived
+          </label>
+        )}
+      </div>
+      {tab === "categories" && (
+        <Card className="mb-6">
+          <SectionTitle
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                <AssignColours categories={data.categories} />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setEditing(undefined);
+                    setOpen(true);
+                  }}
+                >
+                  <Plus size={14} />
+                  Add category
+                </Button>
+              </div>
+            }
+          >
+            Categories
+          </SectionTitle>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {data.categories
+              .filter(
+                (c) =>
+                  (archived || !c.archived) &&
+                  (
+                    c.name +
+                    " " +
+                    (data.categories.find((parent) => parent.id === c.parentId)
+                      ?.name ?? "")
+                  )
+                    .toLowerCase()
+                    .includes(search.toLowerCase()),
+              )
+              .map((category) => (
+                <button
+                  key={category.id}
+                  className="flex items-center gap-3 rounded-xl border px-4 py-3 text-left"
+                  onClick={() => {
+                    setEditing(category);
+                    setOpen(true);
+                  }}
+                >
+                  <span
+                    className="size-2.5 rounded-full"
+                    style={{
+                      background: categoryColour(category, data.categories),
+                    }}
+                  />
+                  <span className="flex-1 text-xs font-medium">
+                    {category.parentId
+                      ? data.categories.find((c) => c.id === category.parentId)
+                          ?.name + " / "
+                      : ""}
+                    {category.name}
+                  </span>
+                  <Pill
+                    colour={
+                      category.archived
+                        ? undefined
+                        : identityColour("type:" + category.kind)
+                    }
+                  >
+                    {category.archived ? "Archived" : category.kind}
+                  </Pill>
+                  <Pencil size={12} className="text-gray-400" />
+                </button>
+              ))}
+          </div>
+        </Card>
+      )}
+      {tab === "rules" && (
+        <Card>
+          <SectionTitle
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
-                  setRule(item);
+                  setRule(undefined);
                   setRuleOpen(true);
                 }}
               >
-                <p className="break-words text-sm font-medium">
-                  {item.matchMode === "exact" ? "Matches" : "Contains"} “
-                  {item.pattern}”
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {item.kind === "transfer"
-                    ? `Transfer: ${data.accounts.find((a) => a.id === item.accountId)?.name} ${item.direction === "out" ? "→" : "←"} ${data.accounts.find((a) => a.id === item.counterAccountId)?.name}`
-                    : data.categories.find((c) => c.id === item.categoryId)
-                        ?.name}{" "}
-                  · priority {item.priority} ·{" "}
-                  {item.enabled ? "Enabled" : "Paused"}
-                </p>
-              </button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={"Delete rule " + item.pattern}
-                onClick={() => {
-                  if (window.confirm("Delete this transaction rule?"))
-                    action.mutate({
-                      path: "/rules/" + item.id,
-                      method: "DELETE",
-                    });
-                }}
-              >
-                <Trash2 size={14} />
+                <Plus size={14} />
+                Rule
               </Button>
-            </div>
-          ))}
-        </div>
-        {!data.rules.length && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Add a merchant rule to save a little time next import.
+            }
+          >
+            Transaction rules
+          </SectionTitle>
+          <p className="mb-5 text-xs leading-5 text-muted-foreground">
+            Rules saved during import review or from the transaction table
+            appear here. Rules ignore case and extra spaces. Exact descriptions
+            run before contains rules, then lower priorities run first. Your
+            chosen category takes precedence. Transfer rules also remember the
+            source account, direction and other account.
           </p>
-        )}
-      </Card>
+          <div className="divide-y">
+            {data.rules
+              .filter(
+                (r) =>
+                  r.pattern.toLowerCase().includes(search.toLowerCase()) &&
+                  (status === "all" || r.enabled === (status === "enabled")),
+              )
+              .map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 py-4"
+                >
+                  <button
+                    className="flex-1 text-left"
+                    onClick={() => {
+                      setRule(item);
+                      setRuleOpen(true);
+                    }}
+                  >
+                    <p className="break-words text-sm font-medium">
+                      {item.matchMode === "exact" ? "Matches" : "Contains"} “
+                      {item.pattern}”
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {item.kind === "transfer"
+                        ? `Transfer: ${data.accounts.find((a) => a.id === item.accountId)?.name} ${item.direction === "out" ? "→" : "←"} ${data.accounts.find((a) => a.id === item.counterAccountId)?.name}`
+                        : data.categories.find((c) => c.id === item.categoryId)
+                            ?.name}{" "}
+                      · {item.enabled ? "Enabled" : "Paused"}
+                    </p>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={"Delete rule " + item.pattern}
+                    onClick={() => {
+                      if (window.confirm("Delete this transaction rule?"))
+                        action.mutate({
+                          path: "/rules/" + item.id,
+                          method: "DELETE",
+                        });
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              ))}
+          </div>
+          {!data.rules.length && (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Add a merchant rule to save a little time next import.
+            </p>
+          )}
+        </Card>
+      )}
       <Dialog
         open={open}
         onOpenChange={setOpen}

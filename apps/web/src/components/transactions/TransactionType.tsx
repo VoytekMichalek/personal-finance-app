@@ -1,5 +1,5 @@
 import { AccountDateIssue } from "../accounts/AccountDateIssue";
-import { ActionError } from "../common/ActionError";
+import { InlineSaveStatus } from "../common/InlineSaveStatus";
 import { TransferValueNote } from "../assets/TransferValueNote";
 import { accountLabel } from "@finance/shared";
 import { useState } from "react";
@@ -62,7 +62,7 @@ export function TransactionType({
   const busy = disabled || action.saving;
   const selectedKind =
     pending ??
-    (action.isPending ? action.variables?.kind : row.kind) ??
+    (action.isPending || action.isError ? action.variables?.kind : row.kind) ??
     row.kind;
   return (
     <div className="max-w-full space-y-2">
@@ -240,12 +240,35 @@ export function TransactionType({
           </div>
         </div>
       )}
-      {action.saving && (
-        <p role="status" className="text-[10px] text-muted-foreground">
-          Saving type…
+      {action.isError && (
+        <p className="text-[11px] text-muted-foreground">
+          Currently saved: {kinds[row.kind]}. Review the accounts before
+          retrying.
         </p>
       )}
-      <ActionError error={action.error} />
+      <InlineSaveStatus
+        pending={action.isPending}
+        saved={action.isSuccess}
+        error={action.error}
+        retry={() => {
+          if (!action.variables) return;
+          const input = { ...action.variables, version: row.version };
+          if (input.unlinkCounterpart && peer)
+            input.unlinkCounterpart = {
+              ...input.unlinkCounterpart,
+              version: peer.version,
+            };
+          const linked = data.transactions.find(
+            (t) => t.id === input.linkExisting?.id,
+          );
+          if (input.linkExisting && linked)
+            input.linkExisting = {
+              ...input.linkExisting,
+              version: linked.version,
+            };
+          action.mutate(input);
+        }}
+      />
     </div>
   );
 }

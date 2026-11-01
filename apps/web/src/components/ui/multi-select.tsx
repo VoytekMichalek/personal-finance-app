@@ -8,6 +8,8 @@ export function MultiSelect({
   options,
   allLabel,
   id,
+  "aria-label": labelText,
+  selectionLabel,
   "aria-labelledby": labelledBy,
 }: {
   value: string[];
@@ -15,6 +17,8 @@ export function MultiSelect({
   options: { value: string; label: string }[];
   allLabel: string;
   id?: string;
+  "aria-label"?: string;
+  selectionLabel?: string;
   "aria-labelledby"?: string;
 }) {
   const selected = options.filter((option) => value.includes(option.value));
@@ -22,12 +26,13 @@ export function MultiSelect({
     ? allLabel
     : selected.length === 1
       ? selected[0]!.label
-      : `${selected.length} selected`;
+      : `${selectionLabel ?? "Selected"} (${selected.length})`;
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
         <Button
           id={id}
+          aria-label={labelText}
           aria-labelledby={labelledBy}
           variant="secondary"
           className="w-full justify-between gap-2 rounded-xl px-3.5 text-left font-normal"

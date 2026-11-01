@@ -18,7 +18,7 @@ test("remembered rules retain exact matching when edited and can be paused", asy
     },
   });
   expect(created.ok()).toBe(true);
-  await page.goto("/categories");
+  await page.goto("/categories?tab=rules");
   await page.getByRole("button", { name: /Matches “local shop”/ }).click();
   const dialog = page.getByRole("dialog", { name: "Edit rule" });
   await expect(dialog.getByLabel("Match description")).toHaveText(
@@ -31,7 +31,7 @@ test("remembered rules retain exact matching when edited and can be paused", asy
   await page.reload();
   await expect(
     page.getByRole("button", { name: /Matches “local shop”/ }),
-  ).toContainText("Groceries · priority 0 · Paused");
+  ).toContainText("Groceries · Paused");
   const after = await (await page.request.get("/api/snapshot")).json();
   expect(after.rules).toHaveLength(1);
   expect(after.rules[0]).toMatchObject({ matchMode: "exact", enabled: false });

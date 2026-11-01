@@ -1,16 +1,17 @@
-import { RecentTransactions } from "../components/transactions/RecentTransactions";
+import { BalanceOutlook } from "../components/overview/BalanceOutlook";
+import { SpendingHistory } from "../components/overview/SpendingHistory";
+import { Attention } from "../components/overview/Attention";
+import { SpendingCategories } from "../components/overview/SpendingCategories";
 import { SelectItem } from "../components/ui/select";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Plus, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import {
   overview,
-  forecast,
   effectiveBudgets,
-  categorySpend,
   occurrences,
   money,
   displayDate,
+  addDays,
 } from "@finance/shared";
 import { useSnapshot } from "../hooks/data";
 import { Button } from "../components/ui/button";
@@ -21,15 +22,15 @@ import {
   Select,
   Loading,
   ErrorState,
-  Empty,
-  Pill,
   TextLink,
 } from "../components/common/primitives";
-import { BalanceChart } from "../components/common/Chart";
 export function Overview() {
   const query = useSnapshot();
   const navigate = useNavigate();
-  const [owner, setOwner] = useState("all");
+  const [params, setParams] = useSearchParams();
+  const owner = params.get("owner") ?? "all";
+  const setOwner = (owner: string) =>
+    setParams(owner === "all" ? {} : { owner }, { replace: true });
   if (query.isPending) return <Loading />;
   if (query.error && !query.data)
     return (
@@ -40,22 +41,25 @@ export function Overview() {
     );
   const data = query.data;
   const summary = overview(data, owner);
-  const projected = forecast(data, 90);
-  const closing = projected.at(-1)!.balanceCents;
+  const ownerQuery =
+    owner === "all" ? "" : `&owner=${encodeURIComponent(owner)}`;
+  const monthQuery = `from=${data.today.slice(0, 7)}-01&to=${data.today}${ownerQuery}`;
   const budgets = effectiveBudgets(data.budgets, data.today.slice(0, 7));
   const upcoming = occurrences(
     data.schedules,
     data.transactions,
     data.today,
-    projected.at(-1)!.date,
+    addDays(data.today, 90),
   )
-    .filter((o) => !o.matched)
+    .filter(
+      (o) => !o.matched && (owner === "all" || o.schedule.owner === owner),
+    )
     .slice(0, 4);
   return (
     <>
       <PageHeading
         eyebrow="A clearer picture"
-        title="Everything, in balance."
+        title="Overview"
         description={
           new Intl.DateTimeFormat("en-AU", {
             weekday: "long",
@@ -99,28 +103,30 @@ export function Overview() {
             summary.balance,
             Wallet,
             "Bank & cash, less credit owed",
-            "/accounts",
+            owner === "all"
+              ? "/accounts"
+              : `/accounts?owner=${encodeURIComponent(owner)}`,
           ],
           [
             "Money in",
             summary.income,
             ArrowUpRight,
             "Income this month",
-            "/transactions?kind=income",
+            `/transactions?kind=income&${monthQuery}`,
           ],
           [
             "Money out",
             summary.spent,
             ArrowDownRight,
             "Expenses, less refunds",
-            "/transactions?kind=expense",
+            `/transactions?kind=expense&${monthQuery}`,
           ],
           [
             "Budget remaining",
             summary.remaining,
             Wallet,
             budgets.length
-              ? "From " + money(summary.budget, true) + " planned"
+              ? "Whole household · " + money(summary.budget, true) + " planned"
               : "Set a budget to get started",
             "/plan",
           ],
@@ -147,137 +153,19 @@ export function Overview() {
           </button>
         ))}
       </div>
+      <Attention data={data} owner={owner} />
       <div className="mb-6 grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-        <Card>
-          <SectionTitle
-            action={
-              <TextLink onClick={() => navigate("/plan?tab=forecast")}>
-                Explore forecast
-              </TextLink>
-            }
-          >
-            A little look ahead
-          </SectionTitle>
-          <div className="mb-5 flex items-center gap-3">
-            <p className="text-2xl font-semibold tracking-tight tabular-nums">
-              {money(closing)}
-            </p>
-            <Pill>In 90 days</Pill>
-          </div>
-          <BalanceChart
-            points={projected.filter((_, i) => i % 3 === 0 || i === 90)}
-            label={
-              "Household forecast from " +
-              money(projected[0]!.balanceCents) +
-              " to " +
-              money(closing) +
-              " over 90 days."
-            }
-          />
-          <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
-            Household projection · scheduled income and bills, plus remaining
-            spending budgets.
-          </p>
-        </Card>
-        <Card>
-          <SectionTitle
-            action={
-              <TextLink onClick={() => navigate("/plan")}>View plan</TextLink>
-            }
-          >
-            Your spending plan
-          </SectionTitle>
-          {budgets.length ? (
-            <div className="grid gap-5">
-              {budgets.slice(0, 5).map((b) => {
-                const category = data.categories.find(
-                  (c) => c.id === b.categoryId,
-                );
-                const spent = categorySpend(
-                  data.transactions,
-                  b.categoryId,
-                  data.today.slice(0, 7),
-                  data.today,
-                );
-                const percent = b.amountCents
-                  ? Math.min(100, Math.max(0, (spent / b.amountCents) * 100))
-                  : 0;
-                return (
-                  <div key={b.categoryId}>
-                    <div className="mb-2 flex justify-between text-xs">
-                      <span className="font-medium">{category?.name}</span>
-                      <span className="text-muted-foreground tabular-nums">
-                        {money(spent, true)}{" "}
-                        <span className="text-gray-300">/</span>{" "}
-                        {money(b.amountCents, true)}
-                      </span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: percent + "%",
-                          backgroundColor:
-                            spent > b.amountCents ? "#c63845" : category?.color,
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-              <p className="mt-2 text-xs text-muted-foreground">
-                Small decisions. A bigger picture.
-              </p>
-            </div>
-          ) : (
-            <Empty
-              title="Give your money a plan"
-              description="Set a monthly budget for the things that matter."
-              action={
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => navigate("/plan")}
-                >
-                  Create a budget
-                </Button>
-              }
-            />
-          )}
-        </Card>
+        <BalanceOutlook data={data} />
+        <SpendingHistory data={data} owner={owner} />
       </div>
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
+        <SpendingCategories data={data} owner={owner} />
         <Card>
           <SectionTitle
             action={
-              <TextLink onClick={() => navigate("/transactions")}>
-                All activity
-              </TextLink>
-            }
-          >
-            Recent activity
-          </SectionTitle>
-          {data.transactions.length ? (
-            <RecentTransactions data={data} />
-          ) : (
-            <Empty
-              title="Your story starts here"
-              description="Add an account, then record a transaction or import a bank CSV."
-              action={
-                <Button
-                  variant="secondary"
-                  onClick={() => navigate("/accounts")}
-                >
-                  Add your first account
-                </Button>
-              }
-            />
-          )}
-        </Card>
-        <Card>
-          <SectionTitle
-            action={
-              <TextLink onClick={() => navigate("/plan?tab=bills")}>
+              <TextLink
+                onClick={() => navigate(`/plan?tab=bills${ownerQuery}`)}
+              >
                 All upcoming
               </TextLink>
             }

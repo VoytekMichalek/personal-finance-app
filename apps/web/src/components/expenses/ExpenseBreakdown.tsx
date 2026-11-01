@@ -1,9 +1,11 @@
+import { VisualTitle } from "../common/VisualTitle";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import {
   categoryColour,
   categoryLabel,
   identityColour,
+  ownerColour,
   money,
   type ExpenseGroup,
   type Snapshot,
@@ -26,6 +28,10 @@ export function ExpenseBreakdown({
   }) => void;
 }) {
   const [group, setGroup] = useState<ExpenseGroup>("categories");
+  const [expandedGroup, setExpandedGroup] = useState<ExpenseGroup | null>(null);
+  const expanded = expandedGroup === group;
+  const groups = report[group];
+  const visible = expanded ? groups : groups.slice(0, 8);
   const max = Math.max(
     1,
     ...report[group].map((row) => Math.abs(row.amountCents)),
@@ -49,18 +55,22 @@ export function ExpenseBreakdown({
             ? "Household"
             : (data.people.find((item) => item.id === id)?.name ??
               "Former member"),
-      colour: identityColour(
-        (group === "accounts" ? "account:" : "person:") + id,
-      ),
+      colour:
+        group === "accounts"
+          ? identityColour("account:" + id)
+          : ownerColour(id, data.people),
     };
   };
   return (
     <Card className="min-w-0 self-start">
-      <h2 className="mb-3 font-semibold">Expense breakdown</h2>
+      <VisualTitle
+        title="Expense breakdown"
+        context="Expenses less refunds in the selected dates and filters. Choose a category, account or person to see its transactions. Percentages use positive net spending."
+      />
       <div
         role="tablist"
         aria-label="Expense breakdown"
-        className="mb-3 flex flex-wrap gap-2"
+        className="mb-4 flex w-fit flex-wrap gap-1 rounded-xl bg-muted/60 p-1"
       >
         {(
           [
@@ -73,9 +83,12 @@ export function ExpenseBreakdown({
             key={key}
             role="tab"
             aria-selected={group === key}
-            variant={group === key ? "default" : "secondary"}
+            variant={group === key ? "default" : "ghost"}
             size="sm"
-            onClick={() => setGroup(key)}
+            onClick={() => {
+              setGroup(key);
+              setExpandedGroup(null);
+            }}
           >
             {label}
           </Button>
@@ -90,9 +103,9 @@ export function ExpenseBreakdown({
         role="region"
         aria-label="Breakdown totals"
         tabIndex={0}
-        className="max-h-80 overflow-y-auto rounded-lg focus-visible:outline-2 focus-visible:outline-primary"
+        className="rounded-lg focus-visible:outline-2 focus-visible:outline-primary"
       >
-        {report[group].map((row) => {
+        {visible.map((row) => {
           const { title, colour } = identity(row.id);
           return (
             <button
@@ -108,6 +121,15 @@ export function ExpenseBreakdown({
                   <strong className="tabular-nums">
                     {money(row.amountCents)}
                   </strong>
+                  {report.totalCents > 0 && (
+                    <span
+                      className="w-10 text-right text-[11px] text-muted-foreground"
+                      aria-label={`${((row.amountCents / report.totalCents) * 100).toFixed(1)}% of net expenses`}
+                    >
+                      {((row.amountCents / report.totalCents) * 100).toFixed(1)}
+                      %
+                    </span>
+                  )}
                   <ChevronRight size={13} className="text-muted-foreground" />
                 </span>
               </div>
@@ -124,6 +146,19 @@ export function ExpenseBreakdown({
           );
         })}
       </div>
+      {groups.length > 8 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-3 text-primary"
+          aria-expanded={expanded}
+          onClick={() => setExpandedGroup(expanded ? null : group)}
+        >
+          {expanded
+            ? "Show top 8"
+            : `Show all ${group === "people" ? "people" : group} (${groups.length})`}
+        </Button>
+      )}
     </Card>
   );
 }

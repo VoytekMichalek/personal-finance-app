@@ -1,10 +1,11 @@
+import { ImportButton } from "../components/imports/ImportButton";
 import { ActionError } from "../components/common/ActionError";
 import { PersonChip } from "../components/common/EntityChip";
 import { TransactionCategory } from "../components/transactions/TransactionCategory";
 import { TransactionBrowser } from "../components/transactions/TransactionBrowser";
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Upload, ArrowLeftRight, Trash2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Plus, ArrowLeftRight, Trash2 } from "lucide-react";
 import { money, displayDate, type Transaction } from "@finance/shared";
 import { useAction, useSnapshot } from "../hooks/data";
 import { Button } from "../components/ui/button";
@@ -58,16 +59,11 @@ export function Transactions() {
       {!detail && <ActionError error={action.error} />}
       <PageHeading
         eyebrow="Everyday clarity"
-        title="The little things add up."
+        title="Transactions"
         description="Your income, spending and transfers. All in one place."
         action={
           <div className="flex gap-2">
-            <Button asChild variant="secondary">
-              <Link to="/imports">
-                <Upload size={15} />
-                Import CSV
-              </Link>
-            </Button>
+            <ImportButton data={data} />
             <Button onClick={create}>
               <Plus size={15} />
               Add transaction
@@ -83,8 +79,6 @@ export function Transactions() {
       </div>
       <TransactionBrowser
         data={data}
-        initialAccount={params.get("account") ?? ""}
-        initialKind={params.get("kind") ?? ""}
         onOpen={(record) => setParam("detail", record.id)}
       />
       <Dialog

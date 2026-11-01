@@ -1,4 +1,11 @@
-import { test, expect, session, database, choose } from "./fixtures";
+import {
+  chooseDate,
+  test,
+  expect,
+  session,
+  database,
+  choose,
+} from "./fixtures";
 
 for (const view of ["all", "account"]) {
   test(`changing an expense offers similar transfers within ${view} filters after saving @timing @transfer-remember-timing`, async ({
@@ -72,8 +79,16 @@ for (const view of ["all", "account"]) {
           page.getByLabel("Filter account", { exact: true }),
           "Everyday",
         );
-      await page.getByLabel("From date", { exact: true }).fill("2026-10-01");
-      await page.getByLabel("To date", { exact: true }).fill("2026-10-31");
+      await chooseDate(
+        page,
+        page.getByLabel("From date", { exact: true }),
+        "2026-10-01",
+      );
+      await chooseDate(
+        page,
+        page.getByLabel("To date", { exact: true }),
+        "2026-10-31",
+      );
       await choose(
         page,
         page.getByLabel("Filter category", { exact: true }),
@@ -108,7 +123,7 @@ for (const view of ["all", "account"]) {
         .click();
       await expect(picker).toBeDisabled();
       await expect(
-        page.getByRole("status").filter({ hasText: "Saving type…" }),
+        page.getByRole("status").filter({ hasText: "Saving…" }),
       ).toBeVisible();
       await expect(page.getByRole("dialog")).toHaveCount(0);
       release();
@@ -173,6 +188,14 @@ for (const view of ["all", "account"]) {
         enabled: true,
       });
       await page.reload();
+      // Filters now survive reload; transfers remain excluded until the user clears them.
+      await expect(page.getByLabel("Filter type", { exact: true })).toHaveText(
+        "Expenses & refunds",
+      );
+      await expect(picker).toHaveCount(0);
+      await page
+        .getByRole("button", { name: "Clear filters", exact: true })
+        .click();
       if (view === "all")
         await choose(
           page,

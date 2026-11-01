@@ -50,13 +50,11 @@ test("CSV conflicts identify off-page payments, focus the source row and link on
         (_, i) => `2026-10-01,Purchase ${i + 1},-${i + 1}.01`,
       ).join("\n") +
       "\n2026-10-01,Move to savings,-25.00";
-    await page
-      .getByLabel("Choose bank CSV")
-      .setInputFiles({
-        name: "transfers.csv",
-        mimeType: "text/csv",
-        buffer: Buffer.from(csv),
-      });
+    await page.getByLabel("Choose bank CSV").setInputFiles({
+      name: "transfers.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from(csv),
+    });
     await page
       .getByRole("button", { name: "Review transactions", exact: true })
       .click();
@@ -148,15 +146,13 @@ test("new server-side matches surface at the top with skip and explicit separate
   const { db, source } = await seed();
   try {
     await page.goto(`/imports?account=${source.id}`);
-    await page
-      .getByLabel("Choose bank CSV")
-      .setInputFiles({
-        name: "late-match.csv",
-        mimeType: "text/csv",
-        buffer: Buffer.from(
-          "Date,Description,Amount\n2026-10-01,Late match one,-11.00\n2026-10-02,Late match two,-12.00",
-        ),
-      });
+    await page.getByLabel("Choose bank CSV").setInputFiles({
+      name: "late-match.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from(
+        "Date,Description,Amount\n2026-10-01,Late match one,-11.00\n2026-10-02,Late match two,-12.00",
+      ),
+    });
     await page
       .getByRole("button", { name: "Review transactions", exact: true })
       .click();

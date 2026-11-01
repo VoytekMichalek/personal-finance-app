@@ -5,9 +5,10 @@ import {
   database,
   choose,
   tickFilter,
+  choosePeriod,
 } from "./fixtures";
 
-test("categories are editable in Expenses, filtered remembering, drill-downs, recent activity and transaction details", async ({
+test("categories are editable in Expenses, filtered remembering, drill-downs, transaction lists and transaction details", async ({
   page,
 }, info) => {
   const owner = await session(page);
@@ -52,7 +53,7 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, re
       }),
     );
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "All history", exact: true }).click();
+  await choosePeriod(page, "All history");
   await tickFilter(page, "Account", ["Bank"]);
   const list = page.getByRole("list", {
     name: "Expense transactions",
@@ -66,7 +67,11 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, re
       .first(),
     "Dining",
   );
-  await expect(list.getByRole("combobox").first()).toContainText("Dining");
+  await expect(
+    list
+      .getByRole("combobox", { name: "Category for Local shop", exact: true })
+      .first(),
+  ).toContainText("Dining");
   await list
     .getByRole("button", { name: /Remember/ })
     .first()
@@ -87,6 +92,16 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, re
       .categoryId,
   ).toBe(grocery.id);
   expect((await db.rule.findFirstOrThrow()).categoryId).toBe(dining.id);
+  const savedRules = list.getByRole("button", {
+    name: "Matches saved rule for Local shop",
+    exact: true,
+  });
+  await expect(savedRules).toHaveCount(2);
+  await expect(list.getByRole("button", { name: /^Remember / })).toHaveCount(0);
+  await savedRules.first().click();
+  await expect(remember).toContainText("0 to update · 2 already correct.");
+  await remember.getByRole("button", { name: "Cancel", exact: true }).click();
+
   await page
     .getByRole("button", { name: "View Dining transactions", exact: true })
     .click();
@@ -127,12 +142,14 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, re
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page.goto("/");
-  const recent = page.getByRole("list", { name: "Recent transactions" });
-  await choose(page, recent.getByRole("combobox").first(), "Transport");
-  await expect(recent.getByRole("combobox").first()).toContainText("Transport");
-  await recent
-    .getByRole("link", { name: "Local shop", exact: true })
+  await page.goto("/transactions?search=Local+shop");
+  const category = page
+    .getByRole("combobox", { name: "Category for Local shop", exact: true })
+    .first();
+  await choose(page, category, "Transport");
+  await expect(category).toContainText("Transport");
+  await page
+    .getByRole("button", { name: /^Local shop \d/ })
     .first()
     .click();
   const transaction = page.getByRole("dialog", {
@@ -160,7 +177,9 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, re
     const summary = page.getByRole("button", { name: new RegExp(label!) });
     await expect(summary).toContainText(hint!);
     await summary.click();
-    await expect(page).toHaveURL(new RegExp(`/transactions\\?kind=${kind}$`));
+    await expect(page).toHaveURL(
+      new RegExp(`/transactions\\?kind=${kind}&from=`),
+    );
   }
   await db.$disconnect();
 });

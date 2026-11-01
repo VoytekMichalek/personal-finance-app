@@ -5,6 +5,7 @@ import {
   tickFilter,
   chooseDate,
   database,
+  choosePeriod,
 } from "./fixtures";
 
 test("category stacks switch calendar intervals and transactions paginate within report filters", async ({
@@ -84,7 +85,7 @@ test("category stacks switch calendar intervals and transactions paginate within
     expect(response.ok()).toBe(true);
   }
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "All history", exact: true }).click();
+  await choosePeriod(page, "All history");
   await chooseDate(
     page,
     page.getByRole("button", { name: "To", exact: true }),
@@ -99,7 +100,9 @@ test("category stacks switch calendar intervals and transactions paginate within
   await expect(chart.locator(".recharts-bar-rectangle").first()).toBeVisible();
   expect((await chart.boundingBox())!.height).toBeLessThanOrEqual(280);
   const breakdown = page.getByRole("region", { name: "Breakdown totals" });
-  expect((await breakdown.boundingBox())!.height).toBeLessThanOrEqual(320);
+  expect(
+    await breakdown.evaluate((el) => el.scrollHeight <= el.clientHeight),
+  ).toBe(true);
   await page.getByRole("tab", { name: "Table", exact: true }).click();
   const values = page.getByRole("table", {
     name: "Expenses by category and month",
@@ -234,7 +237,7 @@ test("category stacks switch calendar intervals and transactions paginate within
 
 test("a long category breakdown stays compact and every category remains reachable", async ({
   page,
-}) => {
+}, info) => {
   const owner = await session(page);
   const db = await database();
   let categoryCount: number;
@@ -244,7 +247,7 @@ test("a long category breakdown stays compact and every category remains reachab
       take: 12,
     });
     expect(categories.length).toBeGreaterThanOrEqual(8);
-    categoryCount = categories.length;
+    categoryCount = categories.length + 1;
     const account = await db.account.create({
       data: {
         name: "Category test",
@@ -252,6 +255,16 @@ test("a long category breakdown stays compact and every category remains reachab
         owner,
         openingDate: "2026-01-01",
         openingBalanceCents: 100000,
+      },
+    });
+    await db.transaction.create({
+      data: {
+        accountId: account.id,
+        owner,
+        date: "2026-01-05",
+        description: "Uncategorised purchase",
+        kind: "expense",
+        amountCents: -10000,
       },
     });
     await db.transaction.createMany({
@@ -269,12 +282,77 @@ test("a long category breakdown stays compact and every category remains reachab
     await db.$disconnect();
   }
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "All history" }).click();
+  await choosePeriod(page, "All history");
   const breakdown = page.getByRole("region", { name: "Breakdown totals" });
-  await expect(breakdown.getByRole("button")).toHaveCount(categoryCount);
-  expect((await breakdown.boundingBox())!.height).toBeLessThanOrEqual(320);
+  const legend = page.getByRole("list", { name: "Chart categories" });
+  await expect(legend.getByRole("listitem")).toHaveCount(7);
+  await expect(legend).toContainText("Uncategorised");
+  await expect(legend).toContainText("Remaining categories");
+  await page
+    .getByRole("button", { name: "Show all chart categories", exact: true })
+    .click();
+  await expect(legend.getByRole("listitem")).toHaveCount(categoryCount);
+  await page
+    .getByRole("button", { name: "Show top 5 categories", exact: true })
+    .click();
+  await expect(legend.getByRole("listitem")).toHaveCount(7);
+  await page.getByRole("tab", { name: "Table", exact: true }).click();
+  await expect(page.getByRole("table").getByRole("columnheader")).toHaveCount(
+    categoryCount + 2,
+  );
+  await page.getByRole("tab", { name: "Graph", exact: true }).click();
+  const chartBox = (await page
+    .getByRole("heading", { name: "Expenses over time" })
+    .locator("../../..")
+    .boundingBox())!;
+  const breakdownBox = (await page
+    .getByRole("heading", { name: "Expense breakdown" })
+    .locator("../../..")
+    .boundingBox())!;
+  const transactionsBox = (await page
+    .getByRole("heading", {
+      name: `Included transactions · ${categoryCount}`,
+      exact: true,
+    })
+    .locator("..")
+    .boundingBox())!;
+  if (info.project.name === "desktop") {
+    expect(Math.abs(chartBox.y - breakdownBox.y)).toBeLessThan(2);
+    expect(breakdownBox.x).toBeGreaterThan(chartBox.x + chartBox.width);
+    expect(transactionsBox.width).toBeGreaterThan(
+      chartBox.width + breakdownBox.width,
+    );
+  } else expect(breakdownBox.y).toBeGreaterThan(chartBox.y + chartBox.height);
+  expect(transactionsBox.y).toBeGreaterThan(
+    Math.max(
+      chartBox.y + chartBox.height,
+      breakdownBox.y + breakdownBox.height,
+    ),
+  );
   expect(
-    await breakdown.evaluate((el) => el.scrollHeight > el.clientHeight),
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `artifacts/expense-layout-${info.project.name}.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await expect(breakdown.getByRole("button")).toHaveCount(8);
+  expect(
+    await breakdown.evaluate((el) => el.scrollHeight <= el.clientHeight),
+  ).toBe(true);
+  await page
+    .getByRole("button", {
+      name: `Show all categories (${categoryCount})`,
+      exact: true,
+    })
+    .click();
+  await expect(breakdown.getByRole("button")).toHaveCount(categoryCount);
+  expect(
+    await breakdown.evaluate((el) => el.scrollHeight <= el.clientHeight),
   ).toBe(true);
   await breakdown.getByRole("button").last().click();
   const dialog = page.getByRole("dialog");
@@ -288,4 +366,6 @@ test("a long category breakdown stays compact and every category remains reachab
   ).toHaveCount(1);
   await dialog.getByRole("button", { name: "Close dialog" }).click();
   await expect(breakdown.getByRole("button").last()).toBeFocused();
+  await page.getByRole("button", { name: "Show top 8", exact: true }).click();
+  await expect(breakdown.getByRole("button")).toHaveCount(8);
 });

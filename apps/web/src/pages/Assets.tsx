@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, ArrowUpRight } from "lucide-react";
-import { assetValue, money, identityColour } from "@finance/shared";
+import { assetValue, displayDate, money } from "@finance/shared";
 import { useSnapshot } from "../hooks/data";
 import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
@@ -11,8 +11,8 @@ import {
   Loading,
   ErrorState,
   Empty,
-  Pill,
 } from "../components/common/primitives";
+import { PersonChip } from "../components/common/EntityChip";
 import { AssetForm } from "../components/assets/AssetForms";
 export function Assets() {
   const query = useSnapshot(),
@@ -31,8 +31,8 @@ export function Assets() {
     <>
       <PageHeading
         eyebrow="Beyond your accounts"
-        title="Assets & Liabilities"
-        description="Property, investments, superannuation and debts."
+        title="Assets & liabilities"
+        description="Track investments, property and debts."
         action={
           <Button onClick={() => setOpen(true)}>
             <Plus size={15} />
@@ -40,59 +40,92 @@ export function Assets() {
           </Button>
         }
       />
-      <Card>
-        {data.assets.length ? (
-          <div className="divide-y">
-            {data.assets.map((asset) => (
-              <Link
-                key={asset.id}
-                to={"/assets/" + asset.id}
-                className="flex items-center justify-between gap-4 rounded-xl px-2 py-5 transition hover:bg-muted"
-              >
-                <div className="min-w-0">
-                  <p className="break-words font-semibold">{asset.name}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <Pill
-                      colour={identityColour(
-                        "asset-class:" + asset.classification,
-                      )}
-                    >
-                      {asset.classification}
-                    </Pill>
-                    <Pill colour={identityColour("asset-kind:" + asset.kind)}>
-                      {asset.kind === "asset" ? "Asset" : "Liability"}
-                    </Pill>
-                  </div>
+      {data.assets.length ? (
+        <div className="grid items-start gap-5 xl:grid-cols-2">
+          {(["asset", "liability"] as const).map((kind) => {
+            const assets = data.assets.filter((a) => a.kind === kind);
+            const value = (asset: (typeof assets)[number]) =>
+              assetValue(asset, data.today, data.transactions) *
+              (kind === "liability" ? -1 : 1);
+            return (
+              <Card key={kind} className="overflow-hidden p-0!">
+                <div className="flex items-center justify-between gap-3 border-b bg-muted/50 px-4 py-4">
+                  <h2 className="font-semibold">
+                    {kind === "asset" ? "Assets" : "Liabilities"}
+                  </h2>
+                  <strong className="tabular-nums">
+                    {money(assets.reduce((sum, a) => sum + value(a), 0))}
+                  </strong>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <span className="font-semibold tabular-nums">
-                    {money(
-                      assetValue(asset, data.today, data.transactions) *
-                        (asset.kind === "liability" ? -1 : 1),
-                    )}
-                  </span>
-                  <ArrowUpRight size={16} />
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <Empty
-            title="Your wealth, beyond the everyday"
-            description="Add an asset or debt to start its value history."
-            action={<Button onClick={() => setOpen(true)}>Add an asset</Button>}
-          />
-        )}
-        <p className="mt-5 border-t pt-4 text-xs text-muted-foreground">
-          Account balances are already included in net worth.
-        </p>
-      </Card>
+                <ul className="divide-y px-4">
+                  {assets.map((asset) => {
+                    const last = asset.valuations
+                      .filter((v) => v.date <= data.today)
+                      .map((v) => v.date)
+                      .sort()
+                      .at(-1);
+                    return (
+                      <li key={asset.id}>
+                        <Link
+                          to={`/assets/${asset.id}`}
+                          className="flex items-start justify-between gap-3 rounded-lg py-3 hover:bg-muted/50"
+                        >
+                          <div className="min-w-0">
+                            <p className="break-words text-sm font-medium">
+                              {asset.name}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {asset.classification}
+                              {asset.archived ? " · Archived" : ""}
+                            </p>
+                            <div className="mt-2">
+                              <PersonChip
+                                owner={asset.owner}
+                                people={data.people}
+                              />
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="flex items-center justify-end gap-2 font-semibold tabular-nums">
+                              {money(value(asset))}
+                              <ArrowUpRight size={14} />
+                            </p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {last
+                                ? `Valued ${displayDate(last)}`
+                                : "No valuation yet"}
+                            </p>
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {!assets.length && (
+                  <p className="py-4 text-sm text-muted-foreground">
+                    No {kind === "asset" ? "assets" : "liabilities"} recorded.
+                  </p>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Empty
+          title="Add your first asset or debt"
+          description="Track its value and transfers over time."
+          action={<Button onClick={() => setOpen(true)}>Add an asset</Button>}
+        />
+      )}
+      <p className="mt-4 text-xs text-muted-foreground">
+        Bank and credit account balances are already included in net worth.
+      </p>
       <Dialog open={open} onOpenChange={setOpen} title="Add asset or liability">
         <AssetForm
           data={data}
           done={(result) => {
             setOpen(false);
-            navigate("/assets/" + (result as { id: string }).id);
+            navigate(`/assets/${(result as { id: string }).id}`);
           }}
         />
       </Dialog>

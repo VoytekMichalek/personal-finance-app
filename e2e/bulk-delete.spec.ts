@@ -77,6 +77,11 @@ test("bulk deletion respects account filters across pages, cancels safely and pe
     ).toBeVisible();
     expect(await db.transaction.count()).toBe(2);
     await page.reload();
+    await expect(page.getByLabel("Search transactions")).toHaveValue("Cleanup");
+    await expect(
+      page.getByRole("button", { name: /^Keep hidden / }),
+    ).toBeHidden();
+    await page.getByRole("button", { name: "Clear filters", exact: true }).click();
     await expect(
       page.getByRole("button", { name: /^Keep hidden / }),
     ).toBeVisible();

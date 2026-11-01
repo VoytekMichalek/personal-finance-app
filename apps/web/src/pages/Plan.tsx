@@ -35,7 +35,7 @@ export function Plan() {
     <>
       <PageHeading
         eyebrow="A little intention"
-        title="Make room for tomorrow."
+        title="Plan"
         description="A spending plan, a clear calendar and a useful look ahead."
       />
       <div className="mb-7 flex w-fit max-w-full gap-1 overflow-auto rounded-xl border bg-[#efefed] p-1">
@@ -47,7 +47,13 @@ export function Plan() {
         ].map(([id, label]) => (
           <button
             key={id}
-            onClick={() => setParams({ tab: id! })}
+            onClick={() =>
+              setParams((current) => {
+                const next = new URLSearchParams(current);
+                next.set("tab", id!);
+                return next;
+              })
+            }
             className={cn(
               "min-h-10 rounded-lg px-4 text-xs font-medium whitespace-nowrap",
               tab === id

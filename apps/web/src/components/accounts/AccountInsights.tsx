@@ -1,3 +1,5 @@
+import { DateRangeFilter } from "../common/DateRangeFilter";
+import { VisualTitle } from "../common/VisualTitle";
 import { useState } from "react";
 import {
   accountHistory,
@@ -10,10 +12,9 @@ import {
   type Account,
   type Snapshot,
 } from "@finance/shared";
-import { Card, Field, Input, SectionTitle } from "../common/primitives";
+import { Card, SectionTitle } from "../common/primitives";
 import { BalanceChart } from "../common/Chart";
 import { CategoryChip } from "../common/EntityChip";
-import { Button } from "../ui/button";
 import { ExpenseDetail } from "../expenses/ExpenseDetail";
 
 export function AccountInsights({
@@ -46,56 +47,21 @@ export function AccountInsights({
   return (
     <>
       <Card className="mb-5">
-        <div className="mb-4 flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              setFrom(account.openingDate);
-              setTo(data.today);
-            }}
-          >
-            All history
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              setFrom(data.today.slice(0, 4) + "-01-01");
-              setTo(data.today);
-            }}
-          >
-            This year
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              setFrom(data.today.slice(0, 7) + "-01");
-              setTo(data.today);
-            }}
-          >
-            This month
-          </Button>
-        </div>
-        <div className="grid max-w-lg gap-4 sm:grid-cols-2">
-          <Field label="History from">
-            <Input
-              type="date"
-              value={from}
-              max={to}
-              onChange={(event) => setFrom(event.target.value)}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold">Balance & spending</h2>
+          <div className="w-full sm:w-64">
+            <DateRangeFilter
+              from={from}
+              to={to}
+              today={data.today}
+              allFrom={account.openingDate}
+              labels={["History from", "History to"]}
+              onChange={(range) => {
+                setFrom(range.from);
+                setTo(range.to);
+              }}
             />
-          </Field>
-          <Field label="History to">
-            <Input
-              type="date"
-              value={to}
-              min={from}
-              max={data.today}
-              onChange={(event) => setTo(event.target.value)}
-            />
-          </Field>
+          </div>
         </div>
         {!valid && (
           <p role="alert" className="mt-3 text-sm text-amber-800">
@@ -123,12 +89,10 @@ export function AccountInsights({
             ))}
           </div>
           <Card className="mb-5">
-            <SectionTitle>Balance over time</SectionTitle>
-            <p className="mb-4 text-xs text-muted-foreground">
-              {displayDate(history.from)} – {displayDate(to)} · Daily closing
-              balances from recorded activity. Money in and out includes
-              transfers; this is not an income or spending total.
-            </p>
+            <VisualTitle
+              title="Balance over time"
+              context={`${displayDate(history.from)} – ${displayDate(to)}. Daily closing balances from recorded activity. Money in and out includes transfers; this is not an income or spending total.`}
+            />
             <BalanceChart
               points={history.points}
               label={account.name + " historical balance"}

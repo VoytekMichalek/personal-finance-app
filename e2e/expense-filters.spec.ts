@@ -1,4 +1,11 @@
-import { test, expect, session, database, tickFilter } from "./fixtures";
+import {
+  test,
+  expect,
+  session,
+  database,
+  tickFilter,
+  choosePeriod,
+} from "./fixtures";
 
 test("expense filters tick multiple accounts, people and categories; graph/table tabs retain totals and keyboard focus", async ({
   page,
@@ -63,13 +70,17 @@ test("expense filters tick multiple accounts, people and categories; graph/table
     await db.$disconnect();
   }
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "All history", exact: true }).click();
+  await choosePeriod(page, "All history");
   await tickFilter(page, "Account", ["Bank", "Card"]);
   await tickFilter(page, "Person", ["Voytek", "Household"]);
   await tickFilter(page, "Category", ["Groceries", "Transport"]);
-  for (const name of ["Account", "Person", "Category"])
+  for (const [name, label] of [
+    ["Account", "Accounts (2)"],
+    ["Person", "People (2)"],
+    ["Category", "Categories (2)"],
+  ])
     await expect(page.getByRole("button", { name, exact: true })).toHaveText(
-      "2 selected",
+      label!,
     );
   await expect(
     page.getByRole("heading", { name: "Included transactions · 3" }),

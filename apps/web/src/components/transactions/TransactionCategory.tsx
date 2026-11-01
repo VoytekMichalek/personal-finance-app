@@ -1,4 +1,4 @@
-import { ActionError } from "../common/ActionError";
+import { InlineSaveStatus } from "../common/InlineSaveStatus";
 import { useState } from "react";
 import { Dialog } from "../ui/dialog";
 import { CategoryForm } from "../categories/Categories";
@@ -24,9 +24,10 @@ export function TransactionCategory({
 }) {
   const action = useTransactionCategory(row.id);
   const [creating, setCreating] = useState(false);
-  const selectedId = action.isPending
-    ? action.variables?.categoryId
-    : row.categoryId;
+  const selectedId =
+    action.isPending || action.isError
+      ? action.variables?.categoryId
+      : row.categoryId;
   const selected = categories.find((item) => item.id === selectedId);
   if (row.kind === "transfer")
     return <CategoryChip categoryId={null} categories={categories} transfer />;
@@ -49,7 +50,7 @@ export function TransactionCategory({
             : "Uncategorised",
         }}
         value={
-          action.isPending
+          action.isPending || action.isError
             ? (action.variables?.categoryId ?? "")
             : (row.categoryId ?? "")
         }
@@ -61,6 +62,7 @@ export function TransactionCategory({
           }
           if ((value || null) !== row.categoryId)
             action.mutate({ categoryId: value || null, version: row.version });
+          else action.reset();
         }}
       >
         <SelectItem value="__new_category__">+ Create category</SelectItem>
@@ -92,12 +94,23 @@ export function TransactionCategory({
           }}
         />
       </Dialog>
-      {action.saving && (
-        <p role="status" className="text-[10px] text-muted-foreground">
-          Saving category…
+      {action.isError && (
+        <p className="text-[11px] text-muted-foreground">
+          Currently saved:{" "}
+          {categories.find((c) => c.id === row.categoryId)?.name ??
+            "Uncategorised"}
+          . Retry applies your displayed choice.
         </p>
       )}
-      <ActionError error={action.error} />
+      <InlineSaveStatus
+        pending={action.isPending}
+        saved={action.isSuccess}
+        error={action.error}
+        retry={() =>
+          action.variables &&
+          action.mutate({ ...action.variables, version: row.version })
+        }
+      />
     </div>
   );
 }

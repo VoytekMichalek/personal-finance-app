@@ -1,6 +1,8 @@
+import { ReviewBar } from "../common/ReviewBar";
+import { reviewStatus } from "../imports/review-status";
 import { StatementRowIssue } from "./StatementRowIssue";
 import { ActionError } from "../common/ActionError";
-import { StatementReviewIssues } from "./StatementReviewIssues";
+import { StatementConfirmation } from "./StatementConfirmation";
 import { StatementSourceNotes } from "./StatementSourceNotes";
 import { ImportConflicts } from "../imports/ImportConflicts";
 import { useImportConflicts } from "../../hooks/import-conflicts";
@@ -268,6 +270,7 @@ export function StatementReview({
             Check the selected transactions and their categories.
           </p>
           <ImportRows
+            conflictRows={conflicts.map((c) => c.rowNumber)}
             data={data}
             accountId={account.id}
             preview={{ rows }}
@@ -320,55 +323,43 @@ export function StatementReview({
         </>
       )}
       {step === 3 && (
-        <Card>
-          <h2 className="mb-4 text-xl font-semibold">
-            Ready to bring it together?
-          </h2>
-          <div className="grid gap-3 text-sm">
-            <p>
-              {selected.length} transactions selected ·{" "}
-              {rows.length - selected.length} excluded
-            </p>
-            <p>
-              {selected.filter((r) => r.categoryId).length} categorised ·{" "}
-              {
-                selected.filter((r) => !r.categoryId && r.kind !== "transfer")
-                  .length
-              }{" "}
-              uncategorised
-            </p>
-            {reconciledCount > 0 && (
-              <p>
-                {selected.length - reconciledCount} new payments ·{" "}
-                {reconciledCount} existing transfers to reconcile
-              </p>
-            )}
-            <p>{accepted.length} recurring items accepted</p>
-            <p>
-              {applyOpening
-                ? `Opening balance: ${openingAmount} AUD on ${openingDate}`
-                : "Keep the existing account opening balance"}
-            </p>
-          </div>
-          <label className="my-6 flex gap-3 text-sm leading-6">
-            <input
-              className="mt-1"
-              type="checkbox"
-              checked={reviewed}
-              onChange={(e) => setReviewed(e.target.checked)}
-            />
-            I have checked all statement pages, amounts, opening balance,
-            categorisations and recurring items. I accept the selected entries.
-          </label>
-          <StatementReviewIssues
-            dateProblem={!!dateProblem}
-            transferProblems={transferProblems}
-            recurringProblems={accepted.some(
-              (item) => !scheduleSchema.safeParse(item.schedule).success,
-            )}
-            openingError={error}
-            goTo={goTo}
-          />
+        <StatementConfirmation
+          selected={selected}
+          total={rows.length}
+          reconciledCount={reconciledCount}
+          acceptedCount={accepted.length}
+          applyOpening={applyOpening}
+          openingAmount={openingAmount}
+          openingDate={openingDate}
+          reviewed={reviewed}
+          setReviewed={setReviewed}
+          dateProblem={!!dateProblem}
+          transferProblems={transferProblems}
+          recurringProblems={accepted.some(
+            (item) => !scheduleSchema.safeParse(item.schedule).success,
+          )}
+          error={error}
+          goTo={goTo}
+        />
+      )}
+
+      <ReviewBar
+        summary={`${selected.length} selected · ${
+          rows.filter(
+            (row) =>
+              reviewStatus(
+                row,
+                data,
+                account.id,
+                conflicts.map((c) => c.rowNumber),
+              ) === "attention",
+          ).length
+        } need attention`}
+      >
+        <Button variant="ghost" disabled={!step} onClick={() => goTo(step - 1)}>
+          Back
+        </Button>
+        {step === 3 && (
           <Button
             disabled={
               accepted.some(
@@ -409,12 +400,7 @@ export function StatementReview({
               ? "Saving reviewed statement…"
               : "Accept & import statement"}
           </Button>
-        </Card>
-      )}
-      <div className="mt-6 flex justify-between">
-        <Button variant="ghost" disabled={!step} onClick={() => goTo(step - 1)}>
-          Back
-        </Button>
+        )}
         {step < 3 && (
           <Button
             disabled={changingStep || (step === 0 && !!dateProblem)}
@@ -430,7 +416,7 @@ export function StatementReview({
             )}
           </Button>
         )}
-      </div>
+      </ReviewBar>
     </>
   );
 }

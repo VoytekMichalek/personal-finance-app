@@ -1,3 +1,4 @@
+import { pendingStatements } from "./summaries.js";
 import { Router } from "express";
 import multer from "multer";
 import { z } from "zod";
@@ -45,6 +46,9 @@ statementRouter.post("/statements", upload.single("file"), async (req, res) => {
       await uploadStatement(input.accountId, req.file, input.year, input.useAi),
     );
 });
+statementRouter.get("/statements/pending", async (_req, res) =>
+  res.json(await pendingStatements()),
+);
 statementRouter.get("/statements/:id", async (req, res) =>
   res.json(await statementPreview(z.uuid().parse(req.params.id))),
 );

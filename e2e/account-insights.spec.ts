@@ -1,4 +1,11 @@
-import { test, expect, session, database, choose } from "./fixtures";
+import {
+  test,
+  expect,
+  session,
+  database,
+  choose,
+  chooseDate,
+} from "./fixtures";
 
 test("account filters select every matching page and preserve hidden transactions", async ({
   page,
@@ -182,7 +189,7 @@ test("account balance history and category drill-down reconcile with refunds and
     await expect(
       page.getByRole("tab", { name: "Balance & spending" }),
     ).toHaveAttribute("aria-selected", "true");
-    await page.getByLabel("History to").fill("2026-01-03");
+    await chooseDate(page, page.getByLabel("History to"), "2026-01-03");
     await expect(
       page.getByRole("img", { name: "History account historical balance" }),
     ).toBeVisible();
@@ -246,7 +253,7 @@ test("account balance history and category drill-down reconcile with refunds and
     await detail
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
-    await page.getByLabel("History from").fill("2026-01-03");
+    await chooseDate(page, page.getByLabel("History from"), "2026-01-03");
     await expect(
       page.getByText("Balance before period", { exact: true }).locator(".."),
     ).toContainText("$815.00");
