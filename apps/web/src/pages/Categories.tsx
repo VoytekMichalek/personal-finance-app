@@ -8,7 +8,7 @@ import {
 export function CategoriesPage() {
   const query = useSnapshot();
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}

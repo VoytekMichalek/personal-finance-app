@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { useStatementReread } from "../../hooks/statements";
+import {
+  useStatementReread,
+  type StatementReadingOptions,
+} from "../../hooks/statements";
+import { ReadingOptions } from "./ReadingOptions";
+import { ActionError } from "../common/ActionError";
 import { Button } from "../ui/button";
 import { Dialog } from "../ui/dialog";
 
@@ -13,6 +18,7 @@ export function StatementReadAgain({
 }) {
   const [open, setOpen] = useState(false);
   const reread = useStatementReread();
+  const [options, setOptions] = useState<StatementReadingOptions>({});
   return (
     <>
       <Button
@@ -42,14 +48,16 @@ export function StatementReadAgain({
           </p>
           <p className="text-muted-foreground">
             The original reading options, including AI if selected, will be
-            reused. Review the new results before importing.
+            reused unless you change them below. Review the new results before
+            importing.
           </p>
         </div>
-        {reread.error && (
-          <p role="alert" className="mt-4 text-sm text-destructive">
-            {reread.error.message}
-          </p>
-        )}
+        <ReadingOptions
+          value={options}
+          onChange={setOptions}
+          disabled={reread.isPending}
+        />
+        <ActionError error={reread.error} />
         <div className="mt-6 flex flex-wrap justify-end gap-3">
           <Button
             variant="secondary"
@@ -58,7 +66,10 @@ export function StatementReadAgain({
           >
             Keep current review
           </Button>
-          <Button disabled={reread.isPending} onClick={() => reread.mutate(id)}>
+          <Button
+            disabled={reread.isPending}
+            onClick={() => reread.mutate({ id, ...options })}
+          >
             {reread.isPending
               ? "Restarting reading…"
               : "Discard review & read again"}

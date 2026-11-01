@@ -1,11 +1,12 @@
 import { useState } from "react";
 import type { StatementPreview } from "@finance/shared";
-import { Pill } from "../common/primitives";
 import { Button } from "../ui/button";
 export function StatementSourceNotes({
   preview,
+  reviewRow,
 }: {
   preview: StatementPreview;
+  reviewRow: (rowNumber: number) => void;
 }) {
   const [sourcePage, setSourcePage] = useState(1);
   return (
@@ -48,7 +49,15 @@ export function StatementSourceNotes({
               <span className="min-w-0 flex-1 whitespace-pre-wrap break-words font-mono">
                 {l.text}
               </span>
-              {l.rowNumber && <Pill>Row {l.rowNumber}</Pill>}
+              {l.rowNumber && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => reviewRow(l.rowNumber!)}
+                >
+                  Review row {l.rowNumber}
+                </Button>
+              )}
             </div>
           ))}
       </div>

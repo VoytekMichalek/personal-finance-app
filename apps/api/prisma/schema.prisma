@@ -98,6 +98,8 @@ model AuditEvent {
 }
 model Account {
   id String @id @default(uuid())
+  assetId String? @unique
+  asset Asset? @relation(fields: [assetId], references: [id], onDelete: Restrict)
   name String
   type String
   institution String @default("")
@@ -210,6 +212,7 @@ model Asset {
   owner String @default("household")
   archived Boolean @default(false)
   valuations Valuation[]
+  account Account?
 }
 model Valuation {
   id String @id @default(uuid())

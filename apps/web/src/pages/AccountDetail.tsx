@@ -1,8 +1,10 @@
+import { FileLink } from "../components/common/FileLink";
 import { TransactionBrowser } from "../components/transactions/TransactionBrowser";
 import { AccountInsights } from "../components/accounts/AccountInsights";
 import { useState } from "react";
 import {
   Link,
+  Navigate,
   useParams,
   useNavigate,
   useSearchParams,
@@ -60,7 +62,7 @@ export function AccountDetail() {
   const tab = search.get("tab") ?? "activity";
   const setTab = (value: string) => setSearch({ tab: value });
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -75,6 +77,8 @@ export function AccountDetail() {
         Account not found. <Link to="/accounts">Back to accounts</Link>
       </Card>
     );
+  if (account.assetId)
+    return <Navigate to={"/assets/" + account.assetId} replace />;
   const transactions = data.transactions.filter((t) => t.accountId === id);
   const schedules = data.schedules.filter(
     (s) => s.accountId === id || s.counterAccountId === id,
@@ -316,12 +320,12 @@ export function AccountDetail() {
                         ? "Review"
                         : "View progress"}
                   </Link>
-                  <a
-                    className="text-xs text-primary"
-                    href={"/api/statements/" + file.id + "/file"}
+                  <FileLink
+                    path={"/statements/" + file.id + "/file"}
+                    filename={file.filename}
                   >
                     Download PDF
-                  </a>
+                  </FileLink>
                 </div>
               </div>
             ))

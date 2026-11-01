@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { SelectItem, FormSelect } from "../ui/select";
 import { CategoryChip } from "../common/EntityChip";
 import { useState } from "react";
@@ -205,7 +206,7 @@ function BudgetForm({
             ))}
         </FormSelect>
       </Field>
-      <Field label="Month">
+      <Field label="Month" error={form.formState.errors.month?.message}>
         <Input type="month" {...form.register("month")} />
       </Field>
       <Field
@@ -217,6 +218,7 @@ function BudgetForm({
       <Button disabled={action.isPending} type="submit">
         Save budget
       </Button>
+      <ActionError error={action.error} />
     </form>
   );
 }

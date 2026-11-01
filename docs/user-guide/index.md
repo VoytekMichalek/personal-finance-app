@@ -78,7 +78,7 @@ The reader recognises printed year headings and dates such as **06-Nov**, includ
 
 Uploading the same PDF again automatically restarts a failed or older empty reading using your new upload options. Completed imports and non-empty reviews are preserved. For a saved review you want to refresh, choose **Read again** beside the source download. Confirm to discard review edits and read the original PDF again with its original options. This is available only before import; it does not change posted transactions or account balances.
 
-No PDF reader can guarantee every layout or scan. Open **Source & reading notes** for the original text and reading notes. Highlighted source lines, invalid dates or a closing-balance mismatch require attention. Compare the original PDF; do not accept an incomplete extraction. Re-export a clearer PDF, try the optional AI reader, or use the bank’s CSV export. For dates without a printed year, specify the statement year only when it is unambiguous; a statement spanning New Year needs clear transaction years.
+No PDF reader can guarantee every layout or scan. Open **Source & reading notes** for the original text and reading notes. Highlighted source lines, invalid dates or a closing-balance mismatch require attention. Compare the original PDF; do not accept an incomplete extraction. Re-export a clearer PDF, try the optional AI reader, or use the bank’s CSV export. For dates without a printed year, use **Fix statement dates** in the review. Apply a year to all invalid dates, or choose each row’s full date when a statement spans New Year. The printed day, month and amount remain protected.
 
 Uploaded PDFs are private to signed-in household members. Find the original download and a pending review under the account’s Statements tab. Once the PDF upload finishes, processing continues in the background even if you navigate away or close the app. The Statements tab shows Queued, Reading PDF pages, Analysing transactions, Ready to review or Needs attention. Use View progress to reopen a pending job. Failed jobs keep their PDF and offer Try again; completed PDF reviews remain saved for later. No financial records change before you accept the review. An account is created before the optional statement upload, so cancelling setup leaves an empty account you can revisit.
 
@@ -137,7 +137,7 @@ Plan → Bills & income keeps your regular paydays, bills and transfers. Subscri
 Set an amount, type, account, starting date and weekly, fortnightly, monthly, quarterly or annual frequency. For transfers, choose **From account** and **To account**; other types use a category.
 Monthly dates stay anchored to the original day. A schedule starting on the 31st uses the last available day in shorter months and returns to the 31st afterward.
 Planned occurrences do not create transactions automatically.
-Use Record on or after the occurrence date, or Match an existing transaction with the same account, type and amount. Each occurrence can be matched once. Recording a transfer creates both linked entries; matching requires an existing complete transfer between those accounts. Transfers affect each account’s forecast in the correct direction and remain neutral in household income, spending and total funds.
+Use Record on or after the occurrence date, or Match an existing transaction with the same account, type and amount. Each occurrence can be matched once. Recording a transfer creates both linked entries; matching requires an existing complete transfer between those accounts. Transfers affect each account’s forecast in the correct direction and remain excluded from household income and spending. Transfers between cash or credit accounts leave available funds unchanged; transfers to assets or liabilities reduce available funds while updating the tracked value.
 Cancelled schedules stop future projections; existing recorded transactions remain.
 Subscription monthly and annual totals are normalised estimates.
 
@@ -145,7 +145,7 @@ Subscription monthly and annual totals are normalised estimates.
 Plan → Forecast offers 30-, 90-, 180- and 365-day views.
 It starts with available funds, adds scheduled income, subtracts scheduled bills and allows for remaining budgets.
 Budget allowances subtract already recorded and scheduled category spending before being spread across the remaining days. This prevents counting bills twice.
-Transfers and credit-card repayments do not change total available funds. Unscheduled, unbudgeted future spending is not included.
+Transfers between cash or credit accounts, including credit-card repayments, do not change total available funds. Scheduled contributions to assets and repayments to separately tracked liabilities reduce available funds; withdrawals and new borrowing add to them. Unscheduled, unbudgeted future spending is not included.
 Unrecorded occurrences due today are carried into the next day of the forecast. Older unrecorded occurrences need your review and are not projected automatically.
 Use it as a planning estimate and review the assumptions shown beneath the chart.
 
@@ -153,8 +153,8 @@ Use it as a planning estimate and review the assumptions shown beneath the chart
 Tracked accounts are counted automatically.
 Net Worth has its own history chart and a breakdown of every included account and asset. Positive account balances contribute to assets; negative bank or credit balances contribute to liabilities.
 
-Use the separate **Assets & Liabilities** page to add dated valuations for property, investments, superannuation, vehicles or debts not already represented by an account. Reach it from the sidebar, Net Worth, or More on mobile. Open any asset or liability for its own page: current value or amount owed, change since the first entry, a value-history graph, and all dated entries. Update value adds a dated valuation; edit or delete a past entry from its history. The graph holds each recorded value until the next valuation and excludes future entries from current value.
-Update values as they change. Historical totals use the latest recorded valuation on or before each date; history before your first record is not invented.
+Use the separate **Assets & Liabilities** page to add dated valuations for property, investments, superannuation, vehicles or debts not already represented by an account. Reach it from the sidebar, Net Worth, or More on mobile. Open any asset or liability for its own page: current value or amount owed, change since the first entry, a value-history graph, and all dated entries. Update value adds a dated valuation; edit or delete a past entry from its history. The graph combines closing valuations with later transfers and excludes future entries from current value.
+Update values as they change. Historical totals use the latest recorded closing valuation on or before each date, adjusted by later transfers. With no valuation yet, recorded transfers start from zero; history before your first valuation or transfer is not invented.
 Edit or delete an incorrect valuation from the asset’s details.
 
 ## Private receipts
@@ -196,3 +196,31 @@ To review recurring items from a statement already imported, open its account �
 Click any category, account or person in the Expenses breakdown to open its detail view. It keeps your selected dates and filters, shows spending and refunds, and lists the matching transactions newest first. The trend shows daily totals for periods up to 62 days and monthly totals for longer periods, including zero-spend periods. The **Graph / Table** tabs switch between the trend and its exact values. Category rows show transactions assigned to that exact category; choose a parent category in the report filter to include its subcategories. Close the detail view to return to the same report.
 
 In Add/Edit category, click the small colour dot to choose a colour. The dot also supports keyboard navigation.
+
+## Correcting statement dates and recovering from errors
+
+When a PDF omits the year, **Fix statement dates** appears above the review steps. Enter the year and choose **Apply year to invalid dates**. Category edits and review choices are kept. For a statement spanning New Year, expand **Review individual dates**, choose **Fix row**, and select the full date in that row. The printed day, month and amount are preserved. Corrections are saved to the review, so they survive reloading. Future or impossible dates remain excluded until corrected.
+
+A date before an account’s opening date offers **Edit account** on the same screen. The final confirmation provides **Fix opening balance**, **Fix transfers** or **Fix recurring items** buttons when those sections need attention. Invalid rows stay excluded; valid rows can still be imported. If a value cannot be verified from the PDF, use **Check source PDF** and **Read again → Change reading options**, or leave that row excluded. Reading again replaces the unsaved review only after confirmation. It does not change previously imported transactions. You can change the year or retry without AI on the saved PDF.
+
+Failed forms now keep a persistent message beside their controls. Correct the indicated fields and submit again. **Refresh data** checks current records without replaying the failed change. After a connection failure, refresh first to check whether the server already saved it. Open form entries are retained during refresh. A stale bulk-deletion confirmation closes after refresh so you can review and confirm the current selection again. A failed transaction deletion keeps the detail window open so receipts and other blocking details remain accessible.
+
+**Retry PDF upload** reuses the selected file with the current reading options. Receipt uploads allow selecting the same file again. AI-settings links from import and error controls open in another tab, keeping the current file, options and review in place. File download failures stay beside the file link; choose it again to retry. List-loading failures provide **Try again**. Passkey management and user invitations keep their controls alongside persistent feedback. Expired or used invitations require a new link from a household administrator; unavailable server/storage services require the app owner to restore the service, then the on-screen retry can continue.
+
+## Editing categories wherever transactions appear
+
+The category bubble can be changed in the main Transactions list, account ledgers, Expenses, Expense drill-downs, Overview recent activity and transaction details. Choose **+ Create category** to add and immediately apply a category. Charts, totals and filtered lists update after saving. A transaction can disappear from a category-filtered view when it no longer matches that filter.
+
+Expenses also has a **Remember** button beside each transaction. Choose the category in that confirmation, review the match count, then **Save rule & apply**. It applies across all matching pages within the current dates, accounts, people, categories, search and any open drill-down. It saves a rule for future imports too. If changing a category would remove the row from your current filters, use Remember before changing the bubble. Manage saved rules in **Categories → Transaction rules**.
+
+## Transfers to assets and liabilities
+
+Assets and liabilities appear in transfer account selectors, labelled **Asset** or **Liability**. Choose them when recording a transfer, changing an existing payment’s type, reviewing an import, creating a transaction rule or scheduling a recurring transfer. You can also open an asset or liability and choose **Record transfer**; its destination is preselected.
+
+A contribution increases an asset’s tracked value. A repayment reduces the amount owed on a liability. Withdrawals and new borrowing work in the opposite direction. Both linked entries are recorded; transfers remain excluded from income and spending. Asset and liability movements are included once in net worth and are excluded from available bank/cash balances.
+
+Each manual valuation is the **closing value for its date**, including all transfers on or before that date. Only later transfers adjust it. A note in the transfer controls explains when an existing valuation already covers the payment. If that closing valuation did not include the payment, update the valuation. With no valuation yet, transfers start from zero. The asset’s Transactions section shows its movements, and Value history includes both valuations and movements. A negative amount owed represents credit. Import statements into the source bank or credit account, then mark the relevant payments as transfers to the asset or liability.
+
+## Release notes
+
+Open **Settings → Release notes** to see every release, newest first, with dates and highlights. **This version** identifies the installed build. Release details link to the corresponding GitHub release. Settings → System retains the exact release tag, commit and build time for support.

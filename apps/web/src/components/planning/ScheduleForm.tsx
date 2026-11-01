@@ -1,3 +1,5 @@
+import { ActionError } from "../common/ActionError";
+import { accountLabel, isCashAccount } from "@finance/shared";
 import { SelectItem, FormSelect } from "../ui/select";
 import { CategoryChip } from "../common/EntityChip";
 import { useForm } from "react-hook-form";
@@ -53,7 +55,9 @@ export function ScheduleForm({
     defaultValues: {
       name: schedule?.name ?? "",
       accountId:
-        schedule?.accountId ?? data.accounts.find((a) => !a.archived)?.id ?? "",
+        schedule?.accountId ??
+        data.accounts.find((a) => !a.archived && isCashAccount(a))?.id ??
+        "",
       kind: schedule?.kind ?? "expense",
       counterAccountId: schedule?.counterAccountId ?? null,
       amountCents: moneyInput(schedule?.amountCents ?? 0),
@@ -121,7 +125,7 @@ export function ScheduleForm({
             .filter((a) => !a.archived || a.id === schedule?.accountId)
             .map((a) => (
               <SelectItem key={a.id} value={a.id}>
-                {a.name}
+                {accountLabel(a)}
               </SelectItem>
             ))}
         </FormSelect>
@@ -141,17 +145,20 @@ export function ScheduleForm({
               )
               .map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {a.name}
+                  {accountLabel(a)}
                 </SelectItem>
               ))}
           </FormSelect>
         </Field>
       )}
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Starts / next renewal">
+        <Field
+          label="Starts / next renewal"
+          error={form.formState.errors.startDate?.message}
+        >
           <Input type="date" {...form.register("startDate")} />
         </Field>
-        <Field label="Repeats">
+        <Field label="Repeats" error={form.formState.errors.frequency?.message}>
           <FormSelect control={form.control} name={"frequency"}>
             <SelectItem value="weekly">Weekly</SelectItem>
             <SelectItem value="fortnightly">Fortnightly</SelectItem>
@@ -172,7 +179,10 @@ export function ScheduleForm({
         />
       </Field>
       {kind !== "transfer" && (
-        <Field label="Category">
+        <Field
+          label="Category"
+          error={form.formState.errors.categoryId?.message}
+        >
           <Select
             value={form.watch("categoryId") ?? ""}
             onValueChange={(value) =>
@@ -193,7 +203,7 @@ export function ScheduleForm({
           </Select>
         </Field>
       )}
-      <Field label="Belongs to">
+      <Field label="Belongs to" error={form.formState.errors.owner?.message}>
         <FormSelect control={form.control} name={"owner"}>
           <OwnerOptions people={data.people} />
         </FormSelect>
@@ -205,7 +215,7 @@ export function ScheduleForm({
         </label>
       )}
       {form.watch("subscription") && (
-        <Field label="Provider">
+        <Field label="Provider" error={form.formState.errors.provider?.message}>
           <Input {...form.register("provider")} />
         </Field>
       )}
@@ -222,6 +232,7 @@ export function ScheduleForm({
             ? "Save schedule"
             : "Add schedule"}
       </Button>
+      <ActionError error={action.error} />
     </form>
   );
 }

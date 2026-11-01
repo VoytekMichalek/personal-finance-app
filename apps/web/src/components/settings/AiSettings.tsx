@@ -14,7 +14,7 @@ import {
 export function AiSettings({ admin }: { admin: boolean }) {
   const settings = useAiSettings();
   if (settings.status.isPending) return <Loading />;
-  if (settings.status.error)
+  if (settings.status.error && !settings.status.data)
     return (
       <ErrorState
         message={settings.status.error.message}

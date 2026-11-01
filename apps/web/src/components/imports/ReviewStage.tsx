@@ -156,6 +156,23 @@ export function ReviewStage({
         </label>
       )}
       <ImportRows
+        repairError={() => (
+          <div className="space-y-2 text-xs">
+            <p>
+              This row is excluded. Correct the date or amount columns, or
+              upload a corrected CSV. The other valid rows can still be
+              imported.
+            </p>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!!busy}
+              onClick={flow.changePreview}
+            >
+              Fix column mapping
+            </Button>
+          </div>
+        )}
         {...{
           data,
           accountId,

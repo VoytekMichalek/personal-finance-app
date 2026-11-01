@@ -1,13 +1,8 @@
+import { RecentTransactions } from "../components/transactions/RecentTransactions";
 import { SelectItem } from "../components/ui/select";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Plus,
-  ArrowUpRight,
-  ArrowDownRight,
-  Wallet,
-  ChevronRight,
-} from "lucide-react";
+import { Plus, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import {
   overview,
   forecast,
@@ -36,7 +31,7 @@ export function Overview() {
   const navigate = useNavigate();
   const [owner, setOwner] = useState("all");
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -263,48 +258,7 @@ export function Overview() {
             Recent activity
           </SectionTitle>
           {data.transactions.length ? (
-            <div className="divide-y">
-              {data.transactions.slice(0, 5).map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => navigate("/transactions?detail=" + t.id)}
-                  className="flex w-full items-center gap-3 py-3.5 text-left"
-                >
-                  <span className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                    {t.amountCents > 0 ? (
-                      <ArrowUpRight size={16} />
-                    ) : (
-                      <ArrowDownRight size={16} />
-                    )}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium">
-                      {t.description}
-                    </span>
-                    <span className="mt-1 block text-[10px] text-muted-foreground">
-                      {data.categories.find((c) => c.id === t.categoryId)
-                        ?.name ??
-                        (t.kind === "transfer"
-                          ? "Transfer"
-                          : "Uncategorised")}{" "}
-                      · {displayDate(t.date)}
-                    </span>
-                  </span>
-                  <span
-                    className={
-                      "text-xs font-semibold tabular-nums " +
-                      (t.kind !== "transfer" && t.amountCents > 0
-                        ? "text-emerald-700"
-                        : "")
-                    }
-                  >
-                    {t.amountCents > 0 ? "+" : ""}
-                    {money(t.amountCents)}
-                  </span>
-                  <ChevronRight size={13} className="text-gray-300" />
-                </button>
-              ))}
-            </div>
+            <RecentTransactions data={data} />
           ) : (
             <Empty
               title="Your story starts here"

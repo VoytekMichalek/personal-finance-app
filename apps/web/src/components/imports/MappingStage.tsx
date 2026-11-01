@@ -1,4 +1,5 @@
-import { type Mapping, type Snapshot } from "@finance/shared";
+import { Link } from "react-router-dom";
+import { isCashAccount, type Mapping, type Snapshot } from "@finance/shared";
 import { ArrowRight, Sparkles, Upload } from "lucide-react";
 import type { CsvImport } from "../../hooks/csv-import";
 import { Card, Field, SectionTitle, Select } from "../common/primitives";
@@ -25,6 +26,7 @@ export function MappingStage({
           >
             <SelectItem value="">Choose account</SelectItem>
             {data.accounts
+              .filter(isCashAccount)
               .filter((a) => !a.archived)
               .map((a) => (
                 <SelectItem key={a.id} value={a.id}>
@@ -89,8 +91,16 @@ export function MappingStage({
           </p>
           <p className="mb-5 text-xs leading-5 text-muted-foreground">
             Automatic suggestions work without AI. Optional AI suggestions send
-            redacted sample rows to OpenRouter; configure a model in Settings →
-            AI.
+            redacted sample rows to OpenRouter;{" "}
+            <Link
+              className="text-primary underline"
+              to="/settings/ai"
+              target="_blank"
+              rel="noreferrer"
+            >
+              configure a model in Settings → AI
+            </Link>
+            .
           </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(

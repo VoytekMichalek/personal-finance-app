@@ -1,3 +1,5 @@
+import { ActionError } from "../common/ActionError";
+import { accountLabel } from "@finance/shared";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -50,7 +52,10 @@ export function RuleForm({
         }),
       )}
     >
-      <Field label="Match description">
+      <Field
+        label="Match description"
+        error={form.formState.errors.matchMode?.message}
+      >
         <FormSelect control={form.control} name="matchMode">
           <SelectItem value="contains">Contains</SelectItem>
           <SelectItem value="exact">Exact description</SelectItem>
@@ -62,7 +67,7 @@ export function RuleForm({
       >
         <Input placeholder="e.g. Woolworths" {...form.register("pattern")} />
       </Field>
-      <Field label="Rule action">
+      <Field label="Rule action" error={form.formState.errors.kind?.message}>
         <Select
           value={form.watch("kind") ?? "category"}
           onValueChange={(value) => {
@@ -80,14 +85,17 @@ export function RuleForm({
       </Field>
       {form.watch("kind") === "transfer" ? (
         <>
-          <Field label="Source account">
+          <Field
+            label="Source account"
+            error={form.formState.errors.accountId?.message}
+          >
             <FormSelect control={form.control} name="accountId">
               <SelectItem value="">Choose account</SelectItem>
               {data.accounts
                 .filter((a) => !a.archived)
                 .map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.name}
+                    {accountLabel(a)}
                   </SelectItem>
                 ))}
             </FormSelect>
@@ -102,12 +110,15 @@ export function RuleForm({
                 .filter((a) => !a.archived && a.id !== form.watch("accountId"))
                 .map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.name}
+                    {accountLabel(a)}
                   </SelectItem>
                 ))}
             </FormSelect>
           </Field>
-          <Field label="Direction at source account">
+          <Field
+            label="Direction at source account"
+            error={form.formState.errors.direction?.message}
+          >
             <FormSelect control={form.control} name="direction">
               <SelectItem value="out">Money out</SelectItem>
               <SelectItem value="in">Money in</SelectItem>
@@ -144,6 +155,7 @@ export function RuleForm({
       <Button disabled={action.isPending} type="submit">
         Save rule
       </Button>
+      <ActionError error={action.error} />
     </form>
   );
 }

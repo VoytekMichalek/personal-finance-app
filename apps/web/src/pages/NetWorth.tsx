@@ -5,6 +5,7 @@ import {
   netWorth,
   money,
   addDays,
+  isCashAccount,
 } from "@finance/shared";
 import { useSnapshot } from "../hooks/data";
 import {
@@ -19,7 +20,7 @@ import { Button } from "../components/ui/button";
 export function NetWorth() {
   const query = useSnapshot();
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -29,7 +30,7 @@ export function NetWorth() {
   const data = query.data;
   const total = netWorth(data, data.today);
   const entries = [
-    ...data.accounts.map((a) => ({
+    ...data.accounts.filter(isCashAccount).map((a) => ({
       id: a.id,
       name: a.name,
       value: accountBalance(a, data.transactions, data.today),
@@ -39,7 +40,7 @@ export function NetWorth() {
     ...data.assets.map((a) => ({
       id: a.id,
       name: a.name,
-      value: assetValue(a, data.today),
+      value: assetValue(a, data.today, data.transactions),
       to: "/assets/" + a.id,
       type: a.classification,
     })),
@@ -48,8 +49,9 @@ export function NetWorth() {
   const debt = assets - total;
   const earliest =
     [
-      ...data.accounts.map((a) => a.openingDate),
+      ...data.accounts.filter(isCashAccount).map((a) => a.openingDate),
       ...data.assets.flatMap((a) => a.valuations.map((v) => v.date)),
+      ...data.transactions.map((row) => row.date),
     ].sort()[0] ?? data.today;
   const start =
     earliest > addDays(data.today, -365) ? earliest : addDays(data.today, -365);

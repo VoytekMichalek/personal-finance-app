@@ -1,0 +1,21 @@
+# Error recovery review — v0.0.11
+
+Scope: every maintained web page, form, query/mutation hook and explicit error/catch/alert path in `apps/web/src`, plus the affected PDF/import and finance API boundaries. The review inspected all domains below; errors that require an external service or administrator are described honestly rather than bypassing guards. Existing duplicate, source-amount, posted-date, permission and history protections remain enforced.
+
+| Surface | Recovery on the current screen |
+| --- | --- |
+| Initial authentication and bootstrap | Retry server-status reads; retain bootstrap fields; passkey sign-in/creation can be repeated. Invitation exchange can retry the in-memory token after URL redaction; expired/used links explain how an administrator supplies a new one. |
+| Account menu and passkeys | Persistent add/remove failures beside the name and passkey controls; list retry; failed logout opens a retry dialog. Last-passkey safeguards remain enforced. |
+| Overview, Accounts, Transactions, Expenses, Plan, Assets, Net Worth, Categories and Settings | Initial query errors have Try again; a failed background refresh retains the loaded screen and open form. Missing account/asset routes offer navigation to an existing item. |
+| Account, transaction, transfer, asset, valuation, category, rule, schedule and budget forms | Inline validation is associated with its control. Server failures remain beside the editable form with Refresh data. Refresh never replays a write. Old payment dates offer an in-place account editor. |
+| Transaction table and detail mutations | Category/type controls retain persistent feedback and refresh current versions; bulk operations require deliberate confirmation. Refresh closes a stale bulk-delete confirmation for review. Failed detail deletion keeps receipts and other controls accessible. |
+| CSV upload, mapping, AI suggestions and review | Reselect the same file, adjust mapping, retry interrupted suggestions, review manually, resolve duplicates/reconciliations or exclude rows. Invalid rows link directly to mapping controls. AI configuration has an actionable settings link. |
+| PDF upload and background processing | Retained-file upload retry; reselect the same file; retry saved source with editable year/AI options; download source; return to account. Failed external configuration can be restored then retried. |
+| PDF review and confirmation | Persist missing-year repairs without discarding category choices; per-row dates for New Year; reject altered printed day/month, future dates and source amounts. Source notes jump to a row; unreadable rows offer source download/reread and remain excluded. Final blockers link to the relevant editing step. |
+| Recurring suggestions before/after import | Type, accounts, amount and name remain editable; invalid money is visibly rejected rather than silently reverted; save failure has refresh and explicit resubmission. |
+| Receipts and statement downloads | Persistent read/upload/delete failures; refresh or repeat the file selection/action. Downloads check the response and show failures beside a retryable link instead of navigating away to an API error. |
+| User administration and invitations | Persistent list-action and invite-form failures; refresh current users; correct retained form data; copy failure selects the link for manual copying. Last-admin/access guards are retained. |
+| AI settings and System | Keep settings entries after failed refresh; editable key/model and Save/Check controls remain; query retries. Secrets remain server-only and are never included in error evidence. |
+| Unexpected screen/chunk failure | A screen boundary offers reload and Overview, explaining that unsaved entries may need re-entering. |
+
+Verification evidence belongs in `docs/testing.md`; this inventory does not assert that every external outage or invalid source PDF can be repaired inside the app. Such cases retain clear local retry, exclusion or configuration guidance, while ordinary data/validation problems have controls at the point of failure. New error paths must follow this same pattern.

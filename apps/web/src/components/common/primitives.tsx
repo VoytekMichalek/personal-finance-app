@@ -118,10 +118,26 @@ export function Field({
     <div className="grid min-w-0 gap-2 text-sm font-medium">
       <label htmlFor={id}>{label}</label>
       {isValidElement(children)
-        ? cloneElement(children as ReactElement<{ id?: string }>, { id })
+        ? cloneElement(
+            children as ReactElement<{
+              id?: string;
+              "aria-invalid"?: boolean;
+              "aria-describedby"?: string;
+            }>,
+            {
+              id,
+              ...(error
+                ? { "aria-invalid": true, "aria-describedby": id + "-error" }
+                : {}),
+            },
+          )
         : children}
       {error && (
-        <span role="alert" className="text-xs text-destructive">
+        <span
+          id={id + "-error"}
+          role="alert"
+          className="text-xs text-destructive"
+        >
           {error}
         </span>
       )}

@@ -409,3 +409,75 @@ diff checks passed. Desktop/mobile confirmation screenshots were inspected.
 An initial global-list reload assertion matched both sides of a valid transfer;
 the test now restores its account filter before asserting the original row,
 retaining the balance, persistence and hidden-record assertions.
+
+## Recovery, editable expense categories and asset transfers — v0.0.11
+
+Shared units cover missing-year/leap-day parsing, source-date lookup and preserving
+review choices after verified corrections. Real PostgreSQL tests own durable PDF
+date repairs, duplicates, source day/month/year and amount enforcement, future-date
+rejection, concurrent repairs, committed-review protection and editable reread
+options. Browser journeys exercise an invalid year followed by pending/successful
+repair, retained categories, import completion and individual dates across New Year.
+
+Asset-transfer units own signed contributions, withdrawals, repayments and borrowing;
+closing-valuation boundaries; movement history; and exact cash, forecast and net-worth
+totals without double counting. Integration tests execute the additive migration
+against isolated legacy tables, preserve valuations, and cover account/type guards,
+balanced pairs, old-transaction conversion, filtered remembering and future imports.
+Desktop/mobile journeys create assets and liabilities, record contributions and
+repayments, update valuations and verify the saved movements and totals after reload.
+
+Expense remembering uses the same server-recomputed date/account/person/category/
+search/drill-down intersection as the displayed report. Integration tests reject
+hidden or stale confirmation sets and verify future-rule persistence. Browser checks
+edit categories and create a category from Expenses, its drill-downs, Overview and
+transaction details, including filter changes, hidden records and reload persistence.
+
+The complete error-surface inspection is recorded in `error-recovery-review.md`.
+Browser coverage holds a failed form response, proves pending state, preserves
+entered values and checks refresh does not replay a write; it also retries the
+retained PDF upload, recovers a failed file download, and refreshes a stale deletion
+inside its still-open detail dialog before explicitly confirming both transfer sides.
+Release-history checks verify every entry, the installed version marker and phone
+overflow. Screenshots cover phone/desktop date repairs, forms, category editing,
+asset/liability history and release notes. Existing auth, receipt, import, planning
+and financial journeys retain their real API/database assertions.
+
+Clocks are installed before navigation in the new timing cases. Response barriers
+are installed before actions and released in cleanup; no arbitrary sleeps or retry
+allowances are added. All timing cases run ten times without retries, followed by
+the full browser suite. Runs reuse the existing production build; source refinements
+receive a fresh build and affected checks. One worker owns the shared
+finance_e2e fixture; independent unit and finance_test integration checks can run
+concurrently. The existing port-3002 test copy changes only localhost origin strings,
+keeping the owner's preview available on 5174/3000. Native OCR/WebKit helpers remain
+local-only. Household data and external object storage are never reset or used.
+
+R17/R18 inspection confirms unchanged runtime inputs and secret-free image boundaries,
+separate local configuration, the single API/web image and committed migration-before-
+serving. The new migration adds associated accounts without changing asset valuations
+or existing transactions. R19 inspection confirms expected correction/validation
+failures retain quiet HttpError/Zod handling, Better Auth logging stays disabled and
+unexpected failures remain sanitised. Exact-candidate main CI must pass isolated
+production-image smoke checks and scanning before tagging; release repeats those
+checks before publishing and verifies the exact version/commit on the live service.
+No registry publication or household data is used as a substitute for those checks.
+
+Local v0.0.11 evidence: all 119 unit cases, 121 PostgreSQL integration cases and
+five release-script cases passed. Guardrails, lint, every workspace typecheck,
+production builds and whitespace checks passed. Dependency auditing found no
+high/critical issues; the three existing moderate items were not suppressed.
+The full browser suite passed 153 cases with three intentional mobile exclusions
+and zero retries. Final AI-settings navigation refinements passed all 16 affected
+desktop/mobile cases; final PDF date-repair assertions passed 20 timing repetitions.
+
+The initial 180-case timing run reported every case passing, but its local wrapper
+exited with signal 143 during cleanup. A replacement completed all 90 desktop
+repetitions before the local runner was interrupted during mobile. The separate
+mobile run then passed all 90 repetitions and exited normally. Each timing case
+therefore has ten consecutive passing desktop and mobile repetitions with zero
+retries; the exact-commit CI reruns both together before release. These runner
+interruptions produced no failed product assertions and are retained in the local
+evidence rather than reported as clean combined process exits. Logs/screenshots
+remain under ignored `artifacts/v0.0.11-*`. Desktop/mobile screenshots and overflow
+checks cover the new editing, repair, asset-transfer and release-history surfaces.

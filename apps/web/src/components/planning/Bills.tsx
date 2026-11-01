@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { SelectItem } from "../ui/select";
 import { useState } from "react";
 import { Plus, Pencil, Check, Link2 } from "lucide-react";
@@ -47,6 +48,7 @@ export function Bills({
   };
   return (
     <>
+      <ActionError error={action.error} />
       <div className="mb-6 flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
           {subscriptions
@@ -229,6 +231,7 @@ export function Bills({
       >
         {match && (
           <div className="grid gap-4">
+            <ActionError error={action.error} />
             <Select
               aria-label="Existing transaction"
               value={transactionId}

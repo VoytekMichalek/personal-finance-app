@@ -1,6 +1,7 @@
 import { matchOccurrence, saveSchedule } from "./schedules.js";
 import { rememberTransaction } from "./remember-transaction.js";
 import { saveRule } from "./rules.js";
+import { saveAsset } from "./assets.js";
 import { bulkCategory } from "./bulk-category.js";
 import { changeTransactionType } from "./transaction-type.js";
 import { bulkDelete } from "./bulk-delete.js";
@@ -10,7 +11,6 @@ import { z } from "zod";
 import {
   accountSchema,
   budgetSchema,
-  assetSchema,
   valuationSchema,
   forecast,
   netWorth,
@@ -65,6 +65,11 @@ financeRouter.post("/accounts", async (req, res) => {
 });
 financeRouter.put("/accounts/:id", async (req, res) => {
   const id = z.uuid().parse((req.params as Record<string, string>).id);
+  if ((await prisma.account.findUnique({ where: { id } }))?.assetId)
+    throw new HttpError(
+      400,
+      "Edit this item's details and valuations in Assets & Liabilities.",
+    );
   const input = accountSchema.parse(req.body);
   await validateOwner(prisma, input.owner);
   if (input.openingDate > today())
@@ -179,17 +184,13 @@ for (const method of ["post", "put"] as const) {
   financeRouter[method](
     method === "post" ? "/assets" : "/assets/:id",
     async (req, res) => {
-      const data = assetSchema.parse(req.body);
-      await validateOwner(prisma, data.owner);
       res.json(
-        await (method === "post"
-          ? prisma.asset.create({ data })
-          : prisma.asset.update({
-              where: {
-                id: z.uuid().parse((req.params as Record<string, string>).id),
-              },
-              data,
-            })),
+        await saveAsset(
+          req.body,
+          method === "put"
+            ? z.uuid().parse((req.params as Record<string, string>).id)
+            : undefined,
+        ),
       );
     },
   );

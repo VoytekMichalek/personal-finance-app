@@ -28,7 +28,9 @@ export async function snapshot(): Promise<Snapshot> {
     prisma.rule.findMany({ orderBy: [{ priority: "asc" }, { id: "asc" }] }),
     prisma.budget.findMany(),
     prisma.schedule.findMany(),
-    prisma.asset.findMany({ include: { valuations: true } }),
+    prisma.asset.findMany({
+      include: { valuations: true, account: { select: { id: true } } },
+    }),
     prisma.user.findMany({
       where: { state: { not: "pending" } },
       select: { id: true, name: true, email: true, role: true, state: true },
@@ -41,7 +43,10 @@ export async function snapshot(): Promise<Snapshot> {
     rules,
     budgets,
     schedules,
-    assets,
+    assets: assets.map(({ account, ...asset }) => ({
+      ...asset,
+      accountId: account?.id ?? null,
+    })),
     people,
     today: today(),
   });
@@ -78,6 +83,15 @@ export async function validateCategory(
       400,
       "The category does not match the transaction type.",
     );
+}
+export async function validateImportAccount(db: DB, id: string) {
+  const account = await validateAccount(db, id);
+  if (account.assetId)
+    throw new HttpError(
+      400,
+      "Choose a bank, cash or credit account for statement imports. Mark transfers to your asset or liability during review.",
+    );
+  return account;
 }
 export async function applyRule(
   db: DB,

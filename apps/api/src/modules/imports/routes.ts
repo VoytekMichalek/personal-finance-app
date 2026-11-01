@@ -13,7 +13,7 @@ import {
 } from "@finance/shared";
 import { prisma, json } from "../../lib/db.js";
 import { HttpError } from "../../lib/errors.js";
-import { validateAccount } from "../finance/service.js";
+import { validateImportAccount } from "../finance/service.js";
 import { csvRecords, parseRows, readCsv } from "./parser.js";
 import { suggestCsv } from "./suggestions.js";
 import { commitRows } from "./commit.js";
@@ -28,7 +28,7 @@ importRouter.get("/mapping/:accountId", async (req, res) => {
 });
 importRouter.post("/headers", async (req, res) => {
   const input = csvHeadersSchema.parse(req.body);
-  if (input.accountId) await validateAccount(prisma, input.accountId);
+  if (input.accountId) await validateImportAccount(prisma, input.accountId);
   const { rows, hasHeaders } = readCsv(input.csv, input.hasHeaders);
   const saved = input.accountId
     ? await prisma.importMapping.findUnique({
@@ -48,7 +48,7 @@ importRouter.post("/suggest", async (req, res) => {
 });
 importRouter.post("/preview", async (req, res) => {
   const input = previewSchema.parse(req.body);
-  const account = await validateAccount(prisma, input.accountId);
+  const account = await validateImportAccount(prisma, input.accountId);
   const records = csvRecords(input.csv, input.hasHeaders);
   const rows = parseRows(records, input.mapping, account.owner);
   const reconciliation = reconcileCsv(records, rows, input.mapping);
@@ -156,7 +156,7 @@ importRouter.post("/:id/commit", async (req, res) => {
 importRouter.put("/mapping/:accountId", async (req, res) => {
   const mapping = mappingSchema.parse(req.body);
   const accountId = z.uuid().parse(req.params.accountId);
-  await validateAccount(prisma, accountId);
+  await validateImportAccount(prisma, accountId);
   res.json(
     await prisma.importMapping.upsert({
       where: { accountId },

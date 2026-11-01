@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { useState } from "react";
 import { Dialog } from "../ui/dialog";
 import { CategoryForm } from "../categories/Categories";
@@ -96,11 +97,7 @@ export function TransactionCategory({
           Saving category…
         </p>
       )}
-      {action.error && (
-        <p role="alert" className="text-xs text-destructive">
-          {action.error.message}
-        </p>
-      )}
+      <ActionError error={action.error} />
     </div>
   );
 }

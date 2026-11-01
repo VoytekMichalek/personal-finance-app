@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { SelectItem, FormSelect } from "../ui/select";
 import { DatePicker } from "../ui/date-picker";
 import { useState } from "react";
@@ -36,7 +37,10 @@ export function AccountForm({
     defaultValues: {
       name: account?.name ?? "",
       institution: account?.institution ?? "",
-      type: account?.type ?? "bank",
+      type:
+        account?.type === "cash" || account?.type === "credit"
+          ? account.type
+          : "bank",
       owner: account?.owner ?? "household",
       openingDate: account?.openingDate ?? today(),
       openingBalanceCents: moneyInput(account?.openingBalanceCents ?? 0),
@@ -84,14 +88,14 @@ export function AccountForm({
         <Input placeholder="e.g. Everyday account" {...form.register("name")} />
       </Field>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Type">
+        <Field label="Type" error={form.formState.errors.type?.message}>
           <FormSelect control={form.control} name={"type"}>
             <SelectItem value="bank">Bank account</SelectItem>
             <SelectItem value="cash">Cash</SelectItem>
             <SelectItem value="credit">Credit card</SelectItem>
           </FormSelect>
         </Field>
-        <Field label="Belongs to">
+        <Field label="Belongs to" error={form.formState.errors.owner?.message}>
           <FormSelect control={form.control} name={"owner"}>
             <OwnerOptions people={people} />
           </FormSelect>
@@ -104,7 +108,10 @@ export function AccountForm({
           opening balance (for example −500.00), or import a card statement.
         </p>
       )}
-      <Field label="Bank or institution">
+      <Field
+        label="Bank or institution"
+        error={form.formState.errors.institution?.message}
+      >
         <Input placeholder="Optional" {...form.register("institution")} />
       </Field>
       {!uploadStatement && (
@@ -151,6 +158,7 @@ export function AccountForm({
               ? "Continue to statement"
               : "Add account"}
       </Button>
+      <ActionError error={action.error} />
     </form>
   );
 }

@@ -1,3 +1,7 @@
+import { AccountDateIssue } from "../accounts/AccountDateIssue";
+import { ActionError } from "../common/ActionError";
+import { TransferValueNote } from "../assets/TransferValueNote";
+import { accountLabel } from "@finance/shared";
 import { useState } from "react";
 import {
   identityColour,
@@ -117,13 +121,18 @@ export function TransactionType({
                     )
                     .map((account) => (
                       <SelectItem key={account.id} value={account.id}>
-                        {account.name}
+                        {accountLabel(account)}
                       </SelectItem>
                     ))}
                 </Select>
               </label>
               {!!accountId && (
                 <>
+                  <TransferValueNote
+                    data={data}
+                    accountIds={[row.accountId, accountId]}
+                    date={row.date}
+                  />
                   {!!matches.length && (
                     <label className="grid gap-1">
                       Other entry
@@ -167,6 +176,11 @@ export function TransactionType({
               again.
             </p>
           )}
+          <AccountDateIssue
+            data={data}
+            accountIds={[accountId]}
+            date={row.date}
+          />
           <div className="flex flex-wrap gap-1">
             <Button
               size="sm"
@@ -206,7 +220,6 @@ export function TransactionType({
                   },
                   {
                     onSuccess: () => setChoice(undefined),
-                    onError: () => setChoice(undefined),
                   },
                 );
               }}
@@ -232,11 +245,7 @@ export function TransactionType({
           Saving type…
         </p>
       )}
-      {action.error && (
-        <p role="alert" className="text-xs text-destructive">
-          {action.error.message}
-        </p>
-      )}
+      <ActionError error={action.error} />
     </div>
   );
 }

@@ -98,13 +98,27 @@ export function RecurringReview({
                   data={data}
                   patch={(values) => patch(item.key, values)}
                 />
-                <Field label="Recurring name">
+                <Field
+                  label="Recurring name"
+                  error={
+                    !schedule.name.trim()
+                      ? "Enter a name for this recurring item."
+                      : undefined
+                  }
+                >
                   <Input
                     value={schedule.name}
                     onChange={(e) => patch(item.key, { name: e.target.value })}
                   />
                 </Field>
-                <Field label="Expected amount (AUD)">
+                <Field
+                  label="Expected amount (AUD)"
+                  error={
+                    schedule.amountCents <= 0
+                      ? "Enter a valid positive amount above zero."
+                      : undefined
+                  }
+                >
                   <Input
                     defaultValue={moneyInput(schedule.amountCents)}
                     inputMode="decimal"
@@ -114,7 +128,7 @@ export function RecurringReview({
                           amountCents: parseMoney(e.target.value),
                         });
                       } catch {
-                        e.target.value = moneyInput(schedule.amountCents);
+                        patch(item.key, { amountCents: 0 });
                       }
                     }}
                   />

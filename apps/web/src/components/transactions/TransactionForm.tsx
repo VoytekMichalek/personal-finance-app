@@ -1,3 +1,7 @@
+import { AccountDateIssue } from "../accounts/AccountDateIssue";
+import { ActionError } from "../common/ActionError";
+import { TransferValueNote } from "../assets/TransferValueNote";
+import { accountLabel, isCashAccount } from "@finance/shared";
 import { SelectItem, FormSelect } from "../ui/select";
 import { CategoryChip } from "../common/EntityChip";
 import { useForm } from "react-hook-form";
@@ -44,7 +48,7 @@ export function TransactionForm({
 }) {
   const account =
     data.accounts.find((a) => a.id === transaction?.accountId) ??
-    data.accounts.find((a) => !a.archived);
+    data.accounts.find((a) => !a.archived && isCashAccount(a));
   const form = useForm<
     z.input<typeof schema>,
     unknown,
@@ -91,7 +95,7 @@ export function TransactionForm({
         />
       </Field>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Type">
+        <Field label="Type" error={form.formState.errors.kind?.message}>
           <FormSelect
             control={form.control}
             name={"kind"}
@@ -130,7 +134,7 @@ export function TransactionForm({
               .filter((a) => !a.archived || a.id === transaction?.accountId)
               .map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {a.name}
+                  {accountLabel(a)}
                 </SelectItem>
               ))}
           </FormSelect>
@@ -139,7 +143,7 @@ export function TransactionForm({
           <Input type="date" max={data.today} {...form.register("date")} />
         </Field>
       </div>
-      <Field label="Category">
+      <Field label="Category" error={form.formState.errors.categoryId?.message}>
         <Select
           value={form.watch("categoryId") ?? ""}
           onValueChange={(value) => form.setValue("categoryId", value || null)}
@@ -158,12 +162,12 @@ export function TransactionForm({
             ))}
         </Select>
       </Field>
-      <Field label="Belongs to">
+      <Field label="Belongs to" error={form.formState.errors.owner?.message}>
         <FormSelect control={form.control} name={"owner"}>
           <OwnerOptions people={data.people} />
         </FormSelect>
       </Field>
-      <Field label="Notes">
+      <Field label="Notes" error={form.formState.errors.notes?.message}>
         <textarea
           className={inputClass + " h-20 py-3"}
           {...form.register("notes")}
@@ -176,15 +180,23 @@ export function TransactionForm({
             ? "Save transaction"
             : "Add transaction"}
       </Button>
+      <AccountDateIssue
+        data={data}
+        accountIds={[form.watch("accountId")]}
+        date={form.watch("date")}
+      />
+      <ActionError error={action.error} />
     </form>
   );
 }
 export function TransferForm({
   data,
   done,
+  toAccountId = "",
 }: {
   data: Snapshot;
   done: () => void;
+  toAccountId?: string;
 }) {
   const form = useForm<
     z.input<typeof transferFormSchema>,
@@ -194,7 +206,7 @@ export function TransferForm({
     resolver: zodResolver(transferFormSchema),
     defaultValues: {
       fromAccountId: "",
-      toAccountId: "",
+      toAccountId,
       amountCents: "",
       date: today(),
       description: "Transfer",
@@ -224,7 +236,7 @@ export function TransferForm({
               .filter((a) => !a.archived)
               .map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {a.name}
+                  {accountLabel(a)}
                 </SelectItem>
               ))}
           </FormSelect>
@@ -236,10 +248,13 @@ export function TransferForm({
       >
         <Input inputMode="decimal" {...form.register("amountCents")} />
       </Field>
-      <Field label="Date">
+      <Field label="Date" error={form.formState.errors.date?.message}>
         <Input type="date" max={data.today} {...form.register("date")} />
       </Field>
-      <Field label="Description">
+      <Field
+        label="Description"
+        error={form.formState.errors.description?.message}
+      >
         <Input {...form.register("description")} />
       </Field>
       {form.formState.errors.root && (
@@ -247,9 +262,20 @@ export function TransferForm({
           Choose two different accounts.
         </p>
       )}
+      <TransferValueNote
+        data={data}
+        accountIds={[form.watch("fromAccountId"), form.watch("toAccountId")]}
+        date={form.watch("date")}
+      />
       <Button disabled={action.isPending} type="submit">
         Record transfer
       </Button>
+      <AccountDateIssue
+        data={data}
+        accountIds={[form.watch("fromAccountId"), form.watch("toAccountId")]}
+        date={form.watch("date")}
+      />
+      <ActionError error={action.error} />
     </form>
   );
 }

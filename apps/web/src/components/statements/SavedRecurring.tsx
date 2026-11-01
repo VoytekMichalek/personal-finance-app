@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { useState } from "react";
 import type { Snapshot } from "@finance/shared";
 import { scheduleSchema } from "@finance/shared";
@@ -17,7 +18,7 @@ export function SavedRecurring({
   const { query, save } = useSavedRecurring(id);
   const [accepted, setAccepted] = useState<AcceptedRecurring[]>([]);
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -43,11 +44,7 @@ export function SavedRecurring({
           accountId={accountId}
         />
       )}
-      {save.error && (
-        <p role="alert" className="text-sm text-destructive">
-          {save.error.message}
-        </p>
-      )}
+      <ActionError error={save.error} />
       {save.isSuccess && (
         <p role="status" className="text-sm text-emerald-700">
           Recurring items saved.

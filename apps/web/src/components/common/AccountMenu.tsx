@@ -1,3 +1,5 @@
+import { ActionError } from "./ActionError";
+import { ErrorState } from "./primitives";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Fingerprint, LogOut, MoreHorizontal, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,6 +23,8 @@ export function AccountMenu({
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<Error | null>(null);
+  const [logoutError, setLogoutError] = useState<Error | null>(null);
   const keys = useQuery({
     queryKey: ["passkeys"],
     queryFn: async () => {
@@ -31,13 +35,15 @@ export function AccountMenu({
     enabled: open,
   });
   async function logout() {
-    const result = await authClient.signOut();
-    if (result.error) {
-      toast.error(result.error.message);
-      return;
+    setLogoutError(null);
+    try {
+      const result = await authClient.signOut();
+      if (result.error) throw new Error(result.error.message);
+      client.clear();
+      window.location.assign("/");
+    } catch (error) {
+      setLogoutError(error as Error);
     }
-    client.clear();
-    window.location.assign("/");
   }
   return (
     <>
@@ -112,6 +118,16 @@ export function AccountMenu({
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
       <Dialog
+        open={!!logoutError}
+        onOpenChange={(next) => {
+          if (!next) setLogoutError(null);
+        }}
+        title="Could not log out"
+      >
+        <ActionError error={logoutError} />
+        <Button onClick={() => void logout()}>Try logging out again</Button>
+      </Dialog>
+      <Dialog
         open={open}
         onOpenChange={setOpen}
         title="Your passkeys"
@@ -133,13 +149,19 @@ export function AccountMenu({
                 aria-label={"Remove " + (key.name || "passkey")}
                 onClick={async () => {
                   if (!window.confirm("Remove this passkey?")) return;
-                  const result = await authClient.passkey.deletePasskey({
-                    id: key.id,
-                  });
-                  if (result.error) toast.error(result.error.message);
-                  else {
-                    toast.success("Passkey removed");
-                    await keys.refetch();
+                  setProblem(null);
+                  try {
+                    const result = await authClient.passkey.deletePasskey({
+                      id: key.id,
+                    });
+                    if (result.error)
+                      setProblem(new Error(result.error.message));
+                    else {
+                      toast.success("Passkey removed");
+                      await keys.refetch();
+                    }
+                  } catch (error) {
+                    setProblem(error as Error);
                   }
                 }}
               >
@@ -148,10 +170,12 @@ export function AccountMenu({
             </div>
           ))}
           {keys.error && (
-            <p role="alert" className="text-sm text-destructive">
-              {keys.error.message}
-            </p>
+            <ErrorState
+              message={keys.error.message}
+              retry={() => void keys.refetch()}
+            />
           )}
+          <ActionError error={problem} />
           <Field label="New passkey name">
             <Input
               value={label}
@@ -163,6 +187,7 @@ export function AccountMenu({
             disabled={busy}
             onClick={async () => {
               setBusy(true);
+              setProblem(null);
               try {
                 const result = await authClient.passkey.addPasskey({
                   name: label || "Additional passkey",
@@ -172,7 +197,7 @@ export function AccountMenu({
                 setLabel("");
                 toast.success("Passkey added");
               } catch (e) {
-                toast.error((e as Error).message);
+                setProblem(e as Error);
               } finally {
                 setBusy(false);
               }

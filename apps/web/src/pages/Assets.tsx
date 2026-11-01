@@ -19,7 +19,7 @@ export function Assets() {
     navigate = useNavigate();
   const [open, setOpen] = useState(false);
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -66,7 +66,10 @@ export function Assets() {
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="font-semibold tabular-nums">
-                    {money(Math.abs(assetValue(asset, data.today)))}
+                    {money(
+                      assetValue(asset, data.today, data.transactions) *
+                        (asset.kind === "liability" ? -1 : 1),
+                    )}
                   </span>
                   <ArrowUpRight size={16} />
                 </div>

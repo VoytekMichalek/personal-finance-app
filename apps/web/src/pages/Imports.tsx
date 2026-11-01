@@ -1,4 +1,6 @@
+import { ActionError } from "../components/common/ActionError";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { isCashAccount } from "@finance/shared";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Card,
@@ -18,7 +20,7 @@ export function Imports() {
   const [search] = useSearchParams();
   const flow = useCsvImport(search.get("account") ?? "");
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -81,14 +83,7 @@ export function Imports() {
           </li>
         ))}
       </ol>
-      {flow.error && (
-        <p
-          role="alert"
-          className="mb-5 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-destructive"
-        >
-          {flow.error}
-        </p>
-      )}
+      <ActionError error={flow.conflictError} />
       {flow.busy && (
         <p role="status" className="mb-4 text-sm text-muted-foreground">
           {flow.busy}
@@ -118,7 +113,7 @@ export function Imports() {
             </Button>
           </div>
         </Card>
-      ) : !data.accounts.some((a) => !a.archived) ? (
+      ) : !data.accounts.some((a) => !a.archived && isCashAccount(a)) ? (
         <Empty
           title="Add an account first"
           description="Every CSV import belongs to an active account."

@@ -32,6 +32,28 @@ function scan(dir) {
   }
 }
 scan(".");
+const releases = JSON.parse(fs.readFileSync("docs/releases.json", "utf8"));
+const version = JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+if (releases[0]?.version !== version)
+  errors.push(
+    "Add the current version to docs/releases.json before releasing.",
+  );
+if (
+  new Set(releases.map((release) => release.version)).size !== releases.length
+)
+  errors.push("Release history contains duplicate versions.");
+for (const release of releases) {
+  if (
+    !/^\d+\.\d+\.\d+$/.test(release.version) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(release.date) ||
+    !release.highlights?.length ||
+    release.highlights.some((text) => typeof text !== "string" || !text.trim())
+  )
+    errors.push(
+      "Every release needs a version, date and user-facing highlights.",
+    );
+}
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);

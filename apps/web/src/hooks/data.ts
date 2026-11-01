@@ -32,6 +32,5 @@ export function useAction(onSuccess?: (result: unknown) => void) {
       toast.success("Saved");
       onSuccess?.(result);
     },
-    onError: (error) => toast.error(error.message),
   });
 }

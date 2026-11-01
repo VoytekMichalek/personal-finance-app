@@ -106,7 +106,11 @@ test("detail deletion preserves a newly linked payment until both entries are ex
     expect(pair[0]!.transferGroupId).toBe(pair[1]!.transferGroupId);
     expect(pair.reduce((sum, row) => sum + row.amountCents, 0n)).toBe(0n);
 
-    await page.goto("/transactions?detail=" + target.id);
+    await expect(detail).toBeVisible();
+    await detail
+      .getByRole("button", { name: "Refresh data", exact: true })
+      .click();
+    await expect(detail.getByRole("status")).toContainText("Data refreshed");
     await expect(detail).toBeVisible();
     await expect(
       detail.getByRole("button", { name: "Edit transaction", exact: true }),

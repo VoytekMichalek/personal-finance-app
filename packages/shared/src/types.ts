@@ -8,7 +8,8 @@ export type Person = {
 export type Account = {
   id: string;
   name: string;
-  type: "bank" | "cash" | "credit";
+  type: "bank" | "cash" | "credit" | "asset" | "liability";
+  assetId?: string | null;
   institution: string;
   owner: string;
   openingDate: string;
@@ -83,6 +84,7 @@ export type Valuation = {
 };
 export type Asset = {
   id: string;
+  accountId?: string | null;
   name: string;
   kind: "asset" | "liability";
   classification: string;

@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { Snapshot, Transaction } from "@finance/shared";
@@ -84,11 +85,10 @@ export function BulkDelete({
               Both sides of a transfer are removed together. Entries with
               attached receipts must have their receipts removed first.
             </p>
-            {action.error && (
-              <p role="alert" className="mb-4 text-sm text-destructive">
-                {action.error.message}
-              </p>
-            )}
+            <ActionError
+              error={action.error}
+              onRefresh={() => setConfirmation(null)}
+            />
             <div className="flex flex-wrap justify-end gap-3">
               <Button
                 variant="secondary"

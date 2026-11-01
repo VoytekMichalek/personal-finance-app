@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { statementRetrySchema } from "@finance/shared";
 import { prisma } from "../../lib/db.js";
 import { HttpError } from "../../lib/errors.js";
-import { validateAccount } from "../finance/service.js";
+import { validateImportAccount } from "../finance/service.js";
 import { statementPreview } from "./service.js";
 export async function uploadStatement(
   accountId: string,
@@ -22,7 +22,7 @@ export async function uploadStatement(
       "SELECT pg_advisory_xact_lock(hashtext($1))",
       accountId,
     );
-    await validateAccount(tx, accountId);
+    await validateImportAccount(tx, accountId);
     const previous = await tx.statement.findFirst({
       where: { accountId, importBatch: { fileHash: hash } },
       select: {
@@ -128,10 +128,15 @@ export async function retryStatement(id: string, body: unknown = {}) {
         400,
         "Confirm that the current review can be discarded before reading this statement again.",
       );
-    await validateAccount(tx, item.accountId);
-    const options = item.processingOptions as {
+    await validateImportAccount(tx, item.accountId);
+    const savedOptions = item.processingOptions as {
       year?: number;
       useAi?: boolean;
+    };
+    const year = input.year === undefined ? savedOptions.year : input.year;
+    const options = {
+      ...(year ? { year } : {}),
+      useAi: input.useAi ?? savedOptions.useAi ?? false,
     };
     if (options.useAi && !modelId)
       throw new HttpError(400, "Choose an AI model in Settings → AI first.");

@@ -3,16 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Fingerprint,
-  ArrowRight,
-  LockKeyhole,
-} from "lucide-react";
+import { Fingerprint, ArrowRight, LockKeyhole } from "lucide-react";
 import { api, send } from "../lib/api";
 import { authClient } from "../lib/auth";
 import { Button } from "../components/ui/button";
 import { Attribution } from "../components/common/Attribution";
-import { Field, Input } from "../components/common/primitives";
+import { Field, Input, ErrorState } from "../components/common/primitives";
 const setupSchema = z.object({
   name: z.string().min(1),
   email: z.email(),
@@ -151,6 +147,34 @@ export function Access() {
               {error}
             </p>
           )}
+          {error && token && !enrolment && (
+            <div className="mb-4 space-y-2">
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setError("");
+                  try {
+                    setEnrolment(
+                      await send<Enrolment>("/access/exchange", { token }),
+                    );
+                  } catch (problem) {
+                    setError((problem as Error).message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Retry invitation
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                If the link has expired or was already used, sign in below or
+                ask a household administrator to create a new invitation in
+                Settings → Users.
+              </p>
+            </div>
+          )}
           {enrolment ? (
             <div>
               <p className="mb-4 text-sm text-muted-foreground">
@@ -242,9 +266,10 @@ export function Access() {
                 </Button>
               )}
               {status.isError && (
-                <p role="alert" className="mt-5 text-sm text-destructive">
-                  The server is unavailable. Refresh to try again.
-                </p>
+                <ErrorState
+                  message="The server is unavailable. Your entries are kept here."
+                  retry={() => void status.refetch()}
+                />
               )}
             </>
           )}

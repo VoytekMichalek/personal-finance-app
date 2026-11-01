@@ -3,6 +3,7 @@ import { bulkDeleteSchema, date } from "./schemas.js";
 import { matchesRule } from "./categorisation.js";
 import type { RememberedRule } from "./remembered-rule.js";
 import type { Transaction } from "./types.js";
+import { expenseFiltersSchema } from "./expenses.js";
 
 export const transactionFiltersSchema = z.object({
   search: z.string().max(250).default(""),
@@ -48,9 +49,16 @@ const versioned = z.object({
   id: z.uuid(),
   version: z.number().int().positive(),
 });
+export const rememberTransactionFiltersSchema = z.union([
+  z.object({ expenses: expenseFiltersSchema }).strict(),
+  transactionFiltersSchema.strict(),
+]);
+export type RememberTransactionFilters = z.infer<
+  typeof rememberTransactionFiltersSchema
+>;
 export const rememberTransactionSchema = bulkDeleteSchema.extend({
   source: versioned,
-  filters: transactionFiltersSchema,
+  filters: rememberTransactionFiltersSchema,
   categoryId: z.uuid().nullable(),
   pattern: z.string().trim().min(1).max(250),
   matchMode: z.enum(["exact", "contains"]),

@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -60,13 +61,16 @@ export function AssetForm({
       <Field label="Name" error={form.formState.errors.name?.message}>
         <Input placeholder="e.g. Our home" {...form.register("name")} />
       </Field>
-      <Field label="Type">
+      <Field label="Type" error={form.formState.errors.kind?.message}>
         <FormSelect control={form.control} name={"kind"}>
           <SelectItem value="asset">Asset</SelectItem>
           <SelectItem value="liability">Liability</SelectItem>
         </FormSelect>
       </Field>
-      <Field label="Classification">
+      <Field
+        label="Classification"
+        error={form.formState.errors.classification?.message}
+      >
         <FormSelect control={form.control} name={"classification"}>
           {[
             "property",
@@ -82,7 +86,7 @@ export function AssetForm({
           ))}
         </FormSelect>
       </Field>
-      <Field label="Belongs to">
+      <Field label="Belongs to" error={form.formState.errors.owner?.message}>
         <FormSelect control={form.control} name={"owner"}>
           <OwnerOptions people={data.people} />
         </FormSelect>
@@ -90,6 +94,7 @@ export function AssetForm({
       <Button disabled={action.isPending} type="submit">
         Save details
       </Button>
+      <ActionError error={action.error} />
     </form>
   );
 }
@@ -124,7 +129,12 @@ export function ValuationForm({
         }),
       )}
     >
-      <Field label="Valuation date">
+      <p className="text-sm text-muted-foreground">
+        Enter the closing value for this date, including transfers made that
+        day. Later transfers adjust the value automatically; earlier transfers
+        are already included.
+      </p>
+      <Field label="Valuation date" error={form.formState.errors.date?.message}>
         <DatePicker
           value={form.watch("date")}
           onChange={(value) =>
@@ -141,6 +151,7 @@ export function ValuationForm({
       <Button disabled={action.isPending} type="submit">
         Save valuation
       </Button>
+      <ActionError error={action.error} />
     </form>
   );
 }

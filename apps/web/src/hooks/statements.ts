@@ -4,7 +4,30 @@ import {
   isStatementProcessing,
   type StatementResult,
   type RecurringSuggestion,
+  type StatementPreview,
 } from "@finance/shared";
+export function useStatementDateCorrection(
+  id: string,
+  corrected: (preview: StatementPreview) => void,
+) {
+  const client = useQueryClient();
+  const mutation = useMutation({
+    mutationKey: ["statement", id, "dates"],
+    mutationFn: (corrections: { rowNumber: number; date: string }[]) =>
+      send<StatementResult>("/statements/" + id + "/dates", { corrections }),
+    onSuccess: (result) => {
+      client.setQueryData(["statement", id], result);
+      if (result.status === "ready") corrected(result);
+    },
+  });
+  return {
+    ...mutation,
+    refresh: () => {
+      const result = client.getQueryData<StatementResult>(["statement", id]);
+      if (result?.status === "ready") corrected(result);
+    },
+  };
+}
 export function useStatement(id?: string) {
   return useQuery({
     queryKey: ["statement", id],
@@ -45,11 +68,15 @@ export function useStatementUpload() {
     },
   });
 }
+export type StatementReadingOptions = { year?: number | null; useAi?: boolean };
 export function useStatementRetry() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      send<StatementResult>("/statements/" + id + "/retry", {}),
+    mutationFn: ({
+      id,
+      ...options
+    }: StatementReadingOptions & { id: string }) =>
+      send<StatementResult>("/statements/" + id + "/retry", options),
     onSuccess: async (result) => {
       client.setQueryData(["statement", result.id], result);
       await client.invalidateQueries({
@@ -61,8 +88,12 @@ export function useStatementRetry() {
 export function useStatementReread() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
+    mutationFn: ({
+      id,
+      ...options
+    }: StatementReadingOptions & { id: string }) =>
       send<StatementResult>("/statements/" + id + "/retry", {
+        ...options,
         discardReview: true,
       }),
     onSuccess: async (result) => {

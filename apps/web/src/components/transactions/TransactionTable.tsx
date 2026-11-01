@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { RememberTransaction } from "./RememberTransaction";
 import { RememberButton } from "./RememberButton";
 import { useState } from "react";
@@ -212,11 +213,7 @@ export function TransactionTable({
               transactions at once.
             </p>
           )}
-          {action.error && (
-            <p role="alert" className="text-xs text-destructive">
-              {action.error.message}
-            </p>
-          )}
+          <ActionError error={action.error} />
         </div>
       )}
       {rows.length ? (

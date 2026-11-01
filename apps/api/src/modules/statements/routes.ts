@@ -7,6 +7,7 @@ import { HttpError } from "../../lib/errors.js";
 import { statementPreview, commitStatement } from "./service.js";
 import { savedRecurring, acceptSavedRecurring } from "./recurring.js";
 import { uploadStatement, retryStatement } from "./queue.js";
+import { correctStatementDates } from "./correct-dates.js";
 export const statementRouter = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -54,6 +55,11 @@ statementRouter.post("/statements/:id/retry", async (req, res) =>
 );
 statementRouter.post("/statements/:id/commit", async (req, res) =>
   res.json(await commitStatement(z.uuid().parse(req.params.id), req.body)),
+);
+statementRouter.post("/statements/:id/dates", async (req, res) =>
+  res.json(
+    await correctStatementDates(z.uuid().parse(req.params.id), req.body),
+  ),
 );
 statementRouter.get("/statements/:id/recurring", async (req, res) =>
   res.json(await savedRecurring(z.uuid().parse(req.params.id))),

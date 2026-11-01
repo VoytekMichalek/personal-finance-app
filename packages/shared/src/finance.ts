@@ -10,6 +10,7 @@ import type {
 } from "./types.js";
 import { addDays, monthEnd } from "./money.js";
 import { scheduleImpact } from "./schedules.js";
+import { isCashAccount } from "./accounts.js";
 export function accountBalance(
   account: Account,
   transactions: Transaction[],
@@ -129,10 +130,12 @@ export function forecast(snapshot: Snapshot, days = 90): ForecastPoint[] {
     end,
   ).filter((o) => !o.matched);
   // Bank/cash balances less credit owed: purchases reserve funds; repayments are transfers.
-  let balance = snapshot.accounts.reduce(
-    (sum, a) => sum + accountBalance(a, snapshot.transactions, start),
-    0,
-  );
+  let balance = snapshot.accounts
+    .filter(isCashAccount)
+    .reduce(
+      (sum, a) => sum + accountBalance(a, snapshot.transactions, start),
+      0,
+    );
   const points: ForecastPoint[] = [
     {
       date: start,
@@ -203,10 +206,12 @@ export function forecast(snapshot: Snapshot, days = 90): ForecastPoint[] {
       .reduce(
         (s, o) =>
           s +
-          snapshot.accounts.reduce(
-            (sum, account) => sum + scheduleImpact(o.schedule, account.id),
-            0,
-          ),
+          snapshot.accounts
+            .filter(isCashAccount)
+            .reduce(
+              (sum, account) => sum + scheduleImpact(o.schedule, account.id),
+              0,
+            ),
         0,
       );
     balance += scheduled - variable;
@@ -219,18 +224,65 @@ export function forecast(snapshot: Snapshot, days = 90): ForecastPoint[] {
   }
   return points;
 }
-export function assetValue(asset: Asset, date: string): number {
+export function assetValue(
+  asset: Asset,
+  date: string,
+  transactions: Transaction[] = [],
+): number {
   const valuation = [...asset.valuations]
     .filter((v) => v.date <= date)
     .sort((a, b) => b.date.localeCompare(a.date))[0];
-  return (valuation?.amountCents ?? 0) * (asset.kind === "liability" ? -1 : 1);
+  const movements = asset.accountId
+    ? transactions
+        .filter(
+          (row) =>
+            row.accountId === asset.accountId &&
+            row.date <= date &&
+            (!valuation || row.date > valuation.date),
+        )
+        .reduce((sum, row) => sum + row.amountCents, 0)
+    : 0;
+  // A valuation is the closing value on its date: earlier/same-day movements
+  // are already included. Later cash flows change value, never the valuation.
+  return (
+    (valuation?.amountCents ?? 0) * (asset.kind === "liability" ? -1 : 1) +
+    movements
+  );
+}
+export function assetHistory(
+  asset: Asset,
+  transactions: Transaction[],
+  through: string,
+) {
+  return [
+    ...new Set([
+      ...asset.valuations.map((entry) => entry.date),
+      ...transactions
+        .filter((row) => row.accountId === asset.accountId)
+        .map((row) => row.date),
+    ]),
+  ]
+    .filter((date) => date <= through)
+    .sort()
+    .map((date) => ({
+      date,
+      balanceCents:
+        assetValue(asset, date, transactions) *
+        (asset.kind === "liability" ? -1 : 1),
+    }));
 }
 export function netWorth(snapshot: Snapshot, date: string): number {
   return (
-    snapshot.accounts.reduce(
-      (sum, a) => sum + accountBalance(a, snapshot.transactions, date),
+    snapshot.accounts
+      .filter(isCashAccount)
+      .reduce(
+        (sum, a) => sum + accountBalance(a, snapshot.transactions, date),
+        0,
+      ) +
+    snapshot.assets.reduce(
+      (sum, a) => sum + assetValue(a, date, snapshot.transactions),
       0,
-    ) + snapshot.assets.reduce((sum, a) => sum + assetValue(a, date), 0)
+    )
   );
 }
 export function overview(snapshot: Snapshot, owner = "all") {
@@ -244,10 +296,11 @@ export function overview(snapshot: Snapshot, owner = "all") {
   const income = current
     .filter((t) => t.kind === "income")
     .reduce((s, t) => s + t.amountCents, 0);
-  const spent = -current
+  const spent = current
     .filter((t) => t.kind === "expense" || t.kind === "refund")
-    .reduce((s, t) => s + t.amountCents, 0);
+    .reduce((s, t) => s - t.amountCents, 0);
   const balance = snapshot.accounts
+    .filter(isCashAccount)
     .filter((a) => owner === "all" || a.owner === owner)
     .reduce(
       (s, a) => s + accountBalance(a, snapshot.transactions, snapshot.today),

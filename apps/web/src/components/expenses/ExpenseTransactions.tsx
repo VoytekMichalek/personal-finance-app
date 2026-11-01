@@ -11,19 +11,27 @@ import {
   money,
   type Snapshot,
   type Transaction,
+  type ExpenseFilters,
 } from "@finance/shared";
-import { CategoryChip, PersonChip } from "../common/EntityChip";
+import { PersonChip } from "../common/EntityChip";
+import { TransactionCategory } from "../transactions/TransactionCategory";
+import { RememberButton } from "../transactions/RememberButton";
+import { RememberTransaction } from "../transactions/RememberTransaction";
 import { Button } from "../ui/button";
 
 const pageSize = 10;
 export function ExpenseTransactions({
   rows,
   data,
+  filters,
 }: {
   rows: Transaction[];
   data: Snapshot;
+  filters: ExpenseFilters;
 }) {
   const [page, setPage] = useState(0);
+  const [remembering, setRemembering] = useState<string>();
+  const rememberedRow = data.transactions.find((row) => row.id === remembering);
   const lastPage = Math.max(0, Math.ceil(rows.length / pageSize) - 1);
   const current = Math.min(page, lastPage);
   const sorted = [...rows].sort(
@@ -38,6 +46,16 @@ export function ExpenseTransactions({
     );
   return (
     <div className="@container">
+      {rememberedRow && (
+        <RememberTransaction
+          key={rememberedRow.id}
+          row={rememberedRow}
+          data={data}
+          rows={rows}
+          filters={{ expenses: filters }}
+          close={() => setRemembering(undefined)}
+        />
+      )}
       <div
         className="hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,1fr)_7rem] gap-4 border-b bg-muted/40 px-3 py-2.5 text-[11px] font-medium text-muted-foreground @min-[640px]:grid"
         aria-hidden="true"
@@ -82,10 +100,7 @@ export function ExpenseTransactions({
                 </Link>
               </div>
               <div className="col-start-1 row-start-3 flex min-w-0 flex-wrap gap-1.5 text-xs [overflow-wrap:anywhere] @min-[640px]:col-start-auto @min-[640px]:row-start-auto">
-                <CategoryChip
-                  categoryId={row.categoryId}
-                  categories={data.categories}
-                />
+                <TransactionCategory row={row} categories={data.categories} />
                 <PersonChip owner={row.owner} people={data.people} />
               </div>
               <div
@@ -97,6 +112,12 @@ export function ExpenseTransactions({
                     Refund
                   </span>
                 )}
+                <div className="mt-2 font-normal">
+                  <RememberButton
+                    row={row}
+                    onClick={() => setRemembering(row.id)}
+                  />
+                </div>
               </div>
             </li>
           );

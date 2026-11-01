@@ -14,6 +14,7 @@ import { Users } from "../components/settings/Users";
 import { Attribution } from "../components/common/Layout";
 import { useAiSettings } from "../hooks/ai-settings";
 import { AiSettings } from "../components/settings/AiSettings";
+import { ReleaseNotes } from "../components/settings/ReleaseNotes";
 type Metadata = {
   version: string;
   releaseTag: string;
@@ -31,7 +32,7 @@ export function SettingsPage({ user }: { user: Person }) {
     queryFn: () => api<Metadata>("/system"),
   });
   if (snapshot.isPending) return <Loading />;
-  if (snapshot.error)
+  if (snapshot.error && !snapshot.data)
     return (
       <ErrorState
         message={snapshot.error.message}
@@ -42,6 +43,7 @@ export function SettingsPage({ user }: { user: Person }) {
     ...(user.role === "admin" ? [["users", "Users"]] : []),
     ["system", "System"],
     ["ai", "AI"],
+    ["releases", "Release notes"],
   ];
   return (
     <>
@@ -68,6 +70,8 @@ export function SettingsPage({ user }: { user: Person }) {
         <Users />
       ) : tab === "ai" ? (
         <AiSettings admin={user.role === "admin"} />
+      ) : tab === "releases" ? (
+        <ReleaseNotes version={system.data?.version} />
       ) : (
         <Card>
           <h2 className="mb-5 font-semibold">A few useful details</h2>

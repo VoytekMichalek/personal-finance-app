@@ -1,8 +1,10 @@
+import { ActionError } from "../components/common/ActionError";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   assetValue,
+  assetHistory,
   displayDate,
   money,
   type Valuation,
@@ -18,14 +20,18 @@ import { BalanceChart } from "../components/common/Chart";
 import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
 import { AssetForm, ValuationForm } from "../components/assets/AssetForms";
+import { TransferForm } from "../components/transactions/TransactionForm";
+import { TransactionBrowser } from "../components/transactions/TransactionBrowser";
 export function AssetDetail() {
   const { id } = useParams(),
     query = useSnapshot(),
     action = useAction();
+  const navigate = useNavigate();
+  const [transferOpen, setTransferOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [entry, setEntry] = useState<Valuation | "new" | null>(null);
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -45,7 +51,11 @@ export function AssetDetail() {
   );
   const recorded = history.filter((v) => v.date <= data.today);
   const latest = recorded.at(-1),
-    current = Math.abs(assetValue(asset, data.today));
+    current =
+      assetValue(asset, data.today, data.transactions) *
+      (asset.kind === "liability" ? -1 : 1);
+  const points = assetHistory(asset, data.transactions, data.today);
+  const hasHistory = points.length > 0;
   const change = latest && recorded[0] ? current - recorded[0].amountCents : 0;
   const owner =
     asset.owner === "household"
@@ -54,6 +64,7 @@ export function AssetDetail() {
         "Former member");
   return (
     <>
+      <ActionError error={action.error} />
       <Link
         className="mb-5 inline-flex items-center gap-2 text-xs text-muted-foreground"
         to="/assets"
@@ -66,7 +77,12 @@ export function AssetDetail() {
         title={asset.name}
         description={asset.classification + " · " + owner}
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {asset.accountId && (
+              <Button variant="secondary" onClick={() => setTransferOpen(true)}>
+                Record transfer
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setEditing(true)}>
               <Pencil size={14} />
               Edit details
@@ -84,7 +100,7 @@ export function AssetDetail() {
             {asset.kind === "asset" ? "Current value" : "Amount owed"}
           </p>
           <p className="mt-2 text-2xl font-semibold">
-            {latest ? money(current) : "No value recorded"}
+            {hasHistory ? money(current) : "No value recorded"}
           </p>
         </Card>
         <Card>
@@ -104,12 +120,9 @@ export function AssetDetail() {
       </div>
       <Card className="mb-5">
         <h2 className="mb-4 font-semibold">Value history</h2>
-        {recorded.length ? (
+        {hasHistory ? (
           <BalanceChart
-            points={recorded.map((v) => ({
-              date: v.date,
-              balanceCents: v.amountCents,
-            }))}
+            points={points}
             label={asset.name + " value history"}
             valueLabel={asset.kind === "asset" ? "Value" : "Amount owed"}
             step
@@ -119,6 +132,11 @@ export function AssetDetail() {
             Add a value to start the graph.
           </p>
         )}
+        <p className="mt-3 text-xs text-muted-foreground">
+          Transfers after the latest valuation adjust this value automatically.
+          Each valuation is a closing value that includes all movements on or
+          before its date. A negative amount owed means a credit balance.
+        </p>
       </Card>
       <Card>
         <h2 className="mb-4 font-semibold">Past entries</h2>
@@ -165,6 +183,27 @@ export function AssetDetail() {
           <p className="text-sm text-muted-foreground">No entries yet.</p>
         )}
       </Card>
+      {asset.accountId && (
+        <section className="mt-6">
+          <h2 className="mb-3 font-semibold">Transactions</h2>
+          <TransactionBrowser
+            data={data}
+            accountId={asset.accountId}
+            onOpen={(row) => navigate("/transactions?detail=" + row.id)}
+          />
+        </section>
+      )}
+      <Dialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        title="Move money"
+      >
+        <TransferForm
+          data={data}
+          toAccountId={asset.accountId ?? ""}
+          done={() => setTransferOpen(false)}
+        />
+      </Dialog>
       <Dialog
         open={editing}
         onOpenChange={setEditing}

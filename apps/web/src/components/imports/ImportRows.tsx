@@ -1,3 +1,5 @@
+import { accountLabel } from "@finance/shared";
+import { TransferValueNote } from "../assets/TransferValueNote";
 import { RememberCategory } from "./RememberCategory";
 import { EditAccountButton } from "../accounts/EditAccountButton";
 import {
@@ -6,6 +8,7 @@ import {
   useRef,
   type Dispatch,
   type SetStateAction,
+  type ReactNode,
 } from "react";
 import {
   money,
@@ -27,6 +30,7 @@ type RowProps = {
   accountId: string;
   busy: string;
   updateRow: (n: number, patch: Partial<ImportRow>) => void;
+  repairError?: (row: ImportRow) => ReactNode;
 };
 const ReviewRow = memo(function ReviewRow({
   row,
@@ -36,6 +40,7 @@ const ReviewRow = memo(function ReviewRow({
   busy,
   updateRow,
   focusRow,
+  repairError,
 }: RowProps) {
   const articleRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -147,6 +152,7 @@ const ReviewRow = memo(function ReviewRow({
       ) : row.duplicate ? (
         <Pill tone="warning">Possible duplicate · select to retain</Pill>
       ) : null}
+      {row.error && repairError?.(row)}
       <div className="grid min-w-0 gap-3 sm:grid-cols-3">
         <label className="grid min-w-0 gap-1.5 text-xs text-muted-foreground">
           Type
@@ -206,7 +212,7 @@ const ReviewRow = memo(function ReviewRow({
                 .map((a) => (
                   <SelectItem key={a.id} value={a.id}>
                     <Pill colour={identityColour("account:" + a.id)}>
-                      {a.name}
+                      {accountLabel(a)}
                     </Pill>
                   </SelectItem>
                 ))}
@@ -244,6 +250,13 @@ const ReviewRow = memo(function ReviewRow({
               ? "Auto categorised · saved rule"
               : "Auto categorised · remembered in this upload"}
         </Pill>
+      )}
+      {row.kind === "transfer" && (
+        <TransferValueNote
+          data={data}
+          accountIds={[row.counterAccountId]}
+          date={row.date}
+        />
       )}
       {row.kind !== "transfer" && !row.error && (
         <RememberCategory
@@ -289,6 +302,7 @@ export function ImportRows({
   busy,
   updateRow,
   focusRow,
+  repairError,
 }: Omit<RowProps, "row" | "rememberedCount"> & {
   preview: { rows: ImportRow[] };
   page: number;
@@ -313,6 +327,7 @@ export function ImportRows({
               row={row}
               rememberedCount={rememberedCounts.get(row.rowNumber) ?? 0}
               focusRow={focusRow}
+              repairError={repairError}
               data={data}
               accountId={accountId}
               busy={busy}

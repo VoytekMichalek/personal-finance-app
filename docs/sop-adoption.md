@@ -646,3 +646,31 @@ evidence. The overall CI job allowance increases from 30 to 45 minutes for added
 regression coverage over the measured 26-minute baseline; individual test deadlines
 and all gates remain unchanged. The owner explicitly requested this fix and patch
 release.
+
+## In-place recovery, editable reports and asset transfers — 1 November 2026
+
+This continuation retains the fixed current-SOP source revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, retrieved at
+`2026-10-31T22:57:39.967Z`, and the adopted baseline and exceptions above.
+The owner requested category editing wherever transactions appear, transfers to
+assets/liabilities with automatic value updates, missing-year PDF recovery and
+an application-wide review of error recovery, mobile verification, maintained
+in-app release highlights and another patch release.
+
+The additive asset-account migration preserves valuations and ledger history.
+Manual valuations are closing values; subsequent transfers adjust them without
+double counting net worth or treating transfers as spending. PDF corrections are
+persisted only after verifying the printed source day/month/year and unchanged
+amounts, with account serialization against import and reread. Error feedback keeps
+local correction, refresh or retry controls available; external service/access
+failures explain their necessary owner/admin action. No access or source-data
+safeguards are relaxed to provide recovery.
+
+User guidance and the error-surface review are maintained with the changes. The
+new `docs/releases.json` is rendered in Settings and required by source/release
+guardrails. AGENTS records the owner's ongoing release-history and error-recovery
+instructions. No dependency, runtime input or deployment-policy change is included;
+existing validation/publication gates remain, with release highlights now checked
+before publication. R17–R19 source inspection and exact-candidate image evidence
+follow the testing record; local checks plus full main/release CI retain the
+existing isolation, timing repetition and desktop/mobile requirements.

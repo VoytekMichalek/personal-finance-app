@@ -1,5 +1,6 @@
 import {
-  date as dateSchema,
+  statementDate,
+  statementDatePattern as datePattern,
   parseMoney,
   type ImportRow,
   type StatementDetails,
@@ -10,22 +11,7 @@ export const openingLabel =
   /opening balance|previous (?:statement )?balance|last statement balance|balance (?:brought forward|b\/f|(?:at|from) (?:the )?(?:last|previous) statement)|beginning balance/i;
 export const closingLabel =
   /closing balance|new balance|balance carried forward|balance c\/f|ending balance/i;
-const datePattern =
-  /^(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?|\d{1,2}[\s-]+[A-Za-z]{3,9}(?:[\s-]+\d{4})?)\b/;
-const months = [
-  "jan",
-  "feb",
-  "mar",
-  "apr",
-  "may",
-  "jun",
-  "jul",
-  "aug",
-  "sep",
-  "oct",
-  "nov",
-  "dec",
-];
+export { statementDate } from "@finance/shared";
 export function statementAmount(text: string) {
   const negative = /DR|\(|^-/.test(text.toUpperCase());
   const value = parseMoney(text.replace(/CR|DR|[()$+\s-]/gi, ""));
@@ -35,21 +21,6 @@ export function statementAmount(text: string) {
 export function statementLedgerAmount(text: string, accountType = "bank") {
   const amount = statementAmount(text);
   return accountType === "credit" && !/CR|DR/i.test(text) ? -amount : amount;
-}
-export function statementDate(text: string, year?: number) {
-  if (/^\d{4}-/.test(text)) return dateSchema.parse(text);
-  const parts = text.trim().split(/[\s/-]+/);
-  const month = /^\d+$/.test(parts[1]!)
-    ? Number(parts[1])
-    : months.indexOf(parts[1]!.slice(0, 3).toLowerCase()) + 1;
-  const y = parts[2]
-    ? Number(parts[2]) + (parts[2].length === 2 ? 2000 : 0)
-    : year;
-  if (!y)
-    throw new Error("Confirm the statement year to read dates without a year.");
-  return dateSchema.parse(
-    `${y}-${String(month).padStart(2, "0")}-${parts[0]!.padStart(2, "0")}`,
-  );
 }
 export function parseStatement(
   pages: string[],

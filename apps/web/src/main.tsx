@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { useMe } from "./hooks/data";
 import { Layout } from "./components/common/Layout";
-import { Loading } from "./components/common/primitives";
+import { Loading, ErrorState } from "./components/common/primitives";
+import { ApiError } from "./lib/api";
+import { ScreenErrorBoundary } from "./components/common/ScreenErrorBoundary";
 import { Access } from "./pages/Access";
 const Overview = lazy(() =>
   import("./pages/Overview").then((m) => ({ default: m.Overview })),
@@ -60,6 +62,14 @@ const queryClient = new QueryClient({
 function App() {
   const me = useMe();
   if (me.isPending) return <Loading />;
+  if (
+    me.error &&
+    !(me.error instanceof ApiError && me.error.status === 401) &&
+    !me.data
+  )
+    return (
+      <ErrorState message={me.error.message} retry={() => void me.refetch()} />
+    );
   if (!me.data) return <Access />;
   return (
     <Suspense fallback={<Loading />}>
@@ -97,7 +107,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        <ScreenErrorBoundary>
+          <App />
+        </ScreenErrorBoundary>
       </BrowserRouter>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>

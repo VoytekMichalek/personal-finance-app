@@ -1,4 +1,6 @@
-import { CategoryChip, PersonChip } from "../components/common/EntityChip";
+import { ActionError } from "../components/common/ActionError";
+import { PersonChip } from "../components/common/EntityChip";
+import { TransactionCategory } from "../components/transactions/TransactionCategory";
 import { TransactionBrowser } from "../components/transactions/TransactionBrowser";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -32,7 +34,7 @@ export function Transactions() {
       return next;
     });
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -53,6 +55,7 @@ export function Transactions() {
   };
   return (
     <>
+      {!detail && <ActionError error={action.error} />}
       <PageHeading
         eyebrow="Everyday clarity"
         title="The little things add up."
@@ -91,7 +94,9 @@ export function Transactions() {
       >
         <TransactionForm
           key={editing?.id ?? "new"}
-          transaction={editing}
+          transaction={
+            data.transactions.find((row) => row.id === editing?.id) ?? editing
+          }
           data={data}
           done={() => setOpen(false)}
         />
@@ -109,6 +114,7 @@ export function Transactions() {
       >
         {detail && (
           <>
+            <ActionError error={action.error} />
             <p className="mb-5 text-3xl font-semibold tabular-nums">
               {money(detail.amountCents)}
             </p>
@@ -119,10 +125,10 @@ export function Transactions() {
               </dd>
               <dt className="text-muted-foreground">Category</dt>
               <dd>
-                <CategoryChip
-                  categoryId={detail.categoryId}
+                <TransactionCategory
+                  row={detail}
                   categories={data.categories}
-                  transfer={detail.kind === "transfer"}
+                  disabled={action.isPending}
                 />
               </dd>
               <dt className="text-muted-foreground">Belongs to</dt>
@@ -161,11 +167,13 @@ export function Transactions() {
                     )
                   )
                     return;
-                  action.mutate({
-                    path: "/transactions/bulk-delete",
-                    body: { records },
-                  });
-                  setParam("detail");
+                  action.mutate(
+                    {
+                      path: "/transactions/bulk-delete",
+                      body: { records },
+                    },
+                    { onSuccess: () => setParam("detail") },
+                  );
                 }}
               >
                 <Trash2 size={14} />

@@ -1,19 +1,26 @@
+import { StatementRowIssue } from "./StatementRowIssue";
+import { ActionError } from "../common/ActionError";
+import { StatementReviewIssues } from "./StatementReviewIssues";
 import { StatementSourceNotes } from "./StatementSourceNotes";
 import { ImportConflicts } from "../imports/ImportConflicts";
 import { useImportConflicts } from "../../hooks/import-conflicts";
 import { useState, useCallback, useTransition } from "react";
-import { SavedRecurring } from "./SavedRecurring";
-import { StatementReadAgain } from "./StatementReadAgain";
+import { StatementImported } from "./StatementImported";
+import { StatementFileHeader } from "./StatementFileHeader";
+import {
+  StatementDateRepairs,
+  StatementRowDateRepair,
+} from "./StatementDateRepairs";
 import { EditAccountButton } from "../accounts/EditAccountButton";
 import { DatePicker } from "../ui/date-picker";
 import { LoaderCircle } from "lucide-react";
-import { Link } from "react-router-dom";
 import {
   money,
   moneyInput,
   parseMoney,
   updateImportRows,
   scheduleSchema,
+  mergeStatementDateRepairs,
   type Account,
   type ImportRow,
   type Snapshot,
@@ -22,7 +29,10 @@ import {
 import { Card, Field, Input } from "../common/primitives";
 import { Button } from "../ui/button";
 import { ImportRows } from "../imports/ImportRows";
-import { useStatementCommit } from "../../hooks/statements";
+import {
+  useStatementCommit,
+  useStatementDateCorrection,
+} from "../../hooks/statements";
 import { RecurringReview, type AcceptedRecurring } from "./RecurringReview";
 export function StatementReview({
   preview,
@@ -37,7 +47,11 @@ export function StatementReview({
   const [page, setPage] = useState(0);
   const [step, setStep] = useState(0);
   const [changingStep, startTransition] = useTransition();
-  const goTo = (next: number) => startTransition(() => setStep(next));
+  const goTo = (next: number) =>
+    startTransition(() => {
+      setStep(next);
+      setError("");
+    });
   const [accepted, setAccepted] = useState<AcceptedRecurring[]>([]);
   const [reviewed, setReviewed] = useState(false);
   const empty = !data.transactions.some((t) => t.accountId === account.id);
@@ -60,6 +74,34 @@ export function StatementReview({
   const commit = useStatementCommit();
   const conflicts = useImportConflicts(data, account.id, rows, commit.error);
   const [focusRow, setFocusRow] = useState<{ rowNumber: number }>();
+  const reviewRow = (rowNumber: number) => {
+    setPage(
+      Math.max(
+        0,
+        Math.floor(rows.findIndex((row) => row.rowNumber === rowNumber) / 20),
+      ),
+    );
+    setFocusRow({ rowNumber });
+    goTo(1);
+  };
+  const dateRepair = useStatementDateCorrection(preview.id, (corrected) => {
+    setRows((current) => mergeStatementDateRepairs(current, corrected.rows));
+    setReviewed(false);
+    commit.reset();
+    const first = corrected.rows
+      .map((row) => row.date)
+      .filter(Boolean)
+      .sort()[0];
+    if (first)
+      setOpeningDate((current) =>
+        current && current <= first ? current : first,
+      );
+    if (corrected.details.opening)
+      setOpeningAmount(
+        (current) =>
+          current || moneyInput(corrected.details.opening!.amountCents),
+      );
+  });
   const clearError = commit.reset;
   const selected = rows.filter((r) => r.include && !r.error);
   const reconciledCount = selected.filter((r) => r.reconcileExisting).length;
@@ -82,28 +124,12 @@ export function StatementReview({
     });
   if (commit.isSuccess || preview.committedAt)
     return (
-      <>
-        {" "}
-        <Card>
-          <h2 className="text-xl font-semibold">Statement imported</h2>
-          <p className="my-4 text-sm text-muted-foreground">
-            {commit.data
-              ? `${commit.data.imported} statement rows processed. `
-              : ""}
-            Your account activity and accepted recurring items are ready.
-          </p>
-          <Button asChild>
-            <Link to={"/accounts/" + account.id}>View account</Link>
-          </Button>
-          <a
-            className="ml-4 text-sm text-primary"
-            href={"/api/statements/" + preview.id + "/file"}
-          >
-            Download original PDF
-          </a>
-        </Card>
-        <SavedRecurring id={preview.id} accountId={account.id} data={data} />
-      </>
+      <StatementImported
+        id={preview.id}
+        accountId={account.id}
+        imported={commit.data?.imported}
+        data={data}
+      />
     );
   return (
     <>
@@ -114,42 +140,25 @@ export function StatementReview({
         data={data}
         busy={commit.isPending}
         updateRow={updateRow}
-        reviewRow={(rowNumber) => {
-          setPage(
-            Math.floor(
-              rows.findIndex((row) => row.rowNumber === rowNumber) / 20,
-            ),
-          );
-          setFocusRow({ rowNumber });
-          goTo(1);
-        }}
+        reviewRow={reviewRow}
       />
-      {commit.error && (
-        <p role="alert" className="mb-4 text-sm text-destructive">
-          {commit.error.message}
-        </p>
-      )}
-      <Card className="mb-5">
-        <div className="flex flex-wrap justify-between gap-3">
-          <span>
-            <strong className="break-all text-sm">{preview.filename}</strong>
-            <span className="mt-1 block text-xs text-muted-foreground">
-              {preview.pages} pages read · {rows.length} transaction lines ·{" "}
-              {rows.filter((r) => r.duplicate && !r.reconcileExisting).length}{" "}
-              possible duplicates
-            </span>
-          </span>
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              href={"/api/statements/" + preview.id + "/file"}
-              className="text-xs text-primary"
-            >
-              Download source PDF
-            </a>
-            <StatementReadAgain id={preview.id} disabled={commit.isPending} />
-          </div>
-        </div>
-      </Card>
+      <ActionError
+        error={commit.error || dateRepair.error}
+        onRefresh={dateRepair.refresh}
+      />
+      <StatementFileHeader
+        preview={preview}
+        rows={rows}
+        busy={commit.isPending || dateRepair.isPending}
+      />
+      <StatementDateRepairs
+        rows={rows}
+        details={preview.details}
+        busy={commit.isPending || dateRepair.isPending}
+        correct={dateRepair.mutate}
+        error={dateRepair.error?.message}
+        reviewRow={reviewRow}
+      />
       <div className="mb-6 flex flex-wrap gap-2">
         {[
           "Opening balance",
@@ -250,7 +259,7 @@ export function StatementReview({
               notes below.
             </p>
           )}
-          <StatementSourceNotes preview={preview} />
+          <StatementSourceNotes preview={preview} reviewRow={reviewRow} />
         </div>
       )}
       {step === 1 && (
@@ -264,9 +273,34 @@ export function StatementReview({
             preview={{ rows }}
             page={page}
             setPage={setPage}
-            busy={commit.isPending ? "Saving" : ""}
+            busy={commit.isPending || dateRepair.isPending ? "Saving" : ""}
             updateRow={updateRow}
             focusRow={focusRow}
+            repairError={(row) => (
+              <>
+                <StatementRowIssue
+                  row={row}
+                  id={preview.id}
+                  busy={commit.isPending || dateRepair.isPending}
+                />
+                <StatementRowDateRepair
+                  row={row}
+                  details={preview.details}
+                  today={data.today}
+                  busy={commit.isPending || dateRepair.isPending}
+                  correct={dateRepair.mutate}
+                  error={
+                    dateRepair.error?.message.startsWith(
+                      `Row ${row.rowNumber}:`,
+                    ) ||
+                    (dateRepair.variables?.length === 1 &&
+                      dateRepair.variables[0]?.rowNumber === row.rowNumber)
+                      ? dateRepair.error?.message
+                      : undefined
+                  }
+                />
+              </>
+            )}
           />
         </>
       )}
@@ -326,25 +360,15 @@ export function StatementReview({
             I have checked all statement pages, amounts, opening balance,
             categorisations and recurring items. I accept the selected entries.
           </label>
-          {accepted.some(
-            (item) => !scheduleSchema.safeParse(item.schedule).success,
-          ) && (
-            <p role="alert" className="mb-4 text-sm text-destructive">
-              Complete the type and accounts for each accepted item in Recurring
-              suggestions.
-            </p>
-          )}
-          {transferProblems && (
-            <p role="alert" className="mb-4 text-sm text-destructive">
-              Check the transfer accounts and their opening dates in Review
-              transactions before importing.
-            </p>
-          )}
-          {error && (
-            <p role="alert" className="mb-4 text-sm text-destructive">
-              {error}
-            </p>
-          )}
+          <StatementReviewIssues
+            dateProblem={!!dateProblem}
+            transferProblems={transferProblems}
+            recurringProblems={accepted.some(
+              (item) => !scheduleSchema.safeParse(item.schedule).success,
+            )}
+            openingError={error}
+            goTo={goTo}
+          />
           <Button
             disabled={
               accepted.some(
@@ -354,6 +378,7 @@ export function StatementReview({
               !reviewed ||
               !selected.length ||
               commit.isPending ||
+              dateRepair.isPending ||
               !!dateProblem ||
               transferProblems
             }

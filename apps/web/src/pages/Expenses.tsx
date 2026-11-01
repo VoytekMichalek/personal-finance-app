@@ -25,7 +25,7 @@ import { SearchInput } from "../components/common/SearchInput";
 export function Expenses() {
   const query = useSnapshot();
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -199,6 +199,7 @@ function ExpenseReport({ data }: { data: Snapshot }) {
             ])}
             rows={report.rows}
             data={data}
+            filters={{ from, to, accountIds, owners, categoryIds, search }}
           />
         </Card>
       </div>

@@ -188,7 +188,7 @@ export function ExpenseDetail({
       <h2 className="mt-6 mb-2 font-semibold">
         Transactions · {report.rows.length}
       </h2>
-      <ExpenseTransactions rows={report.rows} data={data} />
+      <ExpenseTransactions rows={report.rows} data={data} filters={filters} />
     </Dialog>
   );
 }

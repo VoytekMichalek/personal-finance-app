@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { RuleForm } from "./RuleForm";
 import { SelectItem, FormSelect } from "../ui/select";
 import { categoryColour, identityColour } from "@finance/shared";
@@ -31,6 +32,7 @@ export function Categories({ data }: { data: Snapshot }) {
   const action = useAction();
   return (
     <>
+      <ActionError error={action.error} />
       <Card className="mb-6">
         <SectionTitle
           action={
@@ -229,13 +231,16 @@ export function CategoryForm({
       <Field label="Name" error={form.formState.errors.name?.message}>
         <Input {...form.register("name")} />
       </Field>
-      <Field label="Type">
+      <Field label="Type" error={form.formState.errors.kind?.message}>
         <FormSelect control={form.control} name={"kind"} disabled={fixedKind}>
           <SelectItem value="expense">Expense</SelectItem>
           <SelectItem value="income">Income</SelectItem>
         </FormSelect>
       </Field>
-      <Field label="Parent category">
+      <Field
+        label="Parent category"
+        error={form.formState.errors.parentId?.message}
+      >
         <Select
           value={form.watch("parentId") ?? ""}
           onValueChange={(value) => form.setValue("parentId", value || null)}
@@ -256,7 +261,7 @@ export function CategoryForm({
             ))}
         </Select>
       </Field>
-      <Field label="Colour">
+      <Field label="Colour" error={form.formState.errors.color?.message}>
         <input
           type="color"
           className="h-11 w-11 cursor-pointer rounded-full border-0 bg-transparent p-2.5 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"
@@ -297,6 +302,7 @@ export function CategoryForm({
         Archiving hides a category and its subcategories from new entries, while
         preserving historical records.
       </p>
+      <ActionError error={action.error} />
     </form>
   );
 }

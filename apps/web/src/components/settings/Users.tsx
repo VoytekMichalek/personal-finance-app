@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { SelectItem, FormSelect } from "../ui/select";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,6 +30,8 @@ export function Users() {
   const [open, setOpen] = useState(false);
   const [invite, setInvite] = useState<Invite>();
   const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<Error | null>(null);
+  const [inviteProblem, setInviteProblem] = useState<Error | null>(null);
   const form = useForm<
     z.input<typeof userInviteSchema>,
     unknown,
@@ -66,6 +69,7 @@ export function Users() {
     )
       return;
     setBusy(true);
+    setProblem(null);
     try {
       const result = await send<Invite | { ok: true }>(
         "/access/users/" + user.id + "/" + name,
@@ -77,13 +81,13 @@ export function Users() {
         await client.invalidateQueries({ queryKey: ["me"] });
       toast.success("User updated");
     } catch (e) {
-      toast.error((e as Error).message);
+      setProblem(e as Error);
     } finally {
       setBusy(false);
     }
   }
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -99,11 +103,17 @@ export function Users() {
             Invite your wife and manage household access.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
+        <Button
+          onClick={() => {
+            setInviteProblem(null);
+            setOpen(true);
+          }}
+        >
           <UserPlus size={15} />
           Add user
         </Button>
       </div>
+      <ActionError error={problem} />
       <Card className="overflow-hidden p-0!">
         <div className="divide-y">
           {query.data.map((user) => (
@@ -185,6 +195,7 @@ export function Users() {
           className="grid gap-4"
           onSubmit={form.handleSubmit(async (body) => {
             setBusy(true);
+            setInviteProblem(null);
             try {
               const result = await send<Invite>("/access/users", body);
               setInvite(result);
@@ -192,19 +203,20 @@ export function Users() {
               form.reset();
               await query.refetch();
             } catch (e) {
-              toast.error((e as Error).message);
+              setInviteProblem(e as Error);
             } finally {
               setBusy(false);
             }
           })}
         >
+          <ActionError error={inviteProblem} />
           <Field label="Name" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} />
           </Field>
           <Field label="Email" error={form.formState.errors.email?.message}>
             <Input type="email" {...form.register("email")} />
           </Field>
-          <Field label="Role">
+          <Field label="Role" error={form.formState.errors.role?.message}>
             <FormSelect control={form.control} name={"role"}>
               <SelectItem value="member">Member</SelectItem>
               <SelectItem value="admin">Administrator</SelectItem>
@@ -243,8 +255,13 @@ export function Users() {
                   await navigator.clipboard.writeText(invite.inviteUrl);
                   toast.success("Invite link copied");
                 } catch {
+                  const field = document.querySelector<HTMLInputElement>(
+                    '[aria-label="Invitation link"]',
+                  );
+                  field?.focus();
+                  field?.select();
                   toast.error(
-                    "Could not copy. Select the link and copy it manually.",
+                    "Could not copy automatically. The link is selected; use your device’s Copy command.",
                   );
                 }
               }}

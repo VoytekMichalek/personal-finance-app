@@ -95,6 +95,30 @@ test("statement suggestions choose transfer direction before and after import an
       page.getByRole("combobox", { name: "Transfer to" }),
       "Other household account",
     );
+    const amount = page.getByLabel("Expected amount (AUD)", { exact: true });
+    const originalAmount = await amount.inputValue();
+    await amount.fill("not an amount");
+    await amount.blur();
+    await expect(amount).toHaveValue("not an amount");
+    await expect(amount).toHaveAttribute("aria-invalid", "true");
+    await expect(
+      page.getByRole("alert").filter({ hasText: "valid positive amount" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Accept recurring items", exact: true }),
+    ).toBeDisabled();
+    await amount.fill(originalAmount);
+    await amount.blur();
+    const name = page.getByLabel("Recurring name", { exact: true });
+    await name.fill("");
+    await expect(name).toHaveAttribute("aria-invalid", "true");
+    await expect(
+      page.getByRole("button", { name: "Accept recurring items", exact: true }),
+    ).toBeDisabled();
+    await name.fill("Netflix");
+    await expect(
+      page.getByRole("button", { name: "Accept recurring items", exact: true }),
+    ).toBeEnabled();
     await page.screenshot({
       path: `artifacts/recurring-transfers-${info.project.name}.png`,
       fullPage: true,

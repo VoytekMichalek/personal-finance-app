@@ -3,6 +3,8 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, ArrowLeft, LoaderCircle } from "lucide-react";
 import { api } from "../lib/api";
+import { Button } from "../components/ui/button";
+import { ActionError } from "../components/common/ActionError";
 import { useSnapshot } from "../hooks/data";
 import { useStatementUpload, useStatement } from "../hooks/statements";
 import {
@@ -32,7 +34,7 @@ export function StatementImport() {
   const [year, setYear] = useState("");
   const [error, setError] = useState("");
   if (query.isPending || (statementId && saved.isPending)) return <Loading />;
-  if (query.error || saved.error)
+  if ((query.error && !query.data) || (saved.error && !saved.data))
     return (
       <ErrorState
         message={(query.error || saved.error)!.message}
@@ -44,7 +46,27 @@ export function StatementImport() {
     );
   const data = query.data,
     account = data.accounts.find((a) => a.id === id);
-  if (!account) return <Card>Account not found.</Card>;
+  if (!account)
+    return (
+      <Card>
+        Account not found.{" "}
+        <Link className="text-primary underline" to="/accounts">
+          Choose an account
+        </Link>
+      </Card>
+    );
+  if (account.assetId)
+    return (
+      <Card>
+        <p className="mb-4 text-sm">
+          Import the bank statement into its bank or credit account, then mark
+          the payment as a transfer to this asset or liability.
+        </p>
+        <Link className="text-primary underline" to="/accounts">
+          Choose an account
+        </Link>
+      </Card>
+    );
   const preview = saved.data;
   return (
     <>
@@ -96,6 +118,7 @@ export function StatementImport() {
               </Field>
             </div>
           </details>
+          <ActionError error={integrations.error} />
           <label className="mb-5 flex items-start gap-3 text-sm">
             <input
               type="checkbox"
@@ -117,7 +140,12 @@ export function StatementImport() {
                   must support no retention.
                 </details>
                 {!integrations.data?.modelId && (
-                  <Link className="text-primary" to="/settings/ai">
+                  <Link
+                    className="text-primary"
+                    to="/settings/ai"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Configure AI in Settings → AI.
                   </Link>
                 )}
@@ -131,6 +159,7 @@ export function StatementImport() {
               disabled={upload.isPending}
               onChange={(e) => {
                 const file = e.target.files?.[0];
+                e.target.value = "";
                 if (!file) return;
                 if (file.size > 20 * 1024 * 1024) {
                   setError("Choose a PDF up to 20 MB.");
@@ -161,9 +190,27 @@ export function StatementImport() {
             </p>
           )}
           {(error || upload.error) && (
-            <p role="alert" className="mt-5 text-sm text-destructive">
-              {error || upload.error?.message}
-            </p>
+            <ActionError error={error ? new Error(error) : upload.error} />
+          )}
+          {upload.error && upload.variables && (
+            <Button
+              className="mt-3"
+              disabled={upload.isPending}
+              onClick={() => {
+                upload.mutate(
+                  { ...upload.variables!, year, useAi },
+                  {
+                    onSuccess: (result) =>
+                      navigate(
+                        "/accounts/" + account.id + "/statement/" + result.id,
+                        { replace: true },
+                      ),
+                  },
+                );
+              }}
+            >
+              Retry PDF upload
+            </Button>
           )}
           <p className="mt-6 text-xs leading-5 text-muted-foreground">
             Prefer a spreadsheet?{" "}

@@ -140,6 +140,13 @@ it only after checking schema compatibility. Restore `latest` selection before
 resuming automatic releases. Reverting an image does not undo migrations. The
 first deployment has no previous working production image to fall back to.
 
+From v0.0.11, assets and liabilities have associated transaction accounts. Use a
+rollback build that understands these account types and closing-valuation rules;
+v0.0.10 and earlier do not. Prefer a corrective release, preserving the associated
+accounts, valuations and transaction history. Do not delete the new accounts or
+reverse their migration to make an older image run. Refresh open browser tabs after
+deployment so their calculations and controls use the new frontend.
+
 Voytek owns database backup and restore. Dokploy now has an enabled daily
 PostgreSQL backup (`0 17 * * *`, scheduler timezone not yet independently verified),
 database `db`, prefix `finance-db`, keeping the latest 14 archives. Destination

@@ -20,7 +20,7 @@ export function Plan() {
   const tab = params.get("tab") ?? "budgets";
   const [days, setDays] = useState(90);
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}

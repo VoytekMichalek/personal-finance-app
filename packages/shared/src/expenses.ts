@@ -1,4 +1,6 @@
 import type { Snapshot, Transaction } from "./types.js";
+import { z } from "zod";
+import { date } from "./schemas.js";
 export type ExpenseGroup = "categories" | "accounts" | "people";
 const groupKey = (row: Transaction, group: ExpenseGroup) =>
   group === "categories"
@@ -6,15 +8,24 @@ const groupKey = (row: Transaction, group: ExpenseGroup) =>
     : group === "accounts"
       ? row.accountId
       : row.owner;
-export type ExpenseFilters = {
-  from: string;
-  to: string;
-  accountIds?: string[];
-  owners?: string[];
-  categoryIds?: string[];
-  search?: string;
-  detail?: { group: ExpenseGroup; id: string };
-};
+export const expenseFiltersSchema = z.object({
+  from: date,
+  to: date,
+  accountIds: z.array(z.uuid()).max(10000).optional(),
+  owners: z.array(z.string().min(1).max(100)).max(10000).optional(),
+  categoryIds: z
+    .array(z.union([z.uuid(), z.literal("uncategorised")]))
+    .max(10000)
+    .optional(),
+  search: z.string().max(250).optional(),
+  detail: z
+    .object({
+      group: z.enum(["categories", "accounts", "people"]),
+      id: z.string().min(1).max(100),
+    })
+    .optional(),
+});
+export type ExpenseFilters = z.infer<typeof expenseFiltersSchema>;
 export function expenseReport(
   data: Pick<Snapshot, "transactions" | "categories">,
   filters: ExpenseFilters,

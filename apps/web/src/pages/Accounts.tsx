@@ -2,7 +2,12 @@ import { PersonChip } from "../components/common/EntityChip";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Wallet, Plus, ArrowUpRight, CreditCard, Banknote } from "lucide-react";
-import { accountBalance, money, type Account } from "@finance/shared";
+import {
+  accountBalance,
+  isCashAccount,
+  money,
+  type Account,
+} from "@finance/shared";
 import { useSnapshot } from "../hooks/data";
 import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
@@ -24,7 +29,7 @@ export function Accounts() {
   const [editing, setEditing] = useState<Account | undefined>();
   const [open, setOpen] = useState(false);
   if (query.isPending) return <Loading />;
-  if (query.error)
+  if (query.error && !query.data)
     return (
       <ErrorState
         message={query.error.message}
@@ -32,10 +37,12 @@ export function Accounts() {
       />
     );
   const data = query.data;
-  const accounts = data.accounts.filter(
-    (a) =>
-      (owner === "all" || a.owner === owner) && (showArchived || !a.archived),
-  );
+  const accounts = data.accounts
+    .filter(isCashAccount)
+    .filter(
+      (a) =>
+        (owner === "all" || a.owner === owner) && (showArchived || !a.archived),
+    );
   const total = accounts.reduce(
     (sum, a) => sum + accountBalance(a, data.transactions, data.today),
     0,

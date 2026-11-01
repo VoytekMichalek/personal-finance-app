@@ -48,7 +48,23 @@ export const statementUploadSchema = z.object({
   year: z.coerce.number().int().min(1900).max(2200).optional(),
 });
 export const statementRetrySchema = z.object({
+  year: z.number().int().min(1900).max(2200).nullable().optional(),
+  useAi: z.boolean().optional(),
   discardReview: z.boolean().default(false),
+});
+export const statementDateCorrectionSchema = z.object({
+  corrections: z
+    .array(
+      z.object({
+        rowNumber: z.number().int().positive(),
+        date: date.refine(
+          (value) => value >= "1900-01-01" && value <= "2200-12-31",
+          "Choose a year between 1900 and 2200.",
+        ),
+      }),
+    )
+    .min(1)
+    .max(10000),
 });
 
 export type StatementProcessing = {

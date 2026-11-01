@@ -2,11 +2,13 @@ import {
   matchingCategoryTransactions,
   matchingTransferTransactions,
   filterTransactions,
+  expenseReport,
   matchesRule,
   rememberTransactionSchema,
   transferCounterpart,
   transferChoicesFor,
   type Transaction,
+  type Category,
 } from "@finance/shared";
 import { Prisma } from "@prisma/client";
 import { prisma, json } from "../../lib/db.js";
@@ -35,7 +37,16 @@ export async function rememberTransaction(body: unknown) {
             400,
             "Choose text matching the starting transaction.",
           );
-        const visible = filterTransactions(rows, input.filters);
+        const visible =
+          "expenses" in input.filters
+            ? expenseReport(
+                {
+                  transactions: rows,
+                  categories: json<Category[]>(await tx.category.findMany()),
+                },
+                input.filters.expenses,
+              ).rows
+            : filterTransactions(rows, input.filters);
         const transfer = source.kind === "transfer";
         const matches = transfer
           ? matchingTransferTransactions(visible, source, input)

@@ -1,3 +1,4 @@
+import { ActionError } from "../common/ActionError";
 import { useState } from "react";
 import {
   matchingCategoryTransactions,
@@ -9,7 +10,7 @@ import {
   displayDate,
   type Snapshot,
   type Transaction,
-  type TransactionFilters,
+  type RememberTransactionFilters,
 } from "@finance/shared";
 import { useRememberTransaction } from "../../hooks/remember-transaction";
 import { Dialog } from "../ui/dialog";
@@ -34,7 +35,7 @@ export function RememberTransaction({
   row: Transaction;
   data: Snapshot;
   rows: Transaction[];
-  filters: TransactionFilters;
+  filters: RememberTransactionFilters;
   close: () => void;
   afterTypeChange?: boolean;
 }) {
@@ -252,11 +253,7 @@ export function RememberTransaction({
             {limit.toLocaleString()} transactions.
           </p>
         )}
-        {action.error && (
-          <p role="alert" className="text-sm text-destructive">
-            {action.error.message}
-          </p>
-        )}
+        <ActionError error={action.error} />
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={
