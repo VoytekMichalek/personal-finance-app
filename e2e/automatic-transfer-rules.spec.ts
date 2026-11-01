@@ -202,6 +202,8 @@ for (const view of ["all", "account"]) {
           page.getByLabel("Filter account", { exact: true }),
           "Everyday",
         );
+      // Both transfer counterparts share a description until the account filter commits.
+      await expect(picker).toHaveCount(1);
       await expect(
         page.getByRole("combobox", {
           name: `Type for ${source.description}`,

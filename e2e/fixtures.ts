@@ -129,6 +129,7 @@ export async function choose(page: Page, locator: Locator, label: string) {
     });
     if ((await option.getAttribute("aria-checked")) !== "true")
       await option.click();
+    await expect(option).toHaveAttribute("aria-checked", "true");
     await page.keyboard.press("Escape");
   } else {
     const option = page.getByRole("option", { name: label, exact: true });

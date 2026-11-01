@@ -13,8 +13,9 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-24.04
-    # Full browser coverage plus ten-run timing checks share isolated databases.
-    timeout-minutes: 45
+    # 260 timing repetitions plus the full desktop/WebKit suite share one isolated DB.
+    # The expanded coverage needs room for real browser, image-build and scan work.
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:16.10-alpine

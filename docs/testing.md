@@ -667,3 +667,21 @@ ten mobile runs without retries in 2.9 minutes, recorded in
 passing evidence; no local failure remains unresolved. Final web typecheck, lint,
 guardrails, web build and whitespace checks pass. Exact committed-candidate full CI,
 image verification and release/deployment checks follow publication to main.
+
+Main CI run 41354491263 exposed a further test-readiness race in the final account
+filter assertion of automatic transfer remembering. A local repetition reproduced
+the strict locator matching both correctly saved transfer counterparts before the
+filter committed. The multiselect helper now awaits the selected option's checked
+state before closing, and the test waits for one scoped row before asserting its
+saved type. No financial behavior or assertion is removed. CI now runs 260 timing
+repetitions and 178 browser cases with the existing single database worker; the
+observed live run took about 14 minutes to reach the mobile timing cases. Its job
+allowance increases from 45 to 60 minutes to leave room for full browser coverage,
+the production image, smoke checks and scanning. All validation gates remain.
+
+The filter-helper follow-up passed all 40 transfer timing repetitions (ten of each
+case per browser, zero retries), followed by all 22 affected account, Expenses,
+inline-category and Uncategorised-filter journeys on desktop and mobile. Evidence:
+`artifacts/ux-filter-helper.log`. Guardrails, lint and whitespace checks pass; this
+follow-up changes test readiness and CI time allowance only, so the application
+typecheck, unit, integration and production-build evidence above remains valid.
