@@ -685,3 +685,14 @@ inline-category and Uncategorised-filter journeys on desktop and mobile. Evidenc
 `artifacts/ux-filter-helper.log`. Guardrails, lint and whitespace checks pass; this
 follow-up changes test readiness and CI time allowance only, so the application
 typecheck, unit, integration and production-build evidence above remains valid.
+
+Main CI run 41356486333 passed 132 unit tests, 124 integration tests and all 260
+timing repetitions, then completed the full browser suite with 174 passed, three
+platform skips and one desktop date-reset timeout. Its log identifies the next
+`To date` click racing the previous `Apply dates` transition: the old picker was
+visible when inspected, then detached before the click. The test now awaits panel
+closure and restoration of all four expected rows after each manual date clear.
+All 20 focused repetitions passed (ten per browser, zero retries) in 2.0 minutes;
+evidence is in `artifacts/ux-date-reset-repeat.log`. All eight affected category
+journeys then passed on desktop/mobile (`artifacts/ux-date-reset-suite.log`), along
+with guardrails, lint and whitespace checks. Application code is unchanged.

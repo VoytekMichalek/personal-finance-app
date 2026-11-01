@@ -223,6 +223,12 @@ test("transaction searches and optional dates clear without leaving the account"
     await page
       .getByRole("button", { name: "Apply dates", exact: true })
       .click();
+    await expect(
+      page.getByRole("button", { name: "Apply dates", exact: true }),
+    ).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "Select all 4 matching transactions" }),
+    ).toBeVisible();
     await chooseDate(
       page,
       page.getByLabel("To date", { exact: true }),
@@ -241,6 +247,12 @@ test("transaction searches and optional dates clear without leaving the account"
     await page
       .getByRole("button", { name: "Apply dates", exact: true })
       .click();
+    await expect(
+      page.getByRole("button", { name: "Apply dates", exact: true }),
+    ).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "Select all 4 matching transactions" }),
+    ).toBeVisible();
     await choose(
       page,
       page.getByRole("button", { name: "Filter type" }),
