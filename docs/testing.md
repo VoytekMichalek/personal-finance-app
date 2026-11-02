@@ -801,3 +801,32 @@ above remains applicable; this follow-up changes presentation and release metada
 Main-branch CI and release-image validation run before publication under the existing
 workflow; no check is bypassed. The additive budget migration preserves historical
 plans and is applied automatically by the production entrypoint.
+
+Main Validate [41516369900](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/41516369900)
+on `b33f47394cf919d36a2e00023f31807cbfff4f27` passed 147 unit tests, 130 API
+integration tests and all 260 timing repetitions. Its full browser suite passed
+191 cases, skipped three inapplicable cases and found two failures before image
+validation/publication. The desktop layout assertion still required neighbouring
+cards' controls to share a row, despite the requested title-row layout and responsive
+wrapping. It now verifies each control group's exact right edge, title alignment or
+compact wrapping, bounds and ordering, retaining the tooltip and overflow checks.
+
+The mobile 800-record ledger journey exhausted its unchanged 30-second test budget
+after successful preview, cancellation, save and reopening actions. Trace evidence
+showed accumulated browser/database work rather than a failed financial assertion.
+The journey is split at persisted category/rule boundaries: the first case checks
+the real inline category edit, 800-match preview, cancellation and reload; the second
+performs the real 800-record save and checks its rule, records and saved-action UI;
+the third starts from an equivalent isolated saved-rule fixture and retains pagination,
+reload, match-count, action, rule-navigation and screenshot checks. Both desktop
+and mobile coverage and the 30-second threshold remain. Each case resets its own
+fixture; one worker still owns finance_e2e. No sleeps, retries or waived checks were
+introduced. These test-only corrections have no user-guide impact.
+
+The final three ledger cases passed ten consecutive runs on each engine: 60 passes,
+zero retries, one worker, 10.1 minutes. Maximum individual duration was 16.5 seconds
+on desktop and 18.4 seconds on mobile. The complete affected ledger/UI-polish suite
+then passed all 14 desktop/mobile cases in 1.6 minutes. Both runs reused the existing
+production build on port 3002 and only finance_e2e. Final guardrails, ESLint and
+whitespace checks passed; application sources and the previously checked production
+bundle were unchanged by these test corrections.

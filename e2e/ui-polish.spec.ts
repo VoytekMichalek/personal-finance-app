@@ -1,7 +1,7 @@
 import { test, expect, choosePeriod } from "./fixtures";
 import { seed } from "./ux-fixtures";
 
-test("filters fit one desktop row and neighbouring chart controls align with accessible context", async ({
+test("filters fit one desktop row and chart controls align right within their titles with accessible context", async ({
   page,
 }, info) => {
   const { db } = await seed(page);
@@ -30,13 +30,40 @@ test("filters fit one desktop row and neighbouring chart controls align with acc
     ).toHaveText("This month");
     await page.goto("/expenses");
     const graph = page.getByRole("tab", { name: "Graph", exact: true });
-    const category = page.getByRole("tab", { name: "Category", exact: true });
     await expect(graph).toBeVisible();
     if (info.project.name === "desktop") {
-      expect((await graph.boundingBox())!.y).toBeCloseTo(
-        (await category.boundingBox())!.y,
-        0,
-      );
+      // Each card's controls share its title container and align to its right
+      // edge. Narrower cards may wrap their controls beneath the title.
+      for (const [title, controls] of [
+        ["Expenses over time", "Chart view"],
+        ["Expense breakdown", "Expense breakdown"],
+      ]) {
+        const heading = page.getByRole("heading", { name: title, exact: true });
+        const header = heading.locator("../..");
+        const tabs = header.getByRole("tablist", {
+          name: controls,
+          exact: true,
+        });
+        const titleBox = (await heading.boundingBox())!;
+        const tabsBox = (await tabs.boundingBox())!;
+        const headerBox = (await header.boundingBox())!;
+        expect(tabsBox.x + tabsBox.width).toBeCloseTo(
+          headerBox.x + headerBox.width,
+          0,
+        );
+        expect(tabsBox.y + tabsBox.height).toBeLessThanOrEqual(
+          headerBox.y + headerBox.height + 0.5,
+        );
+        if (tabsBox.y >= titleBox.y + titleBox.height) {
+          expect(tabsBox.y - titleBox.y - titleBox.height).toBeLessThan(24);
+        } else {
+          expect(tabsBox.x).toBeGreaterThan(titleBox.x + titleBox.width);
+          expect(tabsBox.y + tabsBox.height / 2).toBeCloseTo(
+            titleBox.y + titleBox.height / 2,
+            0,
+          );
+        }
+      }
       expect((await graph.boundingBox())!.x).toBeGreaterThan(
         (await page
           .getByRole("button", { name: "Day", exact: true })

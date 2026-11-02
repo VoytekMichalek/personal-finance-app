@@ -57,10 +57,10 @@ const saved = (page: Page) =>
       response.request().method() === "POST",
   );
 
-test("remembers from the ledger, reviews 800 matches across all pages and retains highlights after reload", async ({
+test("reviews 800 ledger matches, cancels safely and keeps the action after reload", async ({
   page,
 }, info) => {
-  const { db, source } = await seed(page, 800);
+  const { db } = await seed(page, 800);
   try {
     await page.goto("/transactions");
     await page
@@ -108,18 +108,50 @@ test("remembers from the ledger, reviews 800 matches across all pages and retain
     ).toBe(2);
     // The dedicated row action remains available after reloading.
     await page.reload();
+    await expect(
+      page.getByRole("button", { name: "Remember " + first, exact: true }),
+    ).toBeVisible();
+  } finally {
+    await db.$disconnect();
+  }
+});
+
+test("applies a saved rule to all 800 ledger matches and preserves source values", async ({
+  page,
+}) => {
+  const { db, source } = await seed(page, 800);
+  try {
+    const salary = await db.category.findFirstOrThrow({
+      where: { name: "Salary" },
+    });
+    // The preview/cancellation journey verifies this inline category edit.
+    // Begin at its persisted boundary to keep the real bulk save independently timed.
+    await db.transaction.update({
+      where: { id: source.id },
+      data: { categoryId: salary.id, version: { increment: 1 } },
+    });
+    await page.goto("/transactions");
+    await page
+      .getByRole("searchbox", { name: "Search transactions" })
+      .fill("Direct Credit 396297");
+    await expect(
+      page.getByRole("button", {
+        name: "Select all 800 matching transactions",
+      }),
+    ).toBeVisible();
     await page
       .getByRole("button", { name: "Remember " + first, exact: true })
       .click();
+    const dialog = page.getByRole("dialog");
+    await expect(
+      dialog.getByText("799 to update · 1 already correct."),
+    ).toBeVisible();
     const response = saved(page);
     await dialog
       .getByRole("button", { name: "Save rule & apply to 800", exact: true })
       .click();
     expect((await response).ok()).toBe(true);
     await expect(dialog).toBeHidden();
-    const salary = await db.category.findFirstOrThrow({
-      where: { name: "Salary" },
-    });
     expect(
       await db.transaction.count({ where: { categoryId: salary.id } }),
     ).toBe(800);
@@ -127,6 +159,49 @@ test("remembers from the ledger, reviews 800 matches across all pages and retain
     expect(
       await db.transaction.findUnique({ where: { id: source.id } }),
     ).toMatchObject({ amountCents: 100n, date: "2026-10-31" });
+    expect(await db.rule.findFirstOrThrow()).toMatchObject({
+      pattern: "direct credit 396297 ivv payment",
+      matchMode: "contains",
+      categoryId: salary.id,
+      kind: null,
+      priority: 0,
+      enabled: true,
+    });
+    await expect(
+      page.getByRole("button", {
+        name: "Matches saved rule for " + first,
+        exact: true,
+      }),
+    ).toBeVisible();
+  } finally {
+    await db.$disconnect();
+  }
+});
+
+test("retains saved-rule highlights across 800 ledger records, pagination and reload", async ({
+  page,
+}, info) => {
+  const { db } = await seed(page, 800);
+  try {
+    // The preceding journey verifies the real 800-record save and its persisted
+    // rule. Start here with that saved state so pagination has its own 30s budget.
+    const salary = await db.category.findFirstOrThrow({
+      where: { name: "Salary" },
+    });
+    await db.transaction.updateMany({
+      where: { description: { startsWith: "Direct Credit 396297" } },
+      data: { categoryId: salary.id },
+    });
+    await db.rule.create({
+      data: {
+        pattern: "direct credit 396297 ivv payment",
+        matchMode: "contains",
+        categoryId: salary.id,
+        kind: null,
+        priority: 0,
+        enabled: true,
+      },
+    });
     await page.goto("/transactions");
     await page
       .getByRole("searchbox", { name: "Search transactions" })
@@ -145,8 +220,10 @@ test("remembers from the ledger, reviews 800 matches across all pages and retain
       page.getByRole("button", { name: "Remember " + first, exact: true }),
     ).toHaveCount(0);
     await matchingAction.click();
+    const dialog = page.getByRole("dialog");
     await expect(dialog).toContainText("0 to update · 800 already correct.");
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(dialog).toBeHidden();
     await page.screenshot({
       path: `artifacts/saved-rule-action-${info.project.name}.png`,
       animations: "disabled",
