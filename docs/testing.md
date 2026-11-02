@@ -696,3 +696,108 @@ All 20 focused repetitions passed (ten per browser, zero retries) in 2.0 minutes
 evidence is in `artifacts/ux-date-reset-repeat.log`. All eight affected category
 journeys then passed on desktop/mobile (`artifacts/ux-date-reset-suite.log`), along
 with guardrails, lint and whitespace checks. Application code is unchanged.
+
+## Overview month and compact report headings — 3 November 2026
+
+The shared finance test owns full prior-month boundaries, exact refunds, transfer
+exclusion, owner filtering, month-specific budgets and unchanged current balances.
+`overview-month.spec.ts` owns month selection, ownership preservation, reloads,
+transaction/budget drill-down dates, invalid/future URL fallback, desktop header
+alignment, mobile overflow and the relocated expense controls. Existing Overview
+history, expense chart, detail and category journeys retain their assertions.
+
+Verification uses the existing production build on port 3002 and only
+`finance_e2e`, leaving the owner's development app and finance database available.
+A temporary harness changes hard-coded test origins from 3000 to 3002; it preserves
+all tests and assertions. One worker remains necessary because these journeys
+reset the same isolated database. Unit tests and static checks run independently.
+No timeout, debounce, polling or retry timing changed, so no new timing-repeat
+selection applies. All waits use rendered state or real API/database completion.
+
+Results on Node 24.21.0/pnpm 10.34.6: 32 focused unit cases in finance,
+overview-history, expenses and expense-category-trend passed; all workspace
+typechecks, changed-file ESLint, guardrails and shared/API/web builds passed.
+The affected browser selection covered 16 distinct desktop/mobile cases. Fourteen
+passed initially; two caught the changed current-month caption. Restoring
+"Income this month" for the default month resolved that regression, and all four
+month/category follow-up cases passed without retries (50.3 seconds;
+`/tmp/finance-overview-final-browser.log`). Unaffected chart/history evidence was
+reused. Desktop and mobile Overview/Expenses screenshots were visually inspected.
+Full GitHub CI and a release were not requested or run for this local change.
+
+## Custom calendars, budget periods and budget reporting — 3 November 2026
+
+The shared budget model now owns finite repeat periods, effective monthly overrides
+and budget-versus-actual reports. Coverage includes inclusive year boundaries,
+one-month budgets, old ongoing plans, overlapping active plans, zero overrides,
+first-month edits, restoring a plan, shortened plans retaining explicit overrides,
+refunds, exact cents, unbudgeted categories, subcategory isolation, matched/cancelled
+bills and current/past/future report cutoffs. The owner's $200 subscription example
+is explicitly covered: $150 scheduled plus $50 unused allowance, or the full $230
+when known bills exceed that budget. Report actuals remain separate from future bills.
+
+The new budget API integration suite plus finance and ledger-category regressions
+passed 19 cases against finance_test. This includes persistence, authentication,
+invalid repeat ranges, invalid categories, idempotent restore and competing monthly
+overrides. The additive migration was applied successfully to the local household
+schema and isolated databases; existing budget rows keep their amounts and unlimited
+duration. No household database was reset.
+
+Calendar keyboard selection/dismissal and focus restoration passed ten consecutive
+runs per case on both desktop Chromium and mobile WebKit: 40 passes, zero retries.
+The affected existing calendar/planning/overview/transaction/asset/filter/statement
+journeys passed 42 cases. After adding reporting, all eight selected budget/report
+browser cases passed, including under/over and unbudgeted filters, six-month table
+navigation, refund-inclusive transaction drill-downs, retained month when editing,
+repeat counts and failed override retry. No assertion/timeout was relaxed. A mobile
+bill action row overflow found in the new date journey was corrected with wrapping;
+the calendar was widened on desktop and uses the existing dialog surface on phones.
+
+The browser harness reused the production build on port 3002 so the local preview
+could stay available. It used finance_e2e with one worker because fixtures reset a
+shared test household. Existing test copies with fixed Origin headers were adjusted
+only in /tmp to use that port. Native engines/libraries were reused, and independent
+unit/type/lint checks ran separately from this single mutable fixture resource.
+No arbitrary sleeps were added. Chart/report interactions have no new timer windows.
+
+The separate finance_demo database was prepared with 193 fictional transactions,
+eight budget plans, seven schedules and six months of history. Re-running preparation
+left the dataset intact. A temporary signed demo session verified the live API totals,
+$200/$50/$100/$50 subscription budget/actual/upcoming/available example, six trend
+months, demo banner and desktop/mobile overflow; that temporary session was removed.
+Screenshots of both calendars, budgets, reports and the populated demo were inspected.
+The normal local finance records were only read for sign-in continuity; fixture
+financial data was written solely to finance_demo. Provider credentials are disabled
+in the demo process, and pnpm dev returns to the unchanged regular configuration.
+
+The reporting presentation follow-up has a dedicated /budget-report route, desktop
+sidebar entry and mobile More entry. Browser coverage verifies active navigation,
+retained months from existing report links, compact meter geometry, the 100% marker
+at two-thirds of the track, green 0%/70%/100%, red 150%/160%, capped overflow, zero
+allowances, unbudgeted rows and shortfalls caused solely by upcoming bills. The
+report, budget-plan and sidebar selection passed 11 cases with zero retries in
+1.1 minutes; the desktop-only sidebar motion case was intentionally skipped on
+mobile. Its compositor implementation is unchanged. No timing-sensitive control
+changed after the ten-run calendar evidence above.
+
+Final local verification: all 147 unit tests, all workspace typechecks, full ESLint,
+source/file-size guardrails, whitespace checks and shared/API/web production builds
+passed. The live demo was checked again on desktop Chromium and mobile WebKit;
+both screenshots were visually inspected and neither had horizontal overflow.
+The demo remains running at http://localhost:5173/budget-report with six months of
+fictional finances. This task did not publish a release or run remote CI.
+
+### v0.0.13 release candidate — 3 November 2026
+
+The owner subsequently requested faint report-column separators and release
+v0.0.13. Root/API/web/shared versions and in-app release highlights now agree.
+The final report suite passed all four desktop/mobile cases without retries
+(21.5 seconds), using the rebuilt production bundle and isolated finance_e2e.
+Both demo surfaces were checked again; desktop separators preserve alignment
+and the mobile figures retain their stacked layout. Full lint, all workspace
+typechecks, guardrails, whitespace checks, shared/API/web builds and the deployment
+script test passed. Earlier financial unit/integration and calendar timing evidence
+above remains applicable; this follow-up changes presentation and release metadata.
+Main-branch CI and release-image validation run before publication under the existing
+workflow; no check is bypassed. The additive budget migration preserves historical
+plans and is applied automatically by the production entrypoint.

@@ -2,7 +2,13 @@ import { useScrollRestoration } from "../../hooks/scroll-restoration";
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { useState } from "react";
 import "./sidebar.css";
-import { Building2, Tags, PanelLeftClose, ChartPie } from "lucide-react";
+import {
+  Building2,
+  Tags,
+  PanelLeftClose,
+  ChartPie,
+  ChartColumnIncreasing,
+} from "lucide-react";
 import { Attribution } from "./Attribution";
 export { Attribution } from "./Attribution";
 import { NavLink, Outlet } from "react-router-dom";
@@ -22,6 +28,7 @@ const items = [
   ["/transactions", "Transactions", ArrowLeftRight],
   ["/accounts", "Accounts", Wallet],
   ["/expenses", "Expenses", ChartPie],
+  ["/budget-report", "Budget vs actual", ChartColumnIncreasing],
   ["/plan", "Plan", CalendarDays],
   ["/assets", "Assets & Liabilities", Building2],
   ["/categories", "Categories & rules", Tags],
@@ -120,11 +127,22 @@ export function Layout({ user }: { user: Person }) {
           <AccountMenu user={user} />
         </div>
       </header>
-      <main
-        data-sidebar-collapsed={collapsed}
-        className="finance-main"
-      >
+      <main data-sidebar-collapsed={collapsed} className="finance-main">
         <div className="mx-auto max-w-[1600px] px-5 py-8 pb-28 sm:px-8 lg:px-12 lg:py-12">
+          {import.meta.env.DEV && import.meta.env.VITE_DEMO_DATA === "1" && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+              <span>
+                <strong>Demo household</strong> · Fictional finances for
+                testing. Your regular records are separate.
+              </span>
+              <NavLink
+                className="font-medium underline underline-offset-4"
+                to="/budget-report"
+              >
+                Explore budget report
+              </NavLink>
+            </div>
+          )}
           <Outlet />
         </div>
       </main>
@@ -135,7 +153,12 @@ export function Layout({ user }: { user: Person }) {
         {[
           ...items.filter(
             ([to]) =>
-              to !== "/assets" && to !== "/categories" && to !== "/net-worth",
+              ![
+                "/assets",
+                "/categories",
+                "/net-worth",
+                "/budget-report",
+              ].includes(to),
           ),
         ].map(([to, label, Icon]) => (
           <NavLink
@@ -170,7 +193,12 @@ export function Layout({ user }: { user: Person }) {
             >
               {[
                 ...items.filter(([to]) =>
-                  ["/assets", "/categories", "/net-worth"].includes(to),
+                  [
+                    "/assets",
+                    "/categories",
+                    "/net-worth",
+                    "/budget-report",
+                  ].includes(to),
                 ),
                 ["/settings", "Settings", Settings] as const,
               ].map(([to, label, Icon]) => (

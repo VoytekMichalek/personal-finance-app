@@ -54,7 +54,7 @@ function ExpenseReport({ data }: { data: Snapshot }) {
           </Card>
         ))}
       </div>
-      <div className="mb-5 grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+      <div className="mb-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(18rem,1fr)]">
         <ExpenseCategoryChart
           rows={report.rows}
           data={data}

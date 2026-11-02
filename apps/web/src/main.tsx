@@ -24,6 +24,9 @@ const Imports = lazy(() =>
 const Plan = lazy(() =>
   import("./pages/Plan").then((m) => ({ default: m.Plan })),
 );
+const BudgetActual = lazy(() =>
+  import("./pages/BudgetActual").then((m) => ({ default: m.BudgetActual })),
+);
 const AssetDetail = lazy(() =>
   import("./pages/AssetDetail").then((m) => ({ default: m.AssetDetail })),
 );
@@ -94,6 +97,7 @@ function App() {
           <Route path="transactions" element={<Transactions />} />
           <Route path="imports" element={<Imports />} />
           <Route path="plan" element={<Plan />} />
+          <Route path="budget-report" element={<BudgetActual />} />
           <Route path="net-worth" element={<NetWorth />} />
           <Route path="settings/*" element={<SettingsPage user={me.data} />} />
           <Route path="documentation" element={<Documentation />} />

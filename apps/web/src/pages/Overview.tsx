@@ -1,4 +1,5 @@
 import { BalanceOutlook } from "../components/overview/BalanceOutlook";
+import { MonthPicker } from "../components/ui/month-picker";
 import { SpendingHistory } from "../components/overview/SpendingHistory";
 import { Attention } from "../components/overview/Attention";
 import { SpendingCategories } from "../components/overview/SpendingCategories";
@@ -12,6 +13,8 @@ import {
   money,
   displayDate,
   addDays,
+  monthEnd,
+  budgetSchema,
 } from "@finance/shared";
 import { useSnapshot } from "../hooks/data";
 import { Button } from "../components/ui/button";
@@ -29,8 +32,16 @@ export function Overview() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const owner = params.get("owner") ?? "all";
-  const setOwner = (owner: string) =>
-    setParams(owner === "all" ? {} : { owner }, { replace: true });
+  const setFilter = (key: string, value: string) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        return next;
+      },
+      { replace: true },
+    );
   if (query.isPending) return <Loading />;
   if (query.error && !query.data)
     return (
@@ -40,11 +51,23 @@ export function Overview() {
       />
     );
   const data = query.data;
-  const summary = overview(data, owner);
+  const currentMonth = data.today.slice(0, 7);
+  const selectedMonth = budgetSchema.shape.month.safeParse(params.get("month"));
+  const month =
+    selectedMonth.success && selectedMonth.data <= currentMonth
+      ? selectedMonth.data
+      : currentMonth;
+  const monthLabel = new Intl.DateTimeFormat("en-AU", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(month + "-01T00:00:00Z"));
+  const summary = overview(data, owner, month);
   const ownerQuery =
     owner === "all" ? "" : `&owner=${encodeURIComponent(owner)}`;
-  const monthQuery = `from=${data.today.slice(0, 7)}-01&to=${data.today}${ownerQuery}`;
-  const budgets = effectiveBudgets(data.budgets, data.today.slice(0, 7));
+  const to = month === currentMonth ? data.today : monthEnd(month);
+  const monthQuery = `from=${month}-01&to=${to}${ownerQuery}`;
+  const budgets = effectiveBudgets(data.budgets, month, data.budgetOverrides);
   const upcoming = occurrences(
     data.schedules,
     data.transactions,
@@ -58,51 +81,54 @@ export function Overview() {
   return (
     <>
       <PageHeading
-        eyebrow="A clearer picture"
         title="Overview"
-        description={
-          new Intl.DateTimeFormat("en-AU", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-            timeZone: "UTC",
-          }).format(new Date(data.today + "T00:00:00Z")) +
-          " · Your household at a glance"
-        }
         action={
-          <Button onClick={() => navigate("/transactions?new=1")}>
-            <Plus size={16} />
-            Add transaction
-          </Button>
+          <div className="contents">
+            <MonthPicker
+              aria-label="Overview month"
+              max={currentMonth}
+              currentMonth={currentMonth}
+              value={month}
+              onChange={(value) =>
+                setFilter("month", value === currentMonth ? "" : value)
+              }
+              className="order-2 w-full sm:order-none sm:ml-auto sm:w-52"
+            />
+            <Select
+              aria-label="Ownership filter"
+              className="order-3 w-full sm:order-none sm:w-48"
+              value={owner}
+              onValueChange={(value) =>
+                setFilter("owner", value === "all" ? "" : value)
+              }
+            >
+              <SelectItem value="all">Whole household</SelectItem>
+              <SelectItem value="household">Shared only</SelectItem>
+              {data.people
+                .filter((p) => p.state !== "deleted")
+                .map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+            </Select>
+            <Button
+              className="ml-auto sm:ml-0"
+              onClick={() => navigate("/transactions?new=1")}
+            >
+              <Plus size={16} />
+              Add transaction
+            </Button>
+          </div>
         }
       />
-      <div className="mb-6 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">This month</span>
-        <Select
-          aria-label="Ownership filter"
-          className="h-9 w-40 bg-transparent text-xs"
-          value={owner}
-          onValueChange={(value) => setOwner(value)}
-        >
-          <SelectItem value="all">Whole household</SelectItem>
-          <SelectItem value="household">Shared only</SelectItem>
-          {data.people
-            .filter((p) => p.state !== "deleted")
-            .map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
-              </SelectItem>
-            ))}
-        </Select>
-      </div>
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {[
           [
             "Available balance",
             summary.balance,
             Wallet,
-            "Bank & cash, less credit owed",
+            "Current bank & cash, less credit owed",
             owner === "all"
               ? "/accounts"
               : `/accounts?owner=${encodeURIComponent(owner)}`,
@@ -111,7 +137,9 @@ export function Overview() {
             "Money in",
             summary.income,
             ArrowUpRight,
-            "Income this month",
+            month === currentMonth
+              ? "Income this month"
+              : `Income in ${monthLabel}`,
             `/transactions?kind=income&${monthQuery}`,
           ],
           [
@@ -128,7 +156,7 @@ export function Overview() {
             budgets.length
               ? "Whole household · " + money(summary.budget, true) + " planned"
               : "Set a budget to get started",
-            "/plan",
+            `/plan?month=${month}`,
           ],
         ].map(([label, value, Icon, detail, route]) => (
           <button

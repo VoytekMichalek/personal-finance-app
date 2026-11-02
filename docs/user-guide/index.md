@@ -14,10 +14,10 @@ Log out ends your current server session. You can sign back in with any register
 If you lose every passkey, another administrator can reset your access and give you a replacement invitation. If the only administrator loses access, contact the app owner.
 
 ## Overview
-Available balance combines bank and cash balances and subtracts outstanding credit owed.
-Money in is recorded income this month. Money out is recorded expenses less refunds. Transfers do not count as spending or income.
-Use the ownership filter for records labelled Household or a specific person. Both people can see all records.
-Click a summary to see the accounts, transactions or budgets behind it. Money in/out keeps this month's dates and your chosen person. Attention shortcuts lead to uncategorised transactions, statements needing review and bills due in the next seven days.
+Available balance combines current bank and cash balances and subtracts outstanding credit owed.
+Click the calendar control beside the Overview title, choose a year and month (or **This month**) to view its recorded income, expenses less refunds and remaining household budget. It starts with this month through today; previous months include the full calendar month. Transfers do not count as spending or income. Current balances, history charts and upcoming bills keep their own time periods.
+Use **Whole household** beside the month to filter records labelled Household or a specific person. Both people can see all records. Changing the month keeps your chosen person, and both filters stay in the URL when you reload.
+Click a summary to see the accounts, transactions or budgets behind it. Money in/out keeps the selected month's dates and your chosen person; Budget remaining opens that month's plan. Attention shortcuts lead to uncategorised transactions, statements needing review and bills due in the next seven days.
 
 **Household balance & outlook** joins six calendar months of recorded available balances to three months of projections. The solid line is recorded history; the dotted line starts at today's balance, with a Today marker separating them. Switch **Graph / Table** for exact daily values and their recorded/projected status. History starts from your account opening balances and imported activity; gaps before the first account are not invented. The balance chart and forecast cover the whole household, including when you filter spending to one person. Projections use scheduled income, bills and remaining budgets; unscheduled, unbudgeted spending is not included.
 
@@ -137,8 +137,31 @@ Your explicit category takes priority. Rules suggest categories during imports a
 
 ## Monthly budgets
 Plan → Budgets sets an allowance for each expense category. Spending includes all owners and subtracts refunds.
-Choose a month to review **Budget**, **Spent** and **Remaining** side by side. Click a budget amount to edit and save it in place. Click Spent to review transactions in that exact category and month. Budgets repeat until replaced by a new monthly amount. Set zero to stop a category allowance.
+Choose a month with the custom month picker to review **Budget**, **Spent** and **Remaining** side by side. **Set budget** applies to that month only by default. Tick **Repeat monthly** and enter **Number of months** (1–120) to repeat the same allowance. The count includes the starting month; for example, November plus 3 months covers November, December and January. The form shows the exact period before saving.
+
+Click a budget amount to **override just the selected month**, including the first month of a repeating plan. Other months keep their planned amount. Set zero to allow no spending for that month. **Restore plan** removes the override and returns to the planned amount. Saving a revised plan keeps existing monthly overrides; if the plan no longer covers an overridden month, **Remove override** clears that standalone amount. Click Spent to review transactions in that exact category and month.
+
+Existing ongoing plans still repeat until changed. Where plans overlap, the most recently starting active plan wins; an older ongoing plan can resume after a temporary plan ends. To change a plan, use **Set budget** with the same category and starting month, then save the revised allowance and duration. Overview and Forecast use each month's effective allowance, including overrides.
 Unspent amounts do not roll over. Over-budget categories stay visible so you can adjust your plan.
+
+Calendar fields open a custom day picker with month/year navigation, highlighted selection and a **Today** shortcut. Optional schedule end dates have a clear button. Use arrow keys to move between visible dates or months, Enter to select and Escape to close without changing the value.
+
+## Budget vs actual reporting
+
+Open **Budget vs actual** in the sidebar (under **More** on mobile), or **View budget vs actual** from the budget list. Choose a month with the calendar control. The report covers the whole household, labels the current month as partial, and separates:
+
+- **Budget:** the effective allowances for that month, including manual overrides.
+- **Actual spending:** recorded expenses less refunds, excluding income and transfers.
+- **Upcoming bills:** unmatched expense schedules due today or later in the selected month.
+- **Available after bills:** budget minus actual spending minus upcoming bills. A negative value is a shortfall.
+
+The six-month chart compares budget and actual spending. Switch to **Table** for exact amounts; choose a month in the table to open its category breakdown. Category rows show allowance, actual spending, under/over variance, upcoming bills and the amount left after bills. The compact **Used + bills** column shows actual spending plus upcoming bills on a fixed **0–150%** scale, with a **100%** marker and the percentage on the right. Green means within budget; red means over, including a shortfall from upcoming bills. Bars stop at 150%, but the label keeps the true percentage above that. Categories without a budget show a dash; spending against a zero-dollar budget shows **Over budget · no allowance** instead of an undefined percentage.
+
+Filter **Over budget** for categories whose recorded spending already exceeds their allowance, or **Unbudgeted** for spending and bills with no allowance. Zero-dollar budgets are still budgets.
+
+On desktop, faint vertical separators help you follow each column across category rows. Mobile shows the same figures in a stacked layout.
+
+Click a category's **Actual** amount to see the underlying transactions, including refunds, for that exact category and period. **Edit budgets** opens the same month's budget plan. All report totals include unbudgeted categories; the budget editor's Spent/Remaining summaries cover only categories with a budget. Categories and subcategories remain separate. Upcoming bills are included within their category's allowance, not added on top. Completed months show recorded actuals without projecting missed bills into the past.
 
 ## Bills, income, transfers and subscriptions
 Plan → Bills & income keeps your regular paydays, bills and transfers. **Upcoming** groups occurrences into **Overdue**, **This week** and **Later**. **Recurring items** lists the schedules for editing. Filter by owner, and switch between these views without losing that selection. Subscriptions use the same schedule system.
@@ -153,6 +176,8 @@ Subscription monthly and annual totals are normalised estimates.
 Plan → Forecast offers 30-, 90-, 180- and 365-day views.
 It starts with available funds, adds scheduled income, subtracts scheduled bills and allows for remaining budgets.
 Budget allowances subtract already recorded and scheduled category spending before being spread across the remaining days. This prevents counting bills twice.
+For example, a $1,000 category budget with $200 already spent and a $300 upcoming bill leaves $500 for other spending. The forecast includes the $300 bill on its scheduled date and spreads the $500 allowance across the remaining days. If scheduled bills exceed the budget, they still count in full and the extra allowance is zero. Bills without a category budget also count. Monthly overrides and each plan's repeat period determine the allowance used for each month.
+Assign recurring bills to the same exact category as the budget they should consume. A $200 Subscriptions budget with $150 of recurring bills in Subscriptions projects $200 in total, including $50 for other spending. Categories and subcategories have separate allowances; a bill in a different category does not consume this budget.
 Transfers between cash or credit accounts, including credit-card repayments, do not change total available funds. Scheduled contributions to assets and repayments to separately tracked liabilities reduce available funds; withdrawals and new borrowing add to them. Unscheduled, unbudgeted future spending is not included.
 Unrecorded occurrences due today are carried into the next day of the forecast. Older unrecorded occurrences need your review and are not projected automatically.
 Use it as a planning estimate and review the assumptions shown beneath the chart.

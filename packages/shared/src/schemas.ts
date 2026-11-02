@@ -113,10 +113,16 @@ export const transactionTypeSchema = z.object({
     })
     .optional(),
 });
-export const budgetSchema = z.object({
+export const monthSchema = z
+  .string()
+  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Choose a valid month");
+export const budgetOverrideSchema = z.object({
   categoryId: id,
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  month: monthSchema,
   amountCents: cents.nonnegative(),
+});
+export const budgetSchema = budgetOverrideSchema.extend({
+  repeatMonths: z.number().int().min(1).max(120).default(1),
 });
 export const scheduleSchema = z
   .object({

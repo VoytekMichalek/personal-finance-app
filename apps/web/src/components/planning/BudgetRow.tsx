@@ -6,11 +6,13 @@ import {
   moneyInput,
   parseMoney,
   type Category,
+  type EffectiveBudget,
 } from "@finance/shared";
 import { useAction } from "../../hooks/data";
 import { Input } from "../common/primitives";
 import { InlineSaveStatus } from "../common/InlineSaveStatus";
 import { Button } from "../ui/button";
+import { monthLabel } from "../ui/month-picker";
 export function BudgetRow({
   category,
   month,
@@ -19,13 +21,20 @@ export function BudgetRow({
 }: {
   category: Category;
   month: string;
-  budget: number;
+  budget: EffectiveBudget;
   spent: number;
 }) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(moneyInput(budget));
+  const amount = budget.amountCents;
+  const [value, setValue] = useState(moneyInput(amount));
   const [error, setError] = useState("");
   const action = useAction(() => setEditing(false));
+  const restoration = useAction();
+  const restore = () =>
+    restoration.mutate({
+      path: `/budgets/overrides/${budget.overrideId}`,
+      method: "DELETE",
+    });
   const start = `${month}-01`;
   const endDate = new Date(start + "T00:00:00Z");
   endDate.setUTCMonth(endDate.getUTCMonth() + 1);
@@ -36,7 +45,7 @@ export function BudgetRow({
       if (cents < 0) throw new Error("Enter zero or a positive budget.");
       setError("");
       action.mutate({
-        path: "/budgets",
+        path: "/budgets/overrides",
         method: "PUT",
         body: { month, categoryId: category.id, amountCents: cents },
       });
@@ -47,7 +56,18 @@ export function BudgetRow({
   return (
     <div className="border-b py-3 last:border-0">
       <div className="grid items-center gap-3 sm:grid-cols-[minmax(8rem,1fr)_8rem_7rem_7rem]">
-        <span className="text-sm font-medium">{category.name}</span>
+        <div>
+          <span className="text-sm font-medium">{category.name}</span>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {budget.overrideId
+              ? "Overridden for this month"
+              : !budget.endMonth
+                ? "Repeats until changed"
+                : budget.endMonth === budget.month
+                  ? "This month only"
+                  : `Repeats through ${monthLabel(budget.endMonth)}`}
+          </p>
+        </div>
         <div>
           {editing ? (
             <form
@@ -89,13 +109,13 @@ export function BudgetRow({
               aria-label={`Edit ${category.name} budget`}
               onClick={() => {
                 action.reset();
-                setValue(moneyInput(budget));
+                setValue(moneyInput(amount));
                 setEditing(true);
               }}
             >
               {" "}
               <span className="sm:hidden">Budget </span>
-              {money(budget)}
+              {money(amount)}
             </Button>
           )}
         </div>
@@ -107,20 +127,48 @@ export function BudgetRow({
           {money(spent)}
         </Link>
         <span
-          className={`text-sm tabular-nums sm:text-right ${spent > budget ? "text-rose-700" : ""}`}
+          className={`text-sm tabular-nums sm:text-right ${spent > amount ? "text-rose-700" : ""}`}
         >
           <span className="sm:hidden">Remaining </span>
-          {money(budget - spent)}
+          {money(amount - spent)}
         </span>
       </div>
       <div className="mt-2 h-1 rounded-full bg-muted">
         <div
-          className={`h-1 rounded-full ${spent > budget ? "bg-rose-600" : "bg-slate-400"}`}
+          className={`h-1 rounded-full ${spent > amount ? "bg-rose-600" : "bg-slate-400"}`}
           style={{
-            width: `${Math.min(100, Math.max(0, budget ? (spent / budget) * 100 : spent > 0 ? 100 : 0))}%`,
+            width: `${Math.min(100, Math.max(0, amount ? (spent / amount) * 100 : spent > 0 ? 100 : 0))}%`,
           }}
         />
       </div>
+      {editing && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Only {monthLabel(month)} changes. Other months keep their planned
+          amount.
+        </p>
+      )}
+      {budget.overrideId && !editing && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 px-0 text-primary"
+          aria-label={`Restore ${category.name} planned amount`}
+          disabled={restoration.isPending}
+          onClick={restore}
+        >
+          {restoration.isPending
+            ? "Restoring…"
+            : budget.plannedAmountCents === null
+              ? "Remove override"
+              : `Restore plan (${money(budget.plannedAmountCents)})`}
+        </Button>
+      )}
+      <InlineSaveStatus
+        pending={restoration.isPending}
+        saved={restoration.isSuccess}
+        error={restoration.error}
+        retry={restore}
+      />
       {error && (
         <p role="alert" className="mt-1 text-xs text-destructive">
           {error}

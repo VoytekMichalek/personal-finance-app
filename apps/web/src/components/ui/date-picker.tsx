@@ -1,21 +1,32 @@
 import { useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react";
 import { addDays, displayDate, today } from "@finance/shared";
 import { Dialog } from "./dialog";
 import { Popover } from "./popover";
-import type { ReactElement, ReactNode } from "react";
-import { Button } from "./button";
+import type { ReactElement, ReactNode, Ref } from "react";
+import { Button, cn } from "./button";
 import { Select, SelectItem } from "./select";
+import { useCompactViewport } from "../../hooks/compact-viewport";
 export function DatePicker({
   value,
   onChange,
   disabled,
   clearLabel,
-  popover = false,
+  popover,
   id,
   max,
   min,
+  className,
+  onBlur,
+  ref,
   "aria-label": label,
+  ...aria
 }: {
   value: string;
   onChange: (date: string) => void;
@@ -25,8 +36,15 @@ export function DatePicker({
   id?: string;
   min?: string;
   max?: string;
+  className?: string;
+  onBlur?: () => void;
+  ref?: Ref<HTMLButtonElement>;
   "aria-label"?: string;
+  "aria-invalid"?: boolean | "true" | "false";
+  "aria-describedby"?: string;
 }) {
+  const compact = useCompactViewport();
+  const usePopover = popover ?? !compact;
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState((value || today()).slice(0, 7));
   const first = month + "-01";
@@ -39,35 +57,42 @@ export function DatePicker({
   };
   return (
     <>
-      <div className="flex min-w-0 items-center gap-1">
+      <div className={cn("flex min-w-0 items-center gap-1", className)}>
         <PickerSurface
           open={open}
           onOpenChange={setOpen}
-          popover={popover}
+          popover={usePopover}
           trigger={
             <Button
+              {...aria}
+              ref={ref}
+              onBlur={onBlur}
               type="button"
               id={id}
               aria-label={label}
               variant="secondary"
               disabled={disabled}
-              className="h-11 min-w-0 flex-1 justify-between font-normal"
-              onClick={() => {
+              className="h-11 min-w-0 flex-1 justify-between gap-2 bg-gradient-to-b from-white to-slate-50/70 px-3 font-normal"
+              onClick={(event) => {
                 setMonth((value || today()).slice(0, 7));
-                if (!popover) setOpen(true);
+                if (!usePopover) {
+                  event.currentTarget.focus();
+                  setOpen(true);
+                }
               }}
             >
-              <span className="truncate text-left">
+              <CalendarDays size={16} className="shrink-0 text-primary/75" />
+              <span className="flex-1 truncate text-left">
                 {value ? displayDate(value) : "Choose date"}
               </span>
-              <CalendarDays
-                size={16}
+              <ChevronDown
+                size={14}
                 className="shrink-0 text-muted-foreground"
               />
             </Button>
           }
         >
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-4 flex items-center gap-1 rounded-xl bg-muted/60 p-1">
             <Button
               type="button"
               variant="ghost"
@@ -79,6 +104,7 @@ export function DatePicker({
             </Button>
             <Select
               aria-label="Month"
+              className="h-9 flex-1 gap-1 border-0 bg-none px-1 text-sm shadow-none [&>span]:gap-1"
               value={month.slice(5)}
               onValueChange={(m) => setMonth(month.slice(0, 4) + "-" + m)}
             >
@@ -93,6 +119,7 @@ export function DatePicker({
             </Select>
             <Select
               aria-label="Year"
+              className="h-9 w-20 shrink-0 gap-1 border-0 bg-none px-1 text-sm shadow-none [&>span]:gap-1"
               value={month.slice(0, 4)}
               onValueChange={(y) => setMonth(y + month.slice(4))}
             >
@@ -130,9 +157,11 @@ export function DatePicker({
                   "aspect-square rounded-xl text-sm transition hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-25 " +
                   (day === value
                     ? "bg-primary text-white hover:bg-primary"
-                    : day.startsWith(month)
-                      ? ""
-                      : "text-muted-foreground/50")
+                    : day === today()
+                      ? "bg-blue-50 text-primary ring-1 ring-inset ring-primary/25"
+                      : day.startsWith(month)
+                        ? "text-foreground"
+                        : "text-muted-foreground/50")
                 }
                 onKeyDown={(e) => {
                   const delta = {
@@ -162,7 +191,7 @@ export function DatePicker({
           <Button
             type="button"
             variant="ghost"
-            className="mt-4 w-full"
+            className="mt-4 w-full border-t pt-3 text-primary"
             disabled={!!((min && today() < min) || (max && today() > max))}
             onClick={() => {
               onChange(today());
@@ -208,6 +237,7 @@ function PickerSurface({
       onOpenChange={onOpenChange}
       trigger={trigger}
       label="Choose date"
+      className="w-[22rem]"
     >
       {children}
     </Popover>

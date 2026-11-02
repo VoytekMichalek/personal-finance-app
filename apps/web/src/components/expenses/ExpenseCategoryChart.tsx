@@ -78,27 +78,29 @@ export function ExpenseCategoryChart({
       <VisualTitle
         title="Expenses over time"
         context="Recorded expenses by category, less refunds. Weeks start Monday. Scroll across the chart for longer periods; use Table for exact values."
-      />
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div
-          role="group"
-          aria-label="Chart interval"
-          className="flex gap-1 rounded-xl bg-muted/60 p-1"
-        >
-          {(["month", "week", "day"] as const).map((value) => (
-            <Button
-              key={value}
-              size="sm"
-              variant={interval === value ? "default" : "ghost"}
-              aria-pressed={interval === value}
-              onClick={() => setInterval(value)}
+        action={
+          <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
+            <div
+              role="group"
+              aria-label="Chart interval"
+              className="flex gap-1 rounded-xl bg-muted/60 p-1"
             >
-              {value.charAt(0).toUpperCase() + value.slice(1)}
-            </Button>
-          ))}
-        </div>
-        <ChartViewTabs id={viewId} value={view} onChange={setView} />
-      </div>
+              {(["month", "week", "day"] as const).map((value) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={interval === value ? "default" : "ghost"}
+                  aria-pressed={interval === value}
+                  onClick={() => setInterval(value)}
+                >
+                  {value.charAt(0).toUpperCase() + value.slice(1)}
+                </Button>
+              ))}
+            </div>
+            <ChartViewTabs id={viewId} value={view} onChange={setView} />
+          </div>
+        }
+      />
       {!rows.length ? (
         <p className="flex h-48 items-center justify-center text-sm text-muted-foreground">
           No expenses in this selection.

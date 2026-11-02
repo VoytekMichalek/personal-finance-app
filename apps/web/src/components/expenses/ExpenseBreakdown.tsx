@@ -66,34 +66,36 @@ export function ExpenseBreakdown({
       <VisualTitle
         title="Expense breakdown"
         context="Expenses less refunds in the selected dates and filters. Choose a category, account or person to see its transactions. Percentages use positive net spending."
-      />
-      <div
-        role="tablist"
-        aria-label="Expense breakdown"
-        className="mb-4 flex w-fit flex-wrap gap-1 rounded-xl bg-muted/60 p-1"
-      >
-        {(
-          [
-            ["categories", "Category"],
-            ["accounts", "Account"],
-            ["people", "Person"],
-          ] as const
-        ).map(([key, label]) => (
-          <Button
-            key={key}
-            role="tab"
-            aria-selected={group === key}
-            variant={group === key ? "default" : "ghost"}
-            size="sm"
-            onClick={() => {
-              setGroup(key);
-              setExpandedGroup(null);
-            }}
+        action={
+          <div
+            role="tablist"
+            aria-label="Expense breakdown"
+            className="ml-auto flex w-fit flex-wrap gap-1 rounded-xl bg-muted/60 p-1"
           >
-            {label}
-          </Button>
-        ))}
-      </div>
+            {(
+              [
+                ["categories", "Category"],
+                ["accounts", "Account"],
+                ["people", "Person"],
+              ] as const
+            ).map(([key, label]) => (
+              <Button
+                key={key}
+                role="tab"
+                aria-selected={group === key}
+                variant={group === key ? "default" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  setGroup(key);
+                  setExpandedGroup(null);
+                }}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        }
+      />
       {!report.rows.length && (
         <p className="py-6 text-sm text-muted-foreground">
           No expenses in this selection.

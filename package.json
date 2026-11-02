@@ -1,7 +1,7 @@
 {
   "name": "personal-finance",
   "private": true,
-  "version": "0.0.12",
+  "version": "0.0.13",
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -27,7 +27,9 @@
     "start:e2e": "node scripts/e2e-server.mjs",
     "start": "pnpm --filter @finance/api start",
     "integrations:verify": "pnpm --filter @finance/api integrations:verify",
-    "test:release": "node --test scripts/deploy-dokploy.test.mjs"
+    "test:release": "node --test scripts/deploy-dokploy.test.mjs",
+    "demo:prepare": "pnpm ci:prepare && node scripts/prepare-demo.mjs",
+    "dev:demo": "node scripts/dev-demo.mjs"
   },
   "dependencies": {
     "dotenv": "18.0.5",

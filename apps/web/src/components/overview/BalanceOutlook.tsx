@@ -33,9 +33,12 @@ export function BalanceOutlook({ data }: { data: Snapshot }) {
         title="Household balance & outlook"
         context={`Whole household · bank and cash, less credit owed. Recorded history uses opening balances and transactions. ${history.firstRecorded && history.firstRecorded > history.from ? `History available from ${displayDate(history.firstRecorded)}. ` : ""}The dotted projection uses scheduled income, bills and remaining budgets. Unbudgeted, unscheduled expenses are not included.`}
         action={
-          <Link className="text-xs text-primary" to="/plan?tab=forecast">
-            Explore forecast
-          </Link>
+          <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-3">
+            <Link className="text-xs text-primary" to="/plan?tab=forecast">
+              Explore forecast
+            </Link>
+            <ChartViewTabs id={id} value={view} onChange={setView} />
+          </div>
         }
       />
       <div className="mb-5 flex flex-wrap gap-x-8 gap-y-3">
@@ -72,7 +75,6 @@ export function BalanceOutlook({ data }: { data: Snapshot }) {
             Projected
           </span>
         </div>
-        <ChartViewTabs id={id} value={view} onChange={setView} />
       </div>
       <div
         role="tabpanel"

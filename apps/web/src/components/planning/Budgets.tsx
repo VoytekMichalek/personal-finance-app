@@ -1,35 +1,23 @@
+import { BudgetForm } from "./BudgetForm";
+import { MonthPicker } from "../ui/month-picker";
 import { BudgetRow } from "./BudgetRow";
-import { useSearchParams } from "react-router-dom";
-import { ActionError } from "../common/ActionError";
-import { SelectItem, FormSelect } from "../ui/select";
-import { CategoryChip } from "../common/EntityChip";
+import { Link, useSearchParams } from "react-router-dom";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
-  budgetSchema,
+  monthSchema,
   effectiveBudgets,
   categorySpend,
   money,
-  moneyInput,
   type Snapshot,
 } from "@finance/shared";
 import { Plus } from "lucide-react";
-import { useAction } from "../../hooks/data";
 import { Button } from "../ui/button";
 import { Dialog } from "../ui/dialog";
-import { Card, Input, Field, Empty, SectionTitle } from "../common/primitives";
-import { moneyField } from "../common/form";
-const schema = budgetSchema.extend({
-  amountCents: moneyField.refine(
-    (value) => value >= 0,
-    "Enter a positive amount or zero",
-  ),
-});
+import { Card, Empty, SectionTitle } from "../common/primitives";
 export function Budgets({ data }: { data: Snapshot }) {
   const [params, setParams] = useSearchParams();
-  const month = params.get("month") ?? data.today.slice(0, 7);
+  const month =
+    monthSchema.safeParse(params.get("month")).data ?? data.today.slice(0, 7);
   const setMonth = (month: string) =>
     setParams(
       (current) => {
@@ -41,7 +29,7 @@ export function Budgets({ data }: { data: Snapshot }) {
     );
   const [categoryId, setCategoryId] = useState("");
   const [open, setOpen] = useState(false);
-  const budgets = effectiveBudgets(data.budgets, month);
+  const budgets = effectiveBudgets(data.budgets, month, data.budgetOverrides);
   const limit = budgets.reduce((s, b) => s + b.amountCents, 0);
   const spent = budgets.reduce(
     (s, b) => s + categorySpend(data.transactions, b.categoryId, month),
@@ -50,12 +38,11 @@ export function Budgets({ data }: { data: Snapshot }) {
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <Input
+        <MonthPicker
           aria-label="Budget month"
-          type="month"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
-          className="w-44"
+          onChange={setMonth}
+          className="w-56"
         />
         <Button
           onClick={() => {
@@ -81,6 +68,13 @@ export function Budgets({ data }: { data: Snapshot }) {
           </Card>
         ))}
       </div>
+      <div className="mb-4 flex justify-end">
+        <Button asChild variant="ghost" size="sm">
+          <Link to={`/budget-report?month=${month}`}>
+            View budget vs actual →
+          </Link>
+        </Button>
+      </div>
       <Card>
         <SectionTitle>Monthly budgets</SectionTitle>
         {budgets.length ? (
@@ -101,7 +95,7 @@ export function Budgets({ data }: { data: Snapshot }) {
                     key={month + category.id}
                     category={category}
                     month={month}
-                    budget={b.amountCents}
+                    budget={b}
                     spent={categorySpend(
                       data.transactions,
                       b.categoryId,
@@ -125,8 +119,9 @@ export function Budgets({ data }: { data: Snapshot }) {
         )}
 
         <p className="mt-6 border-t pt-4 text-[11px] leading-5 text-muted-foreground">
-          Budgets repeat until you set a new monthly amount. Unspent amounts
-          don’t roll over. All owners are included.
+          Choose whether a new budget repeats and for how many months. Edit an
+          amount to override just that month; Restore plan removes the override.
+          Unspent amounts don’t roll over. All owners are included.
         </p>
       </Card>
       <Dialog open={open} onOpenChange={setOpen} title="Set monthly budget">
@@ -139,67 +134,5 @@ export function Budgets({ data }: { data: Snapshot }) {
         />
       </Dialog>
     </>
-  );
-}
-function BudgetForm({
-  data,
-  month,
-  categoryId,
-  done,
-}: {
-  data: Snapshot;
-  month: string;
-  categoryId: string;
-  done: () => void;
-}) {
-  const existing = effectiveBudgets(data.budgets, month).find(
-    (b) => b.categoryId === categoryId,
-  );
-  const form = useForm<
-    z.input<typeof schema>,
-    unknown,
-    z.output<typeof schema>
-  >({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      month,
-      categoryId,
-      amountCents: moneyInput(existing?.amountCents ?? 0),
-    },
-  });
-  const action = useAction(done);
-  return (
-    <form
-      className="grid gap-4"
-      onSubmit={form.handleSubmit((body) =>
-        action.mutate({ path: "/budgets", body, method: "PUT" }),
-      )}
-    >
-      <Field label="Category" error={form.formState.errors.categoryId?.message}>
-        <FormSelect control={form.control} name={"categoryId"}>
-          <SelectItem value="">Choose category</SelectItem>
-          {data.categories
-            .filter((c) => !c.archived && c.kind === "expense")
-            .map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                <CategoryChip categoryId={c.id} categories={data.categories} />
-              </SelectItem>
-            ))}
-        </FormSelect>
-      </Field>
-      <Field label="Month" error={form.formState.errors.month?.message}>
-        <Input type="month" {...form.register("month")} />
-      </Field>
-      <Field
-        label="Allowance (AUD)"
-        error={form.formState.errors.amountCents?.message}
-      >
-        <Input inputMode="decimal" {...form.register("amountCents")} />
-      </Field>
-      <Button disabled={action.isPending} type="submit">
-        Save budget
-      </Button>
-      <ActionError error={action.error} />
-    </form>
   );
 }

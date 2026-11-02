@@ -42,6 +42,7 @@ const snapshot = (patch: Partial<Snapshot> = {}): Snapshot => ({
   categories: [],
   rules: [],
   budgets: [],
+  budgetOverrides: [],
   schedules: [],
   assets: [],
   people: [],
@@ -56,7 +57,13 @@ it("joins recorded daily balances to an identical forecast starting balance and 
       row({ date: "2026-11-03", amountCents: -99999 }),
     ],
     budgets: [
-      { id: "budget", categoryId: "food", month: "2026-11", amountCents: 3000 },
+      {
+        id: "budget",
+        categoryId: "food",
+        month: "2026-11",
+        endMonth: null,
+        amountCents: 3000,
+      },
     ],
   });
   const result = balanceOutlook(data);

@@ -81,6 +81,7 @@ const snapshot = (transactions: Transaction[] = []): Snapshot => ({
   categories: [],
   rules: [],
   budgets: [],
+  budgetOverrides: [],
   schedules: [],
   people: [],
 });

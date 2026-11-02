@@ -16,6 +16,7 @@ export async function snapshot(): Promise<Snapshot> {
     transactions,
     rules,
     budgets,
+    budgetOverrides,
     schedules,
     assets,
     people,
@@ -27,6 +28,7 @@ export async function snapshot(): Promise<Snapshot> {
     }),
     prisma.rule.findMany({ orderBy: [{ priority: "asc" }, { id: "asc" }] }),
     prisma.budget.findMany(),
+    prisma.budgetOverride.findMany(),
     prisma.schedule.findMany(),
     prisma.asset.findMany({
       include: { valuations: true, account: { select: { id: true } } },
@@ -42,6 +44,7 @@ export async function snapshot(): Promise<Snapshot> {
     transactions,
     rules,
     budgets,
+    budgetOverrides,
     schedules,
     assets: assets.map(({ account, ...asset }) => ({
       ...asset,

@@ -1,7 +1,6 @@
 import type {
   Account,
   Asset,
-  Budget,
   ForecastPoint,
   Occurrence,
   Schedule,
@@ -11,6 +10,7 @@ import type {
 import { addDays, monthEnd } from "./money.js";
 import { scheduleImpact } from "./schedules.js";
 import { isCashAccount } from "./accounts.js";
+import { effectiveBudgets } from "./budgets.js";
 export function accountBalance(
   account: Account,
   transactions: Transaction[],
@@ -45,15 +45,6 @@ export function categorySpend(
         t.date <= through,
     )
     .reduce((sum, t) => sum + t.amountCents, 0);
-}
-export function effectiveBudgets(budgets: Budget[], month: string): Budget[] {
-  const result = new Map<string, Budget>();
-  for (const budget of [...budgets].sort((a, b) =>
-    a.month.localeCompare(b.month),
-  )) {
-    if (budget.month <= month) result.set(budget.categoryId, budget);
-  }
-  return [...result.values()];
 }
 function monthlyOccurrence(start: string, months: number): string {
   const year = Number(start.slice(0, 4));
@@ -164,25 +155,26 @@ export function forecast(snapshot: Snapshot, days = 90): ForecastPoint[] {
         month === start.slice(0, 7) ? start : first,
         last,
       ).filter((o) => !o.matched);
-      const residual = effectiveBudgets(snapshot.budgets, month).reduce(
-        (sum, b) => {
-          const actual = categorySpend(
-            snapshot.transactions,
-            b.categoryId,
-            month,
-            start,
-          );
-          const scheduled = future
-            .filter(
-              (o) =>
-                o.schedule.categoryId === b.categoryId &&
-                o.schedule.kind === "expense",
-            )
-            .reduce((s, o) => s + o.schedule.amountCents, 0);
-          return sum + Math.max(0, b.amountCents - actual - scheduled);
-        },
-        0,
-      );
+      const residual = effectiveBudgets(
+        snapshot.budgets,
+        month,
+        snapshot.budgetOverrides,
+      ).reduce((sum, b) => {
+        const actual = categorySpend(
+          snapshot.transactions,
+          b.categoryId,
+          month,
+          start,
+        );
+        const scheduled = future
+          .filter(
+            (o) =>
+              o.schedule.categoryId === b.categoryId &&
+              o.schedule.kind === "expense",
+          )
+          .reduce((s, o) => s + o.schedule.amountCents, 0);
+        return sum + Math.max(0, b.amountCents - actual - scheduled);
+      }, 0);
       monthlyAllowance.set(month, {
         amount: residual,
         days: Math.round((Date.parse(last) - Date.parse(first)) / 86400000) + 1,
@@ -285,11 +277,14 @@ export function netWorth(snapshot: Snapshot, date: string): number {
     )
   );
 }
-export function overview(snapshot: Snapshot, owner = "all") {
+export function overview(
+  snapshot: Snapshot,
+  owner = "all",
+  month = snapshot.today.slice(0, 7),
+) {
   const transactions = snapshot.transactions.filter(
     (t) => owner === "all" || t.owner === owner,
   );
-  const month = snapshot.today.slice(0, 7);
   const current = transactions.filter(
     (t) => t.date.startsWith(month) && t.date <= snapshot.today,
   );
@@ -306,7 +301,11 @@ export function overview(snapshot: Snapshot, owner = "all") {
       (s, a) => s + accountBalance(a, snapshot.transactions, snapshot.today),
       0,
     );
-  const budgets = effectiveBudgets(snapshot.budgets, month);
+  const budgets = effectiveBudgets(
+    snapshot.budgets,
+    month,
+    snapshot.budgetOverrides,
+  );
   const budget = budgets.reduce((s, b) => s + b.amountCents, 0);
   const budgetSpent = budgets.reduce(
     (sum, b) =>

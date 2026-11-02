@@ -122,7 +122,9 @@ test("budgets edit in place, spent links keep the month, and rules and settings 
       .getByLabel("Groceries budget amount", { exact: true })
       .fill("600");
     const saved = page.waitForResponse(
-      (r) => r.url().endsWith("/api/budgets") && r.request().method() === "PUT",
+      (r) =>
+        r.url().endsWith("/api/budgets/overrides") &&
+        r.request().method() === "PUT",
     );
     await page.getByRole("button", { name: "Save", exact: true }).click();
     expect((await saved).ok()).toBe(true);
@@ -145,11 +147,18 @@ test("budgets edit in place, spent links keep the month, and rules and settings 
     ).toContainText("$600.00");
     expect(
       (
-        await db.budget.findFirstOrThrow({
+        await db.budgetOverride.findFirstOrThrow({
           where: { categoryId: food.id, month },
         })
       ).amountCents,
     ).toBe(60000n);
+    expect(
+      (
+        await db.budget.findFirstOrThrow({
+          where: { categoryId: food.id, month },
+        })
+      ).amountCents,
+    ).toBe(50000n);
     await page.getByRole("link", { name: /\$32\.00/ }).click();
     await expect(page).toHaveURL(new RegExp(`category=${food.id}`));
     await expect(page).toHaveURL(new RegExp(`from=${month}-01`));

@@ -1,4 +1,5 @@
 import { ActionError } from "../common/ActionError";
+import { FormDatePicker } from "../ui/form-date-picker";
 import { accountLabel, isCashAccount } from "@finance/shared";
 import { SelectItem, FormSelect } from "../ui/select";
 import { CategoryChip } from "../common/EntityChip";
@@ -156,7 +157,7 @@ export function ScheduleForm({
           label="Starts / next renewal"
           error={form.formState.errors.startDate?.message}
         >
-          <Input type="date" {...form.register("startDate")} />
+          <FormDatePicker control={form.control} name="startDate" />
         </Field>
         <Field label="Repeats" error={form.formState.errors.frequency?.message}>
           <FormSelect control={form.control} name={"frequency"}>
@@ -172,10 +173,12 @@ export function ScheduleForm({
         label="End date (optional)"
         error={form.formState.errors.endDate?.message}
       >
-        <Input
-          type="date"
-          value={form.watch("endDate") ?? ""}
-          onChange={(e) => form.setValue("endDate", e.target.value || null)}
+        <FormDatePicker
+          control={form.control}
+          name="endDate"
+          nullable
+          clearLabel="Clear end date"
+          min={form.watch("startDate")}
         />
       </Field>
       {kind !== "transfer" && (

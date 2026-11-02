@@ -33,7 +33,7 @@ A local ignored `.env` and migrated PostgreSQL service have already been prepare
 - Dedicated account detail, separate Net Worth and Assets & Liabilities pages, manageable category/subcategory hierarchy and styled keyboard-accessible dropdowns.
 - CSV mapping and preview, signed or debit/credit amounts, explicit date formats, reviewed refunds/transfers, duplicate warnings, saved mapping and atomic, idempotent confirmation.
 - Optional OpenRouter mapping/category suggestions with redacted samples, schema validation, restrictive provider policies and an explicit approved model selection.
-- Repeating calendar-month budgets, scheduled income/bills and subscriptions, matched occurrences and 30/90/180/365-day forecasts without budget/schedule double counting.
+- Calendar-month budgets with optional finite repeats and individual monthly overrides, scheduled income/bills and subscriptions, matched occurrences and 30/90/180/365-day forecasts without budget/schedule double counting.
 - Net-worth history using account ledgers and dated property, investment, superannuation and other valuations.
 - Private JPEG/PNG/WebP/PDF receipt uploads up to 20 MB using Cloudflare R2, authenticated viewing/download/deletion and recoverable failures.
 
@@ -68,3 +68,21 @@ This personal repository owns its CI and release workflows. [Validate](.github/w
 Neither workflow calls a Codename CI wrapper, reusable workflow or action. Release uses GitHub's repository-scoped `GITHUB_TOKEN`; no Codename organisation credentials are required. Keep this ownership permanent even if shared Codename workflows become accessible. The `ci:*` package scripts run code in this repository. After publishing the immutable version and GitHub Release, release updates `latest`, calls the personal app's `DOKPLOY_DEPLOY_WEBHOOKS` secret and waits for the expected release tag/commit at `https://finance.michalek.app/ready`. Ordinary main pushes validate without deploying. Releases share a concurrency group to prevent overlapping production promotions.
 
 Owner: Voytek Michalek. Personal repository, GHCR and CI/release ownership are permanent project decisions; see the [adoption record](docs/sop-adoption.md). See GitHub Actions and the deployment record for actual release and rollout outcomes.
+
+### Local demo household
+
+After the regular local app has an active admin, run `pnpm demo:prepare`, stop the
+regular dev server, then run `pnpm dev:demo`. Open
+`http://localhost:5173/budget-report`. This creates a separate `finance_demo`
+database with six months of fictional transactions, category budgets, monthly
+overrides and recurring bills. Existing local users, passkeys and unexpired
+sessions are copied only so the same local sign-in works; household financial
+records are not copied or edited. The demo shows an explicit banner.
+
+Preparation refuses remote databases and production mode, and never overwrites
+an existing demo with accounts. Repeating it preserves edits made while testing.
+External AI and object storage configuration is disabled for the demo process.
+Stop the demo process and run `pnpm dev` to return to the regular `finance`
+database. `.env` is unchanged. `VITE_DEMO_DATA` is a non-secret development-only
+UI flag set by the demo launcher; `DATABASE_URL` is overridden only for that
+process. No demo flag, dataset or credentials are included in a production build.

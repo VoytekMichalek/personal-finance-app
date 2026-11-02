@@ -64,8 +64,15 @@ const snapshot = (patch: Partial<Snapshot> = {}): Snapshot => ({
   transactions: [transaction()],
   categories: [],
   rules: [],
+  budgetOverrides: [],
   budgets: [
-    { id: "b", categoryId: "food", month: "2026-10", amountCents: 100000 },
+    {
+      id: "b",
+      categoryId: "food",
+      month: "2026-10",
+      endMonth: null,
+      amountCents: 100000,
+    },
   ],
   schedules: [schedule()],
   assets: [],
@@ -99,8 +106,20 @@ describe("exact financial arithmetic", () => {
     expect(
       effectiveBudgets(
         [
-          { id: "a", categoryId: "food", month: "2026-09", amountCents: 20000 },
-          { id: "b", categoryId: "food", month: "2026-11", amountCents: 30000 },
+          {
+            id: "a",
+            categoryId: "food",
+            month: "2026-09",
+            endMonth: null,
+            amountCents: 20000,
+          },
+          {
+            id: "b",
+            categoryId: "food",
+            month: "2026-11",
+            endMonth: null,
+            amountCents: 30000,
+          },
         ],
         "2026-10",
       )[0]?.amountCents,
@@ -108,6 +127,61 @@ describe("exact financial arithmetic", () => {
   });
 });
 describe("calendar recurrence and forecast", () => {
+  it("includes recurring subscriptions within their budget and still projects bills over the allowance", () => {
+    for (const scheduled of [15000, 23000]) {
+      const points = forecast(
+        snapshot({
+          transactions: [],
+          budgets: [
+            {
+              id: "subscriptions",
+              categoryId: "subscriptions",
+              month: "2026-10",
+              endMonth: "2026-10",
+              amountCents: 20000,
+            },
+          ],
+          schedules: [
+            schedule({ categoryId: "subscriptions", amountCents: scheduled }),
+          ],
+        }),
+        30,
+      );
+      expect(points.reduce((sum, point) => sum + point.scheduledCents, 0)).toBe(
+        -scheduled,
+      );
+      expect(points.reduce((sum, point) => sum + point.allowanceCents, 0)).toBe(
+        Math.max(0, 20000 - scheduled),
+      );
+      expect(points.at(-1)?.balanceCents).toBe(
+        500000 - Math.max(20000, scheduled),
+      );
+    }
+  });
+  it("uses monthly overrides in reporting and stops projecting expired plans", () => {
+    const data = snapshot({
+      transactions: [],
+      schedules: [],
+      budgets: [
+        {
+          id: "b",
+          categoryId: "food",
+          month: "2026-10",
+          endMonth: "2026-11",
+          amountCents: 10000,
+        },
+      ],
+      budgetOverrides: [
+        { id: "o", categoryId: "food", month: "2026-10", amountCents: 20000 },
+      ],
+    });
+    expect(overview(data).budget).toBe(20000);
+    expect(overview(data, "all", "2026-11").budget).toBe(10000);
+    expect(overview(data, "all", "2026-12").budget).toBe(0);
+    expect(
+      forecast(data, 91).reduce((sum, point) => sum + point.allowanceCents, 0),
+    ).toBe(30000);
+  });
   it("keeps the original month-end anchor including leap years", () => {
     expect(
       scheduleDates(
@@ -165,7 +239,13 @@ describe("calendar recurrence and forecast", () => {
         transactions: [],
         schedules: [],
         budgets: [
-          { id: "b", categoryId: "food", month: "2026-10", amountCents: 101 },
+          {
+            id: "b",
+            categoryId: "food",
+            month: "2026-10",
+            endMonth: null,
+            amountCents: 101,
+          },
         ],
       }),
       30,
@@ -198,6 +278,67 @@ describe("calendar recurrence and forecast", () => {
 });
 
 describe("household reporting boundaries", () => {
+  it("reports a selected full month while preserving current balances and household budgets", () => {
+    const data = snapshot({
+      budgets: [
+        {
+          id: "september",
+          categoryId: "food",
+          month: "2026-09",
+          endMonth: null,
+          amountCents: 20000,
+        },
+        {
+          id: "october",
+          categoryId: "food",
+          month: "2026-10",
+          endMonth: null,
+          amountCents: 100000,
+        },
+      ],
+      transactions: [
+        transaction({ date: "2026-09-01", kind: "income", amountCents: 50000 }),
+        transaction({ date: "2026-09-30", amountCents: -10001 }),
+        transaction({ date: "2026-09-30", kind: "refund", amountCents: 2501 }),
+        transaction({ date: "2026-09-30", owner: "wife", amountCents: -2000 }),
+        transaction({
+          date: "2026-09-30",
+          kind: "transfer",
+          amountCents: -3000,
+        }),
+        transaction({
+          date: "2026-09-30",
+          kind: "transfer",
+          amountCents: 3000,
+        }),
+        transaction({ kind: "income", amountCents: 1000 }),
+        transaction({ amountCents: -9000 }),
+        transaction({ date: "2026-10-02", amountCents: -6000 }),
+      ],
+    });
+    expect(overview(data, "household", "2026-09")).toEqual({
+      income: 50000,
+      spent: 7500,
+      balance: 532500,
+      budget: 20000,
+      remaining: 10500,
+    });
+    expect(overview(data, "all", "2026-09").spent).toBe(9500);
+    expect(overview(data)).toEqual({
+      income: 1000,
+      spent: 9000,
+      balance: 532500,
+      budget: 100000,
+      remaining: 91000,
+    });
+    expect(overview(data, "all", "2026-08")).toEqual({
+      income: 0,
+      spent: 0,
+      balance: 532500,
+      budget: 0,
+      remaining: 0,
+    });
+  });
   it("filters transaction and account ownership while keeping household budgets inclusive", () => {
     const data = snapshot({
       transactions: [

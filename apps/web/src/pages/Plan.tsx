@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { forecast, money } from "@finance/shared";
 import { useSnapshot } from "../hooks/data";
 import { Button, cn } from "../components/ui/button";
@@ -19,6 +19,11 @@ export function Plan() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") ?? "budgets";
   const [days, setDays] = useState(90);
+  if (tab === "report") {
+    const next = new URLSearchParams(params);
+    next.delete("tab");
+    return <Navigate to={`/budget-report?${next}`} replace />;
+  }
   if (query.isPending) return <Loading />;
   if (query.error && !query.data)
     return (

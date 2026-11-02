@@ -90,7 +90,13 @@ export function AccountDetail() {
     addDays(data.today, 90),
   ).filter((o) => !o.matched);
   const points = forecast(
-    { ...data, accounts: [account], schedules, budgets: [] },
+    {
+      ...data,
+      accounts: [account],
+      schedules,
+      budgets: [],
+      budgetOverrides: [],
+    },
     90,
   );
   const balance = accountBalance(account, transactions, data.today);

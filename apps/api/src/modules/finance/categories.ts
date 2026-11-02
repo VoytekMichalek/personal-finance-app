@@ -34,6 +34,7 @@ export async function saveCategory(input: unknown, id?: string) {
       current?.kind !== data.kind &&
       ((await tx.transaction.count({ where: { categoryId: id } })) ||
         (await tx.budget.count({ where: { categoryId: id } })) ||
+        (await tx.budgetOverride.count({ where: { categoryId: id } })) ||
         (await tx.schedule.count({ where: { categoryId: id } })) ||
         (await tx.rule.count({ where: { categoryId: id } })) ||
         (await tx.category.count({ where: { parentId: id } })))
@@ -64,6 +65,7 @@ export async function removeCategory(id: string) {
       (await tx.transaction.count({ where: { categoryId: id } })) ||
       (await tx.schedule.count({ where: { categoryId: id } })) ||
       (await tx.budget.count({ where: { categoryId: id } })) ||
+      (await tx.budgetOverride.count({ where: { categoryId: id } })) ||
       (await tx.rule.count({ where: { categoryId: id } }))
     )
       throw new HttpError(

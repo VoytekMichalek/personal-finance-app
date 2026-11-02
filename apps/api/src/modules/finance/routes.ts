@@ -2,6 +2,7 @@ import { matchOccurrence, saveSchedule } from "./schedules.js";
 import { rememberTransaction } from "./remember-transaction.js";
 import { saveRule } from "./rules.js";
 import { saveAsset } from "./assets.js";
+import { saveBudget, overrideBudget, restoreBudget } from "./budgets.js";
 import { bulkCategory } from "./bulk-category.js";
 import { changeTransactionType } from "./transaction-type.js";
 import { bulkDelete } from "./bulk-delete.js";
@@ -10,7 +11,6 @@ import { Router } from "express";
 import { z } from "zod";
 import {
   accountSchema,
-  budgetSchema,
   valuationSchema,
   forecast,
   netWorth,
@@ -22,7 +22,6 @@ import { HttpError } from "../../lib/errors.js";
 import {
   snapshot,
   validateOwner,
-  validateCategory,
   createTransaction,
   createTransfer,
   updateTransaction,
@@ -206,18 +205,13 @@ financeRouter.delete("/rules/:id", async (req, res) => {
   res.json({ ok: true });
 });
 financeRouter.put("/budgets", async (req, res) => {
-  const input = budgetSchema.parse(req.body);
-  await validateCategory(prisma, input.categoryId, "expense");
-  const key = { categoryId: input.categoryId, month: input.month };
-  res.json(
-    json(
-      await prisma.budget.upsert({
-        where: { categoryId_month: key },
-        create: { ...key, amountCents: BigInt(input.amountCents) },
-        update: { amountCents: BigInt(input.amountCents) },
-      }),
-    ),
-  );
+  res.json(await saveBudget(req.body));
+});
+financeRouter.put("/budgets/overrides", async (req, res) => {
+  res.json(await overrideBudget(req.body));
+});
+financeRouter.delete("/budgets/overrides/:id", async (req, res) => {
+  res.json(await restoreBudget(z.uuid().parse(req.params.id)));
 });
 financeRouter.post("/schedules/:id/match", async (req, res) => {
   const input = z

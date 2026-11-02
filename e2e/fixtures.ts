@@ -199,3 +199,26 @@ export async function choosePeriod(page: Page, label: string) {
   await expect(preset).toBeHidden();
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 }
+
+export function monthText(month: string) {
+  return new Intl.DateTimeFormat("en-AU", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${month}-01T00:00:00Z`));
+}
+export async function chooseMonth(page: Page, locator: Locator, month: string) {
+  await locator.click();
+  const picker = page.getByRole("dialog", {
+    name: "Choose month",
+    exact: true,
+  });
+  const year = picker.getByRole("combobox", { name: "Year", exact: true });
+  if ((await year.textContent())?.trim() !== month.slice(0, 4))
+    await choose(page, year, month.slice(0, 4));
+  await picker
+    .getByRole("button", { name: monthText(month), exact: true })
+    .click();
+  await expect(picker).toBeHidden();
+  await expect(locator).toHaveText(monthText(month));
+}

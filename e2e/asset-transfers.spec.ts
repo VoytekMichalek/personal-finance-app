@@ -63,7 +63,11 @@ for (const kind of ["asset", "liability"] as const) {
       kind === "asset" ? "Share portfolio · Asset" : "Home loan · Liability",
     );
     await dialog.getByLabel("Amount (AUD)").fill("100");
-    await dialog.getByLabel("Date", { exact: true }).fill("2026-10-02");
+    await chooseDate(
+      page,
+      dialog.getByLabel("Date", { exact: true }),
+      "2026-10-02",
+    );
     await dialog
       .getByRole("button", { name: "Record transfer", exact: true })
       .click();

@@ -59,6 +59,12 @@ export type Budget = {
   categoryId: string;
   month: string;
   amountCents: number;
+  endMonth: string | null;
+};
+export type BudgetOverride = Omit<Budget, "endMonth">;
+export type EffectiveBudget = Budget & {
+  overrideId: string | null;
+  plannedAmountCents: number | null;
 };
 export type Schedule = {
   id: string;
@@ -106,6 +112,7 @@ export type Snapshot = {
   transactions: Transaction[];
   rules: Rule[];
   budgets: Budget[];
+  budgetOverrides: BudgetOverride[];
   schedules: Schedule[];
   assets: Asset[];
   people: Person[];

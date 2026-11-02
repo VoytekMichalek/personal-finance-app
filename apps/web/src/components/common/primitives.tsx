@@ -14,17 +14,24 @@ export function PageHeading({
   description,
   action,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
 }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <header
+      className={cn(
+        "mb-6 flex flex-wrap justify-between gap-4",
+        description ? "items-end" : "items-center",
+      )}
+    >
       <div>
-        <p className="mb-1 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-          {eyebrow}
-        </p>
+        {eyebrow && (
+          <p className="mb-1 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+            {eyebrow}
+          </p>
+        )}
         <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
           {title}
         </h1>

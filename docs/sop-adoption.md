@@ -737,3 +737,54 @@ left-aligned text and Escape/outside-click dismissal. Added `@radix-ui/react-pop
 1.1.23 to match the installed Radix generation; its 24 July 2026 publication predates
 the unchanged 2880-minute age gate. No package-age exclusion or other dependency
 upgrade was introduced.
+
+## Overview month and compact report headings — 3 November 2026
+
+Current SOP main was retrieved once through the installed read-only helper at
+`2026-11-02T19:17:33.926Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`. Policy loading, application UI,
+testing and user-documentation standards were read at that fixed revision.
+The relevant difference from the adopted baseline remains focused local checks
+with full CI in GitHub; personal CI ownership and existing exceptions remain.
+This scoped change does not claim a broader standards migration.
+
+The owner requested aligned Overview controls, a basic date filter, removal of
+introductory text and chart controls beside their titles. The month picker changes
+income, net expenses and household budgets, preserving ownership and drill-down
+dates. Current balances, historical charts and upcoming bills retain their time
+periods. The user guide explains these boundaries. No database, API, authentication,
+dependency or deployment change is required; this task does not publish a release.
+
+### Custom date controls and finite budget plans — 3 November 2026
+
+Retrieved current SOP `main` once through the installed authenticated read-only
+helper at `2026-11-02T19:28:17.619Z`; fixed source revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`. Relevant UI, testing,
+user-documentation and environment standards were unchanged from the preceding
+Overview review; frontend architecture guidance was also reviewed. The adopted
+baseline and documented personal CI/deployment exceptions remain unchanged.
+This task implements local calendar/month controls, finite budget durations and
+monthly overrides; it does not migrate unrelated policy or authorise a release.
+The additive migration preserves all existing budget amounts and their ongoing
+duration. Test migrations/data use only isolated finance_test/finance_e2e databases.
+
+The same task subsequently expanded, at the owner's request, to budget-versus-actual
+reporting and enough local test data for manual review. The fixed SOP revision above
+was retained. Reporting reuses shared exact-cent calculations and the existing UI
+stack; a separate guarded finance_demo database and development-only banner keep
+fictional finances separate from household records. No production configuration,
+release identity or deployment permission changed.
+
+The reporting follow-up moves Budget vs actual into its own sidebar page (More on
+mobile) and replaces full-row bars with a compact 0–150% usage column, a 100% marker
+and explicit percentages. Existing report links retain their selected month through
+the route redirect. No financial calculation or policy revision changed in this
+presentation/navigation follow-up.
+
+On 3 November 2026 the owner explicitly authorised committing and releasing v0.0.13
+after adding subtle report-column separators. The task keeps the fixed SOP revision
+above and the repository-local CI exception. Publication follows passing main-branch
+validation, an annotated immutable tag, image smoke/scan checks and the existing
+authorised Dokploy rollout verification. No deployment inputs or logging policy
+changed; R17–R19 verification reuses the repository's isolated config/logging tests
+and production-image smoke checks on this release candidate.

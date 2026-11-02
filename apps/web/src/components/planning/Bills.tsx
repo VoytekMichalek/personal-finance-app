@@ -144,7 +144,7 @@ export function Bills({
                           key={o.schedule.id + o.date}
                           className="flex flex-wrap items-center justify-between gap-4 py-4"
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
                             <div className="flex size-11 flex-col items-center justify-center rounded-xl bg-muted">
                               <span className="text-[9px] text-muted-foreground">
                                 {new Intl.DateTimeFormat("en-AU", {
@@ -182,7 +182,7 @@ export function Bills({
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex max-w-full flex-wrap items-center gap-3">
                             <span className="text-sm font-semibold tabular-nums">
                               {money(o.schedule.amountCents)}
                             </span>

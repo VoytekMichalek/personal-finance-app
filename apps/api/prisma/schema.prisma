@@ -128,6 +128,7 @@ model Category {
   schedules Schedule[]
   rules Rule[]
   budgets Budget[]
+  budgetOverrides BudgetOverride[]
 }
 model Transaction {
   id String @id @default(uuid())
@@ -180,6 +181,15 @@ model Budget {
   id String @id @default(uuid())
   categoryId String
   category Category @relation(fields:[categoryId],references:[id])
+  month String
+  amountCents BigInt
+  endMonth String?
+  @@unique([categoryId,month])
+}
+model BudgetOverride {
+  id String @id @default(uuid())
+  categoryId String
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict)
   month String
   amountCents BigInt
   @@unique([categoryId,month])

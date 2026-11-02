@@ -1,4 +1,5 @@
 import { AccountDateIssue } from "../accounts/AccountDateIssue";
+import { FormDatePicker } from "../ui/form-date-picker";
 import { ActionError } from "../common/ActionError";
 import { TransferValueNote } from "../assets/TransferValueNote";
 import { accountLabel, isCashAccount } from "@finance/shared";
@@ -140,7 +141,7 @@ export function TransactionForm({
           </FormSelect>
         </Field>
         <Field label="Date" error={form.formState.errors.date?.message}>
-          <Input type="date" max={data.today} {...form.register("date")} />
+          <FormDatePicker control={form.control} name="date" max={data.today} />
         </Field>
       </div>
       <Field label="Category" error={form.formState.errors.categoryId?.message}>
@@ -249,7 +250,7 @@ export function TransferForm({
         <Input inputMode="decimal" {...form.register("amountCents")} />
       </Field>
       <Field label="Date" error={form.formState.errors.date?.message}>
-        <Input type="date" max={data.today} {...form.register("date")} />
+        <FormDatePicker control={form.control} name="date" max={data.today} />
       </Field>
       <Field
         label="Description"

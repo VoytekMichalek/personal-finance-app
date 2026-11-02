@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.0.13",
+    "date": "2026-11-03",
+    "highlights": [
+      "Budget vs actual has its own sidebar report, with six-month trends, category comparisons, unbudgeted spending and transaction drill-downs.",
+      "Compact green/red budget bars use a fixed 150% scale, a 100% marker, percentage labels and subtle column separators.",
+      "Set one-month budgets or repeat them for a chosen number of months, then override individual months and restore the original plan.",
+      "Recurring bills consume their category's budget allowance in forecasts and reports, keeping actual spending and upcoming commitments clear without counting the allowance twice.",
+      "Custom date and month pickers, an Overview month filter and aligned chart controls make planning easier on desktop and mobile."
+    ]
+  },
+  {
     "version": "0.0.12",
     "date": "2026-11-02",
     "highlights": [
