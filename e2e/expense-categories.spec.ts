@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import {
   test,
   expect,
@@ -8,9 +9,7 @@ import {
   choosePeriod,
 } from "./fixtures";
 
-test("categories are editable in Expenses, filtered remembering, drill-downs, transaction lists and transaction details", async ({
-  page,
-}, info) => {
+async function seedExpenses(page: Page) {
   const owner = await session(page);
   const db = await database();
   const bank = await db.account.create({
@@ -52,6 +51,13 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, tr
         },
       }),
     );
+  return { db, grocery, dining, rows };
+}
+
+test("expense categories and filtered rules remain editable through report drill-downs", async ({
+  page,
+}, info) => {
+  const { db, grocery, dining, rows } = await seedExpenses(page);
   await page.goto("/expenses");
   await choosePeriod(page, "All history");
   await tickFilter(page, "Account", ["Bank"]);
@@ -106,11 +112,15 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, tr
     .getByRole("button", { name: "View Dining transactions", exact: true })
     .click();
   const detail = page.getByRole("dialog", { name: "Dining", exact: true });
+  const detailCategory = detail
+    .getByRole("combobox", { name: "Category for Local shop", exact: true })
+    .first();
+  // Wait for the dialog control before the generic picker helper considers
+  // the page's mobile filter toggle beneath this opening modal.
+  await expect(detailCategory).toBeVisible();
   await choose(
     page,
-    detail
-      .getByRole("combobox", { name: "Category for Local shop", exact: true })
-      .first(),
+    detailCategory,
     "+ Create category",
   );
   const create = page.getByRole("dialog", {
@@ -142,6 +152,13 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, tr
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await db.$disconnect();
+});
+
+test("transaction category edits persist in details and dashboard links retain their month", async ({
+  page,
+}) => {
+  const { db } = await seedExpenses(page);
   await page.goto("/transactions?search=Local+shop");
   const category = page
     .getByRole("combobox", { name: "Category for Local shop", exact: true })
@@ -156,12 +173,14 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, tr
     name: "Local shop",
     exact: true,
   });
+  const transactionCategory = transaction.getByRole("combobox", {
+    name: "Category for Local shop",
+    exact: true,
+  });
+  await expect(transactionCategory).toBeVisible();
   await choose(
     page,
-    transaction.getByRole("combobox", {
-      name: "Category for Local shop",
-      exact: true,
-    }),
+    transactionCategory,
     "Groceries",
   );
   await expect(transaction.getByRole("combobox")).toContainText("Groceries");
@@ -170,15 +189,17 @@ test("categories are editable in Expenses, filtered remembering, drill-downs, tr
     "Groceries",
   );
   for (const [label, hint, kind] of [
-    ["Money in", "Income this month", "income"],
+    ["Money in", "Income in Oct 2026", "income"],
     ["Money out", "Expenses, less refunds", "expense"],
   ]) {
-    await page.goto("/");
+    await page.goto("/?month=2026-10");
     const summary = page.getByRole("button", { name: new RegExp(label!) });
     await expect(summary).toContainText(hint!);
     await summary.click();
     await expect(page).toHaveURL(
-      new RegExp(`/transactions\\?kind=${kind}&from=`),
+      new RegExp(
+        `/transactions\\?kind=${kind}&from=2026-10-01&to=2026-10-31`,
+      ),
     );
   }
   await db.$disconnect();

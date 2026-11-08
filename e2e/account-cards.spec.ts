@@ -118,7 +118,7 @@ test("branded account cards distinguish owners, filter consistently and open edi
     await expect(nicolaOption).toBeVisible();
     expect(
       await nicolaOption
-        .getByText("Nicola", { exact: true })
+        .locator('span[aria-hidden="true"]')
         .evaluate((element) => getComputedStyle(element).backgroundColor),
     ).toBe(nicolaColour);
     await nicolaOption.click();

@@ -1270,3 +1270,59 @@ auth settings, proving the test does not depend on developer credentials. API
 typecheck, focused ESLint, guardrails and whitespace checks passed. This is test
 isolation only, with no product or user-guide change; full CI must pass again on
 the corrected final commit before tagging.
+
+Main CI [42457940966](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/42457940966)
+on `0edb8653b26d82a3b81cd1f7889b6f263c953643` passed all 203 unit tests,
+152 API integration tests, audit/build and all 280 timing repetitions (33.8 minutes).
+Its 230-case desktop/mobile suite reached case 220 before the job's 60-minute
+limit cancelled execution. Four assertions failed beforehand, in the desktop/mobile
+account-card and expense-category journeys; no image result is claimed for that run.
+
+Focused reproduction confirmed stale visual expectations: the owner colour moved
+from the name to the initials badge, and the income card now states its selected
+month. The tests now compare the actual initials colour consistently across card
+and selector, and verify an explicit October label plus exact October drill-down
+bounds. All existing ownership, financial, persistence, responsive-layout and
+recovery assertions remain. Application timing is unchanged. The
+workflow job budget becomes 90 minutes based on the observed 34-minute repetition
+stage plus roughly 26 minutes of complete journeys, leaving room for image builds,
+smoke checks and scanning. Per-test timeouts, retries (zero), one worker, desktop/
+mobile projects and every validation gate are unchanged. One worker still owns
+the shared mutable E2E database/reset fixtures. Release highlights are dated
+9 November, when this release preparation continued; no release tag exists yet.
+
+The first local assertion correction passed both desktop cases and mobile cards,
+then the combined mobile expense journey exhausted its unchanged 30-second test
+budget while still making progress through normal interactions. It bundled report
+editing, saved-rule application, category creation, ledger/detail persistence and
+dashboard navigation. It is now two independently seeded journeys: (1) report
+editing/rule boundaries/category creation/layout, and (2) ledger/detail persistence
+and dashboard month links. Every original assertion remains in its corresponding
+journey; the October date assertion is stronger. This retains real database and
+browser boundaries, desktop/mobile coverage, zero retries and the 30-second
+per-test limit. The full suite now has 232 cases. No product behaviour changes.
+
+A repetition subsequently caught a genuine test readiness race: the generic picker
+helper considered the still-visible underlying mobile Filters toggle before the
+report dialog mounted. The report and transaction journeys now explicitly await
+their dialog's category combobox before invoking the picker. The trace identifies
+`revealFilter` waiting to click the underlying Filters button, not a failed
+application save. The obsolete repetition run was stopped, and a new ten-run
+streak starts with this observable readiness correction. No arbitrary sleep,
+forced click, retry or timeout increase was introduced.
+
+The corrected expense journeys passed **40/40** checks: each journey repeated
+ten consecutive times on desktop Chromium and mobile WebKit with retries disabled
+(5.6 minutes). Log: `/tmp/finance-release-browser-repeat-fixed.log`. Both journeys
+retain the 30-second limit and all prior assertions. The original owner-colour and
+month-label failures were reproduced before correction; the isolated fixture split
+retains those regression checks. The complete affected account-card/expense-category
+suite is rerun after the streak against the same build and finance_e2e fixture.
+
+The post-streak combined suite passed **6/6** desktop/mobile checks in 54.7 seconds
+with retries disabled (`/tmp/finance-release-browser-final.log`). Guardrails,
+focused ESLint, web typecheck, workflow YAML parsing and whitespace checks also
+passed. No assertion, browser project or test gate was removed. This follow-up
+changes release metadata/test execution only, so the maintained feature guide
+needs no further change. The corrected final commit still requires complete
+GitHub validation and production-image checks before tagging.
