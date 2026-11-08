@@ -1260,3 +1260,13 @@ configuration, metadata, log silence, diagnostics and redacted genuine failures.
 It now also asserts the production access status disables demo login and the
 demo endpoint returns 404. Exact-candidate image smoke/scan evidence and complete
 application validation are required in GitHub before tagging/publication.
+
+Main CI [42457732262](https://github.com/VoytekMichalek/personal-finance-app/actions/runs/42457732262)
+passed guardrails/lint/types and 184 unit cases, then exposed the demo-policy unit
+file importing real server configuration without CI auth inputs. The test now
+provides synthetic configuration at its module boundary; real policy logic and
+all 19 denial assertions remain. All 19 passed with deliberately invalid ambient
+auth settings, proving the test does not depend on developer credentials. API
+typecheck, focused ESLint, guardrails and whitespace checks passed. This is test
+isolation only, with no product or user-guide change; full CI must pass again on
+the corrected final commit before tagging.

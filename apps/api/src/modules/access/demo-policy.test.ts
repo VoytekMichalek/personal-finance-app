@@ -1,5 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Request } from "express";
+// Policy units use explicit synthetic settings and must not load developer or
+// deployment credentials. Real configuration/session boundaries live in API tests.
+vi.mock("../../lib/config.js", () => ({
+  config: {
+    DATABASE_URL: "postgresql://demo:demo@127.0.0.1:55432/finance_demo",
+    BETTER_AUTH_URL: "http://localhost:5174",
+    BETTER_AUTH_SECRET: "synthetic-unit-only-secret-not-used-for-auth",
+  },
+}));
 import { config } from "../../lib/config.js";
 import { demoLoginEnabled, localDemoRequest } from "./demo-policy.js";
 
