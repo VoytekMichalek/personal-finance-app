@@ -1,3 +1,4 @@
+import { CategoryIcon } from "../common/VisualIcon";
 import { InlineSaveStatus } from "../common/InlineSaveStatus";
 import { useState } from "react";
 import { Dialog } from "../ui/dialog";
@@ -42,6 +43,14 @@ export function TransactionCategory({
       <Select
         aria-label={`Category for ${row.description}`}
         chip={{
+          icon: selected ? (
+            <CategoryIcon
+              category={selected}
+              categories={categories}
+              small
+              bare
+            />
+          ) : undefined,
           colour: selected
             ? categoryColour(selected, categories)
             : identityColour("category:none"),

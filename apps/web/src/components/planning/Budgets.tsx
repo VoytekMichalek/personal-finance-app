@@ -1,3 +1,4 @@
+import { SummaryCard } from "../common/SummaryCard";
 import { BudgetForm } from "./BudgetForm";
 import { MonthPicker } from "../ui/month-picker";
 import { BudgetRow } from "./BudgetRow";
@@ -7,7 +8,6 @@ import {
   monthSchema,
   effectiveBudgets,
   categorySpend,
-  money,
   type Snapshot,
 } from "@finance/shared";
 import { Plus } from "lucide-react";
@@ -55,18 +55,29 @@ export function Budgets({ data }: { data: Snapshot }) {
         </Button>
       </div>
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          ["Monthly plan", limit],
-          ["Spent so far", spent],
-          ["Still available", limit - spent],
-        ].map(([label, value]) => (
-          <Card key={label}>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="mt-3 text-2xl font-semibold tabular-nums">
-              {money(Number(value))}
-            </p>
-          </Card>
-        ))}
+        <SummaryCard
+          label="Monthly plan"
+          amount={limit}
+          icon="piggy-bank"
+          color="#8c7bab"
+          detail="Your category allowances"
+        />
+        <SummaryCard
+          label="Spent so far"
+          amount={spent}
+          icon="shopping-bag"
+          color="#b28a61"
+          detail="Expenses less refunds in budgeted categories"
+        />
+        <SummaryCard
+          label="Still available"
+          amount={limit - spent}
+          icon="wallet"
+          color={limit < spent ? "#ad6c70" : "#62947c"}
+          detail={
+            limit < spent ? "Over budget" : "Remaining in this month's plan"
+          }
+        />
       </div>
       <div className="mb-4 flex justify-end">
         <Button asChild variant="ghost" size="sm">
@@ -92,6 +103,7 @@ export function Budgets({ data }: { data: Snapshot }) {
               return (
                 category && (
                   <BudgetRow
+                    categories={data.categories}
                     key={month + category.id}
                     category={category}
                     month={month}

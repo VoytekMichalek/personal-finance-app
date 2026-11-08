@@ -1,3 +1,4 @@
+import { AssetIdentity } from "../components/assets/AssetIdentity";
 import { ActionError } from "../components/common/ActionError";
 import { useState } from "react";
 import {
@@ -103,7 +104,10 @@ export function AssetDetail() {
         }
       />
       <div className="mb-5 grid gap-4 sm:grid-cols-3">
-        <Card>
+        <Card className="bg-gradient-to-br from-slate-100 to-white">
+          <div className="mb-4">
+            <AssetIdentity asset={asset} />
+          </div>
           <p className="text-xs text-muted-foreground">
             {asset.kind === "asset" ? "Current value" : "Amount owed"}
           </p>
@@ -152,7 +156,7 @@ export function AssetDetail() {
       <div
         role="tablist"
         aria-label="Asset details"
-        className="mb-4 flex gap-2"
+        className="mb-4 flex w-fit gap-1 rounded-xl bg-muted p-1"
       >
         {(["activity", "valuations"] as const).map((value) => (
           <Button

@@ -1,6 +1,9 @@
+import { AccountBanner } from "../components/accounts/AccountIdentity";
+import { ImportProgress } from "../components/imports/ImportProgress";
 import { ActionError } from "../components/common/ActionError";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { isCashAccount } from "@finance/shared";
+import { isCashAccount, latestTransactionDates } from "@finance/shared";
+import { LastTransaction } from "../components/accounts/LastTransaction";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Card,
@@ -18,7 +21,7 @@ import { useCsvImport } from "../hooks/csv-import";
 export function Imports() {
   const query = useSnapshot();
   const [search] = useSearchParams();
-  const flow = useCsvImport(search.get("account") ?? "");
+  const flow = useCsvImport(search.get("account") ?? "", query.data);
   if (query.isPending) return <Loading />;
   if (query.error && !query.data)
     return (
@@ -44,45 +47,26 @@ export function Imports() {
         title="Import bank CSV"
         description="Upload your export, match the columns and approve the transactions."
       />
-      <ol
-        aria-label="CSV import progress"
-        className="mb-7 flex flex-wrap gap-4 text-xs sm:gap-6"
-      >
-        {[
-          ["1", "Upload CSV", !flow.columns && flow.completed === undefined],
-          [
-            "2",
-            "Map columns",
-            Boolean(
-              flow.columns && !flow.preview && flow.completed === undefined,
-            ),
-          ],
-          [
-            "3",
-            "Review & approve",
-            Boolean(flow.preview && flow.completed === undefined),
-          ],
-        ].map(([n, label, active]) => (
-          <li
-            key={String(n)}
-            aria-current={active ? "step" : undefined}
-            className={
-              "flex items-center gap-2 " +
-              (active ? "font-semibold text-primary" : "text-muted-foreground")
-            }
-          >
-            <span
-              className={
-                "flex size-6 items-center justify-center rounded-full border " +
-                (active ? "border-primary bg-blue-50" : "")
-              }
-            >
-              {String(n)}
-            </span>
-            {String(label)}
-          </li>
-        ))}
-      </ol>
+      {account && (
+        <AccountBanner account={account} institutions={data.institutions}>
+          <LastTransaction
+            date={latestTransactionDates(data.transactions).get(account.id)}
+          />
+        </AccountBanner>
+      )}
+      <ImportProgress
+        label="CSV import progress"
+        steps={["Upload CSV", "Map columns", "Review & approve"]}
+        current={
+          flow.completed !== undefined
+            ? 4
+            : flow.preview
+              ? 3
+              : flow.columns
+                ? 2
+                : 1
+        }
+      />
       <ActionError error={flow.conflictError} />
       {flow.busy && (
         <p role="status" className="mb-4 text-sm text-muted-foreground">

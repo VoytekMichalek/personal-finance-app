@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import {
   accountBalance,
+  latestTransactionDates,
   isCashAccount,
   money,
   type Account,
@@ -51,6 +52,7 @@ export function Accounts() {
       />
     );
   const data = query.data;
+  const lastDates = latestTransactionDates(data.transactions);
   const accounts = data.accounts
     .filter(isCashAccount)
     .filter(
@@ -113,8 +115,14 @@ export function Accounts() {
               <AccountCard
                 account={account}
                 people={data.people}
+                institutions={data.institutions}
+                lastTransactionDate={lastDates.get(account.id)}
                 balance={accountBalance(account, data.transactions, data.today)}
                 onOpen={() => navigate("/accounts/" + account.id)}
+                onAppearance={() => {
+                  setEditing(account);
+                  setOpen(true);
+                }}
               />
             </li>
           ))}
@@ -135,6 +143,7 @@ export function Accounts() {
           key={editing?.id ?? "new"}
           account={editing}
           people={data.people}
+          appearanceInitiallyOpen={!!editing}
           done={() => setOpen(false)}
         />
       </Dialog>

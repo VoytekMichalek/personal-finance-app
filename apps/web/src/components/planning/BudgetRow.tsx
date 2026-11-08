@@ -1,3 +1,5 @@
+import { CategoryIcon } from "../common/VisualIcon";
+import { categoryColour } from "@finance/shared";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -15,11 +17,13 @@ import { Button } from "../ui/button";
 import { monthLabel } from "../ui/month-picker";
 export function BudgetRow({
   category,
+  categories = [],
   month,
   budget,
   spent,
 }: {
   category: Category;
+  categories?: Category[];
   month: string;
   budget: EffectiveBudget;
   spent: number;
@@ -57,7 +61,10 @@ export function BudgetRow({
     <div className="border-b py-3 last:border-0">
       <div className="grid items-center gap-3 sm:grid-cols-[minmax(8rem,1fr)_8rem_7rem_7rem]">
         <div>
-          <span className="text-sm font-medium">{category.name}</span>
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <CategoryIcon category={category} categories={categories} small />
+            {category.name}
+          </span>
           <p className="mt-1 text-xs text-muted-foreground">
             {budget.overrideId
               ? "Overridden for this month"
@@ -131,12 +138,17 @@ export function BudgetRow({
         >
           <span className="sm:hidden">Remaining </span>
           {money(amount - spent)}
+          {spent > amount && (
+            <span className="mt-1 block text-xs font-medium">Over budget</span>
+          )}
         </span>
       </div>
       <div className="mt-2 h-1 rounded-full bg-muted">
         <div
           className={`h-1 rounded-full ${spent > amount ? "bg-rose-600" : "bg-slate-400"}`}
           style={{
+            backgroundColor:
+              spent > amount ? "#be123c" : categoryColour(category, categories),
             width: `${Math.min(100, Math.max(0, amount ? (spent / amount) * 100 : spent > 0 ? 100 : 0))}%`,
           }}
         />

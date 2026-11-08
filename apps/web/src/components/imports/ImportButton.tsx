@@ -1,7 +1,13 @@
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FileSpreadsheet, FileText, Upload } from "lucide-react";
-import { isCashAccount, type Snapshot } from "@finance/shared";
+import {
+  isCashAccount,
+  latestTransactionDates,
+  type Snapshot,
+} from "@finance/shared";
+import { LastTransaction } from "../accounts/LastTransaction";
 import { Button } from "../ui/button";
 import { Dialog } from "../ui/dialog";
 import { Field, Select } from "../common/primitives";
@@ -35,11 +41,19 @@ export function ImportButton({
               <SelectItem value="">Choose account</SelectItem>
               {accounts.map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {a.name}
+                  <AccountIdentity
+                    account={a}
+                    institutions={data.institutions}
+                  />
                 </SelectItem>
               ))}
             </Select>
           </Field>
+        )}
+        {chosen && (
+          <LastTransaction
+            date={latestTransactionDates(data.transactions).get(chosen)}
+          />
         )}
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <Button disabled={!chosen} asChild={!!chosen} variant="secondary">

@@ -1,0 +1,2 @@
+ALTER TABLE "Category" ADD COLUMN "icon" TEXT;
+ALTER TABLE "Schedule" ADD COLUMN "icon" TEXT, ADD COLUMN "color" TEXT;

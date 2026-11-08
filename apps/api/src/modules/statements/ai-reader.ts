@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   date,
+  statementDate,
   cents,
   type Category,
   type ImportRow,
@@ -10,14 +11,15 @@ import { getOpenRouterKey } from "../integrations/credentials.js";
 import { approvedModels } from "../../integrations/openrouter.js";
 import { HttpError } from "../../lib/errors.js";
 import {
-  parseStatement,
   openingLabel,
   closingLabel,
-  statementDate,
   statementAmount,
   statementLedgerAmount,
   statementMoneyPattern,
-} from "./parser.js";
+} from "./amounts.js";
+import { parseStatement } from "./parser.js";
+import { parseHsbcStatement } from "./hsbc.js";
+import { parseQantasStatement } from "./qantas.js";
 const output = z.object({
   rows: z
     .array(
@@ -59,6 +61,12 @@ export async function readWithAi(
       .filter((l) => l.text),
   );
   const rows: ImportRow[] = [];
+  // Recognised layouts own the financial evidence, including split currency
+  // amounts and grouped dates. AI may suggest categories but cannot omit rows.
+  const verifiedStatement =
+    parseQantasStatement(pages, owner, accountType) ??
+    parseHsbcStatement(pages, owner, year, accountType);
+  const verifiedCategories = new Map<number, string | null>();
   const details: StatementDetails = {
     lines: lines.map((l) => ({ ...l, rowNumber: null, status: "context" })),
     opening: null,
@@ -172,6 +180,11 @@ export async function readWithAi(
           "AI returned invalid source references. Try the local reader.",
         );
       let validDate = false;
+      const verifiedNumber =
+        verifiedStatement?.details.lines[candidate.sourceLine - 1]?.rowNumber;
+      const verified = verifiedNumber
+        ? verifiedStatement?.rows[verifiedNumber - 1]
+        : undefined;
       try {
         validDate =
           validYears.has(candidate.date.slice(0, 4)) &&
@@ -184,21 +197,37 @@ export async function readWithAi(
         /* Keep uncertain source visible. */
       }
       if (
-        !validDate ||
+        (verifiedStatement
+          ? !verified ||
+            !!verified.error ||
+            verified.date !== candidate.date ||
+            verified.amountCents !== candidate.amountCents
+          : !validDate) ||
         !candidate.amountCents ||
-        !sourceValues(candidate.sourceLine).some(
-          (v) => Math.abs(v) === Math.abs(candidate.amountCents),
-        )
+        (!verifiedStatement &&
+          !sourceValues(candidate.sourceLine).some(
+            (v) => Math.abs(v) === Math.abs(candidate.amountCents),
+          ))
       ) {
         source.status = "review";
         continue;
       }
-      const kind = candidate.amountCents < 0 ? "expense" : "income";
+      const kind = verified
+        ? verified.kind === "income"
+          ? "income"
+          : "expense"
+        : candidate.amountCents < 0
+          ? "expense"
+          : "income";
       const categoryId =
         categories.find(
           (c) =>
-            c.id === candidate.categoryId && !c.archived && c.kind === kind,
+            verified?.kind !== "transfer" &&
+            c.id === candidate.categoryId &&
+            !c.archived &&
+            c.kind === kind,
         )?.id ?? null;
+      if (verified) verifiedCategories.set(verified.rowNumber, categoryId);
       const row: ImportRow = {
         rowNumber: rows.length + 1,
         date: candidate.date,
@@ -234,6 +263,14 @@ export async function readWithAi(
         else closing = item.amountCents;
       }
     }
+  }
+  if (verifiedStatement) {
+    for (const row of verifiedStatement.rows)
+      row.categoryId = verifiedCategories.get(row.rowNumber) ?? null;
+    verifiedStatement.details.warnings.push(
+      "Recognised statement transactions were read from the printed columns. Review AI category suggestions and compare every page against the PDF.",
+    );
+    return verifiedStatement;
   }
   // The deterministic reader also recognises adjacent balance labels/amounts.
   // Use only explicitly printed balances, never a model-inferred amount.

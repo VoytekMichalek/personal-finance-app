@@ -1,3 +1,4 @@
+import { SummaryCard } from "../components/common/SummaryCard";
 import { useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { forecast, money } from "@finance/shared";
@@ -91,18 +92,27 @@ export function Plan() {
             ))}
           </div>
           <div className="mb-6 grid gap-4 sm:grid-cols-3">
-            {[
-              ["Starting balance", points[0]!.balanceCents],
-              ["Projected balance", end.balanceCents],
-              ["Lowest projected balance", minimum],
-            ].map(([label, value]) => (
-              <Card key={label}>
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="mt-3 text-2xl font-semibold tabular-nums">
-                  {money(Number(value))}
-                </p>
-              </Card>
-            ))}
+            <SummaryCard
+              label="Starting balance"
+              amount={points[0]!.balanceCents}
+              icon="wallet"
+              color="#6c8caa"
+              detail="Current household balance"
+            />
+            <SummaryCard
+              label="Projected balance"
+              amount={end.balanceCents}
+              icon="trending-up"
+              color="#62947c"
+              detail={`At the end of ${days} days`}
+            />
+            <SummaryCard
+              label="Lowest projected balance"
+              amount={minimum}
+              icon="shield"
+              color="#b28a61"
+              detail="Lowest daily balance in this forecast"
+            />
           </div>
           <Card>
             <SectionTitle

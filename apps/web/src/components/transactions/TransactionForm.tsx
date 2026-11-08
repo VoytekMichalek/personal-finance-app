@@ -1,8 +1,10 @@
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { AccountDateIssue } from "../accounts/AccountDateIssue";
 import { FormDatePicker } from "../ui/form-date-picker";
 import { ActionError } from "../common/ActionError";
 import { TransferValueNote } from "../assets/TransferValueNote";
-import { accountLabel, isCashAccount } from "@finance/shared";
+import { isCashAccount, categoryRuleMatcher } from "@finance/shared";
+import { useState } from "react";
 import { SelectItem, FormSelect } from "../ui/select";
 import { CategoryChip } from "../common/EntityChip";
 import { useForm } from "react-hook-form";
@@ -71,6 +73,14 @@ export function TransactionForm({
     },
   });
   const kind = form.watch("kind");
+  const [categoryChosen, setCategoryChosen] = useState(false);
+  const rule = categoryRuleMatcher(
+    data.categories,
+    data.rules,
+  )({ description: form.watch("description"), kind });
+  const suggested =
+    !transaction && !categoryChosen ? rule?.categoryId : undefined;
+  const categoryId = suggested ?? form.watch("categoryId");
   const action = useAction(done);
   return (
     <form
@@ -80,6 +90,7 @@ export function TransactionForm({
           path: "/transactions" + (transaction ? "/" + transaction.id : ""),
           body: {
             ...body,
+            categoryId,
             ...(transaction ? { version: transaction.version } : {}),
           },
           method: transaction ? "PUT" : "POST",
@@ -103,6 +114,7 @@ export function TransactionForm({
             onValueChange={(value) => {
               form.setValue("kind", value as "income" | "expense" | "refund");
               form.setValue("categoryId", null);
+              setCategoryChosen(false);
             }}
           >
             <SelectItem value="expense">Expense</SelectItem>
@@ -135,7 +147,10 @@ export function TransactionForm({
               .filter((a) => !a.archived || a.id === transaction?.accountId)
               .map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {accountLabel(a)}
+                  <AccountIdentity
+                    account={a}
+                    institutions={data.institutions}
+                  />
                 </SelectItem>
               ))}
           </FormSelect>
@@ -146,8 +161,11 @@ export function TransactionForm({
       </div>
       <Field label="Category" error={form.formState.errors.categoryId?.message}>
         <Select
-          value={form.watch("categoryId") ?? ""}
-          onValueChange={(value) => form.setValue("categoryId", value || null)}
+          value={categoryId ?? ""}
+          onValueChange={(value) => {
+            setCategoryChosen(true);
+            form.setValue("categoryId", value || null);
+          }}
         >
           <SelectItem value="">Uncategorised</SelectItem>
           {data.categories
@@ -163,6 +181,11 @@ export function TransactionForm({
             ))}
         </Select>
       </Field>
+      {suggested && (
+        <p className="text-xs text-muted-foreground">
+          Auto categorised · saved rule
+        </p>
+      )}
       <Field label="Belongs to" error={form.formState.errors.owner?.message}>
         <FormSelect control={form.control} name={"owner"}>
           <OwnerOptions people={data.people} />
@@ -237,7 +260,10 @@ export function TransferForm({
               .filter((a) => !a.archived)
               .map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {accountLabel(a)}
+                  <AccountIdentity
+                    account={a}
+                    institutions={data.institutions}
+                  />
                 </SelectItem>
               ))}
           </FormSelect>

@@ -3,9 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   mappingSchema,
   updateImportRows,
+  refreshImportRules,
   type ImportPreview,
   type ImportRow,
   type Mapping,
+  type Snapshot,
 } from "@finance/shared";
 import { toast } from "sonner";
 import { api, send, ApiError } from "../lib/api";
@@ -31,7 +33,7 @@ type Suggestion = {
   categories: { rowNumber: number; categoryId: string | null }[];
 };
 
-export function useCsvImport(initialAccountId: string) {
+export function useCsvImport(initialAccountId: string, data?: Snapshot) {
   const client = useQueryClient();
   const [accountId, setAccountId] = useState(initialAccountId);
   const [csv, setCsv] = useState("");
@@ -39,7 +41,14 @@ export function useCsvImport(initialAccountId: string) {
   const [hasHeaders, setHasHeaders] = useState(true);
   const [columns, setColumns] = useState<Headers>();
   const [mapping, setMapping] = useState<Mapping>(emptyMapping);
-  const [preview, setPreview] = useState<ImportPreview>();
+  const [reviewPreview, setPreview] = useState<ImportPreview>();
+  const preview =
+    reviewPreview && data
+      ? {
+          ...reviewPreview,
+          rows: refreshImportRules(reviewPreview.rows, data, accountId),
+        }
+      : reviewPreview;
   const [completed, setCompleted] = useState<number>();
   const [page, setPage] = useState(0);
   const suggested = useRef(new Set<number>());
@@ -165,12 +174,18 @@ export function useCsvImport(initialAccountId: string) {
         current
           ? {
               ...current,
-              rows: updateImportRows(current.rows, rowNumber, patch),
+              rows: updateImportRows(
+                data
+                  ? refreshImportRules(current.rows, data, accountId)
+                  : current.rows,
+                rowNumber,
+                patch,
+              ),
             }
           : current,
       );
     },
-    [clearError],
+    [clearError, data, accountId],
   );
   const suggestCategories = () =>
     task("Suggesting categories…", async () => {

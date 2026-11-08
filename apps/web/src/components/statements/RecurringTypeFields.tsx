@@ -1,4 +1,4 @@
-import { accountLabel } from "@finance/shared";
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import type {
   RecurringSuggestion,
   ScheduleInput,
@@ -68,7 +68,10 @@ export function RecurringTypeFields({
                 .filter((a) => !a.archived && a.id !== accountId)
                 .map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {accountLabel(a)}
+                    <AccountIdentity
+                      account={a}
+                      institutions={data.institutions}
+                    />
                   </SelectItem>
                 ))}
             </Select>

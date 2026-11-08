@@ -7,12 +7,14 @@ import { accessLock, prisma } from "../../lib/db.js";
 import { HttpError } from "../../lib/errors.js";
 import { newGrant, tokenMatches, validGrant } from "./grants.js";
 import { requireAdmin, requireUser } from "./middleware.js";
+import { demoLoginEnabled, localDemoRequest } from "./demo-policy.js";
 export const accessRouter = Router();
-accessRouter.get("/status", async (_req, res) => {
+accessRouter.get("/status", async (req, res) => {
   const setup = await prisma.setup.findUnique({ where: { id: 1 } });
   res.json({
     bootstrapAvailable: !setup?.completedAt,
     bootstrapConfigured: Boolean(config.FIRST_USER_TOKEN),
+    demoLoginAvailable: demoLoginEnabled() && localDemoRequest(req),
   });
 });
 accessRouter.post("/bootstrap", async (req, res) => {

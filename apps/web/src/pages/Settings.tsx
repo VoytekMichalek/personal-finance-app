@@ -1,3 +1,4 @@
+import { VisualIcon } from "../components/common/VisualIcon";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { type Person } from "@finance/shared";
@@ -97,8 +98,30 @@ export function SettingsPage({ user }: { user: Person }) {
             <Link
               key={path}
               to={`/settings/${path}`}
-              className="rounded-xl border bg-white p-5 hover:bg-muted/50"
+              className="rounded-2xl border bg-white p-5 transition-shadow hover:shadow-md"
             >
+              <div className="mb-4">
+                <VisualIcon
+                  name={
+                    path === "users"
+                      ? "heart"
+                      : path === "ai"
+                        ? "bolt"
+                        : path === "releases"
+                          ? "gift"
+                          : "shield"
+                  }
+                  color={
+                    path === "users"
+                      ? "#6c9684"
+                      : path === "ai"
+                        ? "#8e7eac"
+                        : path === "releases"
+                          ? "#b48c5f"
+                          : "#6c8caa"
+                  }
+                />
+              </div>
               <h2 className="font-semibold">{title}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {description}

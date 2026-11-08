@@ -1,33 +1,27 @@
 import {
   statementDate,
   statementDatePattern as datePattern,
-  parseMoney,
   type ImportRow,
   type StatementDetails,
 } from "@finance/shared";
-export const statementMoneyPattern =
-  /(?:[-+]?\$?\(?\d[\d,]*\.\d{2}\)?(?:\s?(?:CR|DR))?)/gi;
-export const openingLabel =
-  /opening balance|previous (?:statement )?balance|last statement balance|balance (?:brought forward|b\/f|(?:at|from) (?:the )?(?:last|previous) statement)|beginning balance/i;
-export const closingLabel =
-  /closing balance|new balance|balance carried forward|balance c\/f|ending balance/i;
-export { statementDate } from "@finance/shared";
-export function statementAmount(text: string) {
-  const negative = /DR|\(|^-/.test(text.toUpperCase());
-  const value = parseMoney(text.replace(/CR|DR|[()$+\s-]/gi, ""));
-  return negative ? -value : value;
-}
-// Card statements express an unsigned balance as money owed, and CR as credit.
-export function statementLedgerAmount(text: string, accountType = "bank") {
-  const amount = statementAmount(text);
-  return accountType === "credit" && !/CR|DR/i.test(text) ? -amount : amount;
-}
+import {
+  openingLabel,
+  closingLabel,
+  statementLedgerAmount,
+  statementMoneyPattern,
+} from "./amounts.js";
+import { parseHsbcStatement } from "./hsbc.js";
+import { parseQantasStatement } from "./qantas.js";
 export function parseStatement(
   pages: string[],
   owner: string,
   year?: number,
   accountType = "bank",
 ) {
+  const qantas = parseQantasStatement(pages, owner, accountType);
+  if (qantas) return qantas;
+  const hsbc = parseHsbcStatement(pages, owner, year, accountType);
+  if (hsbc) return hsbc;
   const amount = (text: string) => statementLedgerAmount(text, accountType);
   const rows: ImportRow[] = [];
   const details: StatementDetails = {

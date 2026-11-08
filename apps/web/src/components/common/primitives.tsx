@@ -1,4 +1,6 @@
-import { ArrowUpRight, LoaderCircle, Plus } from "lucide-react";
+import { VisualIcon } from "./VisualIcon";
+import { type VisualIcon as IconName } from "@finance/shared";
+import { ArrowUpRight } from "lucide-react";
 import {
   cloneElement,
   isValidElement,
@@ -64,18 +66,20 @@ export function Card({
   );
 }
 export function Empty({
+  icon = "wallet",
   title,
   description,
   action,
 }: {
   title: string;
+  icon?: IconName;
   description: string;
   action?: ReactNode;
 }) {
   return (
     <div className="flex min-h-52 flex-col items-center justify-center rounded-2xl border border-dashed bg-white/50 px-6 py-12 text-center">
       <div className="mb-4 rounded-2xl bg-blue-50 p-3 text-primary">
-        <Plus size={22} />
+        <VisualIcon name={icon} bare />
       </div>
       <h3 className="font-semibold">{title}</h3>
       <p className="mt-2 mb-5 max-w-sm text-sm leading-6 text-muted-foreground">
@@ -87,9 +91,24 @@ export function Empty({
 }
 export function Loading() {
   return (
-    <div className="flex min-h-64 items-center justify-center gap-3 text-sm text-muted-foreground">
-      <LoaderCircle className="animate-spin" size={18} />
-      Loading your finances…
+    <div role="status" aria-label="Loading your finances" className="space-y-6">
+      <span className="sr-only">Loading your finances…</span>
+      <div aria-hidden="true" className="motion-safe:animate-pulse space-y-6">
+        <div className="h-9 w-48 rounded-lg bg-slate-200/70" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((n) => (
+            <div key={n} className="h-36 rounded-2xl border bg-white p-5">
+              <div className="h-3 w-24 rounded bg-slate-100" />
+              <div className="mt-6 h-7 w-32 rounded bg-slate-100" />
+            </div>
+          ))}
+        </div>
+        <div className="h-64 rounded-2xl border bg-white p-6 space-y-5">
+          {[0, 1, 2, 3].map((n) => (
+            <div key={n} className="h-6 rounded bg-slate-100/70" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -178,7 +197,7 @@ export function Pill({
           : undefined
       }
       className={cn(
-        "inline-flex max-w-full items-center justify-center rounded-full border border-transparent px-2.5 py-1 text-center text-[11px] font-medium",
+        "inline-flex max-w-full items-center justify-center rounded-full border border-transparent px-2.5 py-1 text-center text-xs font-medium",
         tone === "positive"
           ? "bg-emerald-50 text-emerald-700"
           : tone === "warning"

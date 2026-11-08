@@ -1,3 +1,4 @@
+import { AssetIdentity } from "../components/assets/AssetIdentity";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, ArrowUpRight } from "lucide-react";
@@ -49,7 +50,12 @@ export function Assets() {
               (kind === "liability" ? -1 : 1);
             return (
               <Card key={kind} className="overflow-hidden p-0!">
-                <div className="flex items-center justify-between gap-3 border-b bg-muted/50 px-4 py-4">
+                <div
+                  className="flex items-center justify-between gap-3 border-b px-5 py-5"
+                  style={{
+                    background: kind === "asset" ? "#f0f6f3" : "#faf3ef",
+                  }}
+                >
                   <h2 className="font-semibold">
                     {kind === "asset" ? "Assets" : "Liabilities"}
                   </h2>
@@ -71,13 +77,12 @@ export function Assets() {
                           className="flex items-start justify-between gap-3 rounded-lg py-3 hover:bg-muted/50"
                         >
                           <div className="min-w-0">
-                            <p className="break-words text-sm font-medium">
-                              {asset.name}
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {asset.classification}
-                              {asset.archived ? " · Archived" : ""}
-                            </p>
+                            <AssetIdentity asset={asset} />
+                            {asset.archived && (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Archived
+                              </p>
+                            )}
                             <div className="mt-2">
                               <PersonChip
                                 owner={asset.owner}
@@ -112,6 +117,7 @@ export function Assets() {
         </div>
       ) : (
         <Empty
+          icon="landmark"
           title="Add your first asset or debt"
           description="Track its value and transfers over time."
           action={<Button onClick={() => setOpen(true)}>Add an asset</Button>}

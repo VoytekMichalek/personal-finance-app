@@ -1,3 +1,5 @@
+import { ScheduleIdentity } from "./ScheduleIdentity";
+import { SummaryCard } from "../common/SummaryCard";
 import { useSearchParams } from "react-router-dom";
 import { OwnerFilter } from "../common/form";
 import { ActionError } from "../common/ActionError";
@@ -77,21 +79,22 @@ export function Bills({
         </Button>
       </div>
       {subscriptions && (
-        <Card className="mb-6">
-          <p className="text-xs text-muted-foreground">Active subscriptions</p>
-          <p className="mt-3 text-3xl font-semibold tabular-nums">
-            {money(Math.round(cost / 12))}
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              / month
-            </span>
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {money(cost)} per year · normalised estimate
-          </p>
-        </Card>
+        <div className="mb-6">
+          <SummaryCard
+            label="Active subscriptions · monthly estimate"
+            amount={Math.round(cost / 12)}
+            icon="repeat"
+            color="#8c7bab"
+            detail={`${money(cost)} per year · normalised estimate`}
+          />
+        </div>
       )}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label="Payment view" className="flex gap-2">
+        <div
+          role="tablist"
+          aria-label="Payment view"
+          className="flex gap-1 rounded-xl bg-muted p-1"
+        >
           {[
             ["upcoming", "Upcoming"],
             ["recurring", "Recurring items"],
@@ -100,7 +103,10 @@ export function Bills({
               key={value}
               role="tab"
               aria-selected={view === value}
-              variant={view === value ? "default" : "secondary"}
+              variant="ghost"
+              className={
+                view === value ? "bg-white shadow-sm" : "text-muted-foreground"
+              }
               onClick={() => setFilter("view", value!)}
             >
               {label}
@@ -146,7 +152,7 @@ export function Bills({
                         >
                           <div className="flex min-w-0 items-center gap-3">
                             <div className="flex size-11 flex-col items-center justify-center rounded-xl bg-muted">
-                              <span className="text-[9px] text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 {new Intl.DateTimeFormat("en-AU", {
                                   month: "short",
                                   timeZone: "UTC",
@@ -157,11 +163,16 @@ export function Bills({
                               </span>
                             </div>
                             <div>
-                              <p className="text-sm font-medium">
-                                {o.schedule.name}
+                              <ScheduleIdentity
+                                schedule={o.schedule}
+                                categories={data.categories}
+                              />
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {o.schedule.subscription ? "Renews" : "Due"}{" "}
+                                {displayDate(o.date)}
                               </p>
                               <div className="mt-1 flex items-center gap-2">
-                                <span className="text-[10px] text-muted-foreground">
+                                <span className="text-xs text-muted-foreground">
                                   {o.schedule.kind === "transfer"
                                     ? "Transfer"
                                     : o.schedule.kind === "income"
@@ -227,6 +238,7 @@ export function Bills({
             </div>
           ) : (
             <Empty
+              icon="repeat"
               title="A little less to remember"
               description="Add a regular payday, bill or subscription. Upcoming payments will appear here."
               action={
@@ -250,9 +262,8 @@ export function Bills({
                 className="flex items-center justify-between gap-4 py-4"
               >
                 <div>
-                  <p className="text-sm font-medium">
-                    {s.name} {s.cancelled && <Pill>Cancelled</Pill>}
-                  </p>
+                  <ScheduleIdentity schedule={s} categories={data.categories} />
+                  {s.cancelled && <Pill>Cancelled</Pill>}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {s.provider || displayDate(s.startDate)} · {s.frequency}
                   </p>

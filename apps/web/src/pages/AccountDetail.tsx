@@ -1,7 +1,9 @@
+import { AccountBanner } from "../components/accounts/AccountIdentity";
 import { ImportButton } from "../components/imports/ImportButton";
 import { FileLink } from "../components/common/FileLink";
 import { TransactionBrowser } from "../components/transactions/TransactionBrowser";
 import { AccountInsights } from "../components/accounts/AccountInsights";
+import { LastTransaction } from "../components/accounts/LastTransaction";
 import { useState } from "react";
 import {
   Link,
@@ -14,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import {
   accountBalance,
+  latestTransactionDates,
   addDays,
   forecast,
   scheduleImpact,
@@ -141,18 +144,23 @@ export function AccountDetail() {
           </p>
         </Card>
       )}
-      <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-4!">
-        <div>
-          <p className="text-xs text-muted-foreground">Current balance</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {money(balance)}
+      <AccountBanner account={account} institutions={data.institutions}>
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Current balance</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">
+              {money(balance)}
+            </p>
+            <LastTransaction
+              date={latestTransactionDates(transactions).get(account.id)}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Opening balance {money(account.openingBalanceCents)} on{" "}
+            {displayDate(account.openingDate)}
           </p>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Opening balance {money(account.openingBalanceCents)} on{" "}
-          {displayDate(account.openingDate)}
-        </p>
-      </Card>
+      </AccountBanner>
       <div
         className="mb-6 flex flex-wrap gap-2 rounded-xl bg-muted p-1"
         role="tablist"

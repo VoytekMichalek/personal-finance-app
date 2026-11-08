@@ -788,3 +788,152 @@ validation, an annotated immutable tag, image smoke/scan checks and the existing
 authorised Dokploy rollout verification. No deployment inputs or logging policy
 changed; R17–R19 verification reuses the repository's isolated config/logging tests
 and production-image smoke checks on this release candidate.
+
+## HSBC grouped transaction reader — 8 November 2026
+
+Current policy main was retrieved once with the installed read-only helper at
+`2026-11-08T04:48:10.674Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, and held fixed for this change.
+Policy loading, testing, project tracks, user documentation and application logging
+were reviewed against the adopted baseline. Current testing guidance permits
+focused local verification and reserves full application CI for GitHub Actions.
+The repository-local CI ownership exception remains; this change does not migrate
+unrelated standards, workflows, configuration or deployment behaviour.
+
+Scope: HSBC AUD grouped posting dates, debit/credit columns, cross-page continuation,
+balance/count reconciliation, source-protected optional AI categories, saved-review
+re-reading and inherited-date repair. Tests use fictional statements; the supplied
+household PDF was checked locally read-only and is not committed. No household
+records, schema, dependencies, release version or deployment are changed.
+
+
+## Account import history and saved-rule recovery — 8 November 2026
+
+This follow-up uses the same fixed current-policy snapshot recorded above; the
+application UI standard was also consulted. Scope includes latest ledger dates on
+accounts/imports, refreshing rule suggestions while preserving explicit review
+choices, confirmed category-rule application to existing uncategorised records,
+and correcting the account-specific spending/drill-down filter. The user guide
+explains the new recovery workflow and account boundaries. No schema, credentials,
+dependencies, household data, version or deployment configuration change.
+
+
+## Category slicer Select all — 8 November 2026
+
+Current policy main was retrieved once through the installed read-only helper at
+`2026-11-08T05:27:05.068Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, and held fixed for this task.
+Policy loading, application UI, user documentation and testing were reviewed
+against the adopted baseline. Current testing guidance permits focused local
+checks and reserves full application CI for GitHub; repository-owned CI and
+existing exceptions remain. No broader standards migration is claimed.
+
+Scope: Select all in every category multiselect (Transactions, account ledgers
+and Expenses), retaining the open menu for individual unticking. Expense
+select-all ticks match exact categories so an unchecked child is excluded even
+when its parent remains selected. This selection mode survives reloads and is
+validated by the shared schema used for server-side remembered-rule boundaries;
+clearing returns to the existing parent/subcategory behaviour. The user guide
+is updated. No schema migration, dependency, release or deployment change.
+
+
+## Institution branding and soft account cards — 8 November 2026
+
+Retrieved current SOP main once with the installed read-only helper at
+`2026-11-08T05:35:11.786Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, fixed for this task. Policy loading,
+application UI, testing, logging and user-documentation guidance were reviewed
+against the adopted baseline. Current testing guidance permits focused local checks
+and reserves full application CI for GitHub. Personal workflow ownership and existing
+exceptions remain; no broader policy migration is claimed.
+
+The owner approved the Soft tint design and explicitly requested implementation.
+This supersedes the earlier white-card/no-institution-colour preference for account
+cards. Scope includes local institution logos, soft tints, clear credit amount-owed
+labels, a quieter owner footer, appearance previews, bounded raster logo uploads,
+per-account overrides and reusable custom institutions. Existing ledger dates and
+ownership filtering remain. The additive migration adds branding fields
+and an Institution table without rewriting balances or historical records. Custom
+logos are small authenticated snapshot data; built-in logos ship locally. No external
+logo lookup, provider configuration or dependency is added. The guide is updated.
+The task does not authorise a version bump, release or deployment.
+
+## Local demo admin sign-in — 8 November 2026
+
+During the same account-card preview task, the owner requested: “Make me an admin
+bypass I can use.” This explicitly authorises a passkey-free entry only for the
+local fictional demo household. It is a scoped exception to the passkey-only
+authentication standard, not a production or ordinary-household recovery path.
+The fixed SOP retrieval above (`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`,
+`2026-11-08T05:35:11.786Z`) is reused for this follow-up. Authentication guidance
+is unchanged from the adopted baseline; environment, logging and focused testing
+requirements remain applicable.
+
+`pnpm dev:demo` opts into explicit development mode, a process-only demo flag and
+a fresh secret. The shortcut requires a loopback origin/database/socket, an exact
+Host match and database name `finance_demo`; it is unavailable in production,
+ordinary local mode, remote deployments or other databases. The demo API binds to
+loopback. A dedicated Demo Admin receives a one-hour Better Auth session using
+separate cookies. Normal session/role checks, logout and disabled-user protections
+remain; no second session implementation or credential is embedded in the client.
+The button is excluded from production frontend output. No production environment
+input, database migration, release or deployment is introduced. README and user
+guide explain entry, expiry, retry and the local-only boundary.
+
+
+## Qantas Pay AUD statement reader — 8 November 2026
+
+Current policy main was retrieved once using the installed read-only helper and
+existing SSH credentials at `2026-11-08T06:29:07.845Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, held fixed for this task. HTTPS
+retrieval was unavailable; the SSH retrieval succeeded. Policy loading, testing,
+user documentation and application logging were reviewed against the adopted
+baseline. Current testing guidance permits focused local verification and keeps
+full application CI in GitHub. The existing personal workflow exception remains;
+no unrelated policy migration or full adoption is claimed.
+
+Scope: the Qantas Pay prepaid AUD wallet layout, wrapped merchant names, card
+numbers before full dates, cross-page wallet amounts, currency-specific balances,
+credit-voucher refunds, reviewed reload transfers and visible incomplete entries.
+Recognised source values remain authoritative with optional AI reading. The
+user guide explains the supported layout and recovery through source review,
+corrected exports and Read again. Tests use fictional data; the supplied PDF was
+inspected locally read-only and is not committed or sent to an AI provider. No
+household transactions, dependency pins, configuration, release version or
+deployment were changed by this task. Concurrent existing work is preserved.
+
+## Visual consistency and dashboard periods — 8 November 2026
+
+The owner approved the proposed site-wide visual changes and requested dashboard
+**This year** / **This month** shortcuts. This continuation keeps the policy
+snapshot retrieved at `2026-11-08T05:35:11.786Z`,
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, fixed. Relevant UI, testing and
+user-documentation guidance remains as recorded for account branding; focused
+local checks follow the newer testing guidance. No unrelated SOP, release or
+authentication migration is included. Nullable category/schedule appearance
+fields are additive, and ordinary older-client updates preserve omitted fields.
+The dashboard year shortcut means calendar year to date, using Brisbane's
+application date. It shows net income instead of extrapolating monthly budgets.
+Historical charts and current balances retain explicit independent periods.
+
+
+## v0.0.14 release — 8 November 2026
+
+The owner explicitly requested production release of the current improvements.
+Current SOP main was retrieved once using the installed helper and existing SSH
+credentials at `2026-11-08T07:07:42.773Z`, revision
+`b26c3b14c98aa17a2b929d1f211e8d11cbb0440b`, fixed for this release. Policy loading,
+testing, environment/deployment and logging guidance were read alongside the
+local release/readiness procedures. Current guidance keeps full application CI
+in GitHub and requires passing final-commit validation before tagging. The local
+workflow ownership, metadata names and automatic Dokploy deployment exceptions
+remain; no broader standards migration is claimed. AI review remains unconfigured.
+
+Root and all workspace manifests advance only the PATCH number to 0.0.14. In-app
+highlights cover institution branding, site-wide visual consistency, dashboard
+periods, mobile controls, statement readers and reviewed saved-rule application.
+The maintained user guide already covers these workflows. Both committed schema
+migrations are additive and preserve existing records. No production environment
+input or dependency changes; the demo shortcut remains development-only and is
+excluded from production frontend output. Release publication and rollout wait
+for the repository's existing validation, image smoke/scan and identity gates.

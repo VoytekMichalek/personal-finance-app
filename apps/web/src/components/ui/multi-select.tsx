@@ -1,10 +1,12 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronDown } from "lucide-react";
 import { Button } from "./button";
+import type { ReactNode } from "react";
 
 export function MultiSelect({
   value,
   onChange,
+  onSelectAll,
   options,
   allLabel,
   id,
@@ -14,7 +16,8 @@ export function MultiSelect({
 }: {
   value: string[];
   onChange: (value: string[]) => void;
-  options: { value: string; label: string }[];
+  onSelectAll?: (value: string[]) => void;
+  options: { value: string; label: string; content?: ReactNode }[];
   allLabel: string;
   id?: string;
   "aria-label"?: string;
@@ -38,7 +41,9 @@ export function MultiSelect({
           className="w-full justify-between gap-2 rounded-xl px-3.5 text-left font-normal"
           title={selected.map((option) => option.label).join(", ") || allLabel}
         >
-          <span className="truncate">{label}</span>
+          <span className="min-w-0 truncate">
+            {selected.length === 1 ? (selected[0]!.content ?? label) : label}
+          </span>
           <ChevronDown size={16} className="shrink-0 text-slate-400" />
         </Button>
       </Menu.Trigger>
@@ -49,6 +54,17 @@ export function MultiSelect({
           align="start"
           className="z-[80] max-h-[min(360px,var(--radix-dropdown-menu-content-available-height))] w-[var(--radix-dropdown-menu-trigger-width)] min-w-48 max-w-[var(--radix-dropdown-menu-content-available-width)] overflow-y-auto rounded-2xl border bg-white p-1.5 shadow-xl"
         >
+          {onSelectAll && (
+            <Menu.Item
+              onSelect={(event) => {
+                event.preventDefault();
+                onSelectAll(options.map((option) => option.value));
+              }}
+              className="flex min-h-11 cursor-pointer items-center rounded-xl px-3 py-2 text-sm font-medium text-primary outline-none data-[highlighted]:bg-blue-50"
+            >
+              Select all
+            </Menu.Item>
+          )}
           <Menu.CheckboxItem
             checked={!value.length}
             onCheckedChange={() => onChange([])}
@@ -78,7 +94,9 @@ export function MultiSelect({
               <Menu.ItemIndicator className="absolute left-3">
                 <Check size={15} />
               </Menu.ItemIndicator>
-              <span className="[overflow-wrap:anywhere]">{option.label}</span>
+              <span className="[overflow-wrap:anywhere]">
+                {option.content ?? option.label}
+              </span>
             </Menu.CheckboxItem>
           ))}
         </Menu.Content>

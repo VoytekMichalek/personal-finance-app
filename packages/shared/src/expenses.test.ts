@@ -1,5 +1,9 @@
 import { expect, it } from "vitest";
-import { expenseReport, expenseTrend } from "./expenses.js";
+import {
+  expenseFiltersSchema,
+  expenseReport,
+  expenseTrend,
+} from "./expenses.js";
 import type { Category, Transaction } from "./types.js";
 const categories = [
   { id: "home", parentId: null },
@@ -21,6 +25,47 @@ const row = (
     categoryId: "insurance",
     ...patch,
   }) as Transaction;
+it("honours exact category ticks after Select all without re-including an unchecked child", () => {
+  const data = {
+    categories,
+    transactions: [
+      row("parent", "expense", -1000, { categoryId: "home" }),
+      row("child", "expense", -2500),
+      row("refund", "refund", 500),
+      row("unclassified", "expense", -700, { categoryId: null }),
+      row("transfer", "transfer", -10000, { categoryId: null }),
+      row("income", "income", 20000, { categoryId: null }),
+    ],
+  };
+  const filters = {
+    ...expenseFiltersSchema.parse({
+      from: "2026-01-01",
+      to: "2026-01-31",
+      categoryMatch: "exact",
+    }),
+    categoryIds: ["home", "insurance", "uncategorised"],
+  };
+  expect(expenseReport(data, filters).totalCents).toBe(3700);
+  const excluded = expenseReport(data, {
+    ...filters,
+    categoryIds: ["home", "uncategorised"],
+  });
+  expect(excluded.rows.map((entry) => entry.id)).toEqual([
+    "parent",
+    "unclassified",
+  ]);
+  expect(excluded.totalCents).toBe(1700);
+  expect(
+    expenseReport(data, { ...filters, categoryIds: ["insurance"] }).totalCents,
+  ).toBe(2000);
+  expect(
+    expenseReport(data, {
+      ...filters,
+      categoryIds: ["home"],
+      categoryMatch: undefined,
+    }).totalCents,
+  ).toBe(3000);
+});
 it("deducts refunds, excludes transfers and income, and filters people/accounts/date/category descendants", () => {
   const data = {
     categories,

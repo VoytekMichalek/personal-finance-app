@@ -1,5 +1,6 @@
+import { SummaryCard } from "../components/common/SummaryCard";
 import { useExpenseFilters } from "../hooks/expense-filters";
-import { expenseReport, money, type Snapshot } from "@finance/shared";
+import { expenseReport, type Snapshot } from "@finance/shared";
 import { useSnapshot } from "../hooks/data";
 import {
   Card,
@@ -42,17 +43,20 @@ function ExpenseReport({ data }: { data: Snapshot }) {
         </p>
       )}
       <div className="mb-5 grid gap-4 sm:grid-cols-2">
-        {[
-          ["Net expenses", report.totalCents],
-          ["Spending", report.spendingCents],
-        ].map(([label, amount]) => (
-          <Card key={label}>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">
-              {money(Number(amount))}
-            </p>
-          </Card>
-        ))}
+        <SummaryCard
+          label="Net expenses"
+          amount={report.totalCents}
+          icon="shopping-bag"
+          color="#b28a61"
+          detail="Spending less refunds in this selection"
+        />
+        <SummaryCard
+          label="Spending"
+          amount={report.spendingCents}
+          icon="wallet"
+          color="#788ca6"
+          detail="Recorded expenses before refunds"
+        />
       </div>
       <div className="mb-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(18rem,1fr)]">
         <ExpenseCategoryChart

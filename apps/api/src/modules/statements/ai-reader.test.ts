@@ -6,6 +6,7 @@ vi.mock("../../integrations/openrouter.js", () => ({
   approvedModels: { models: [{ id: "approved" }] },
 }));
 import { readWithAi } from "./ai-reader.js";
+import { hsbcStatement } from "../../integration/hsbc-fixture.js";
 afterEach(() => vi.unstubAllGlobals());
 function response(
   rows: unknown[],
@@ -154,4 +155,94 @@ it("validates card balances in ledger signs rather than unsigned amounts owed", 
   expect(result.details.warnings.some((w) => w.includes("reconcile"))).toBe(
     false,
   );
+});
+
+it("retains every verified HSBC row when AI omits groups or returns changed dates and signs", async () => {
+  const pages = hsbcStatement().map((page) => page.join("\n"));
+  const lines = pages
+    .flatMap((page) => page.split("\n"))
+    .filter((line) => line.trim());
+  const sourceLine = (text: string) =>
+    lines.findIndex((line) => line.includes(text)) + 1;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      response([
+        {
+          sourceLine: sourceLine("29DEC25"),
+          date: "2025-12-30",
+          dateText: "29DEC25",
+          description: "AI rewrote this",
+          amountCents: 20,
+          categoryId: "income",
+        },
+        {
+          sourceLine: sourceLine("Monthly fee"),
+          date: "2026-01-02",
+          dateText: "01 Jan",
+          description: "Wrong date",
+          amountCents: -500,
+          categoryId: "expense",
+        },
+        {
+          sourceLine: sourceLine("Plan 12.50"),
+          date: "2026-01-02",
+          dateText: "02 Jan",
+          description: "Wrong sign",
+          amountCents: 1250,
+          categoryId: "income",
+        },
+        {
+          sourceLine: sourceLine("Not a transaction"),
+          date: "2025-12-31",
+          dateText: "31 Dec",
+          description: "Footer",
+          amountCents: -99900,
+          categoryId: "expense",
+        },
+      ]),
+    ),
+  );
+  const result = await readWithAi(
+    pages,
+    "household",
+    [
+      {
+        id: "income",
+        name: "Income",
+        kind: "income",
+        archived: false,
+        color: "#ffffff",
+      },
+      {
+        id: "expense",
+        name: "Expense",
+        kind: "expense",
+        archived: false,
+        color: "#ffffff",
+      },
+    ],
+    "approved",
+  );
+  expect(result.rows.map((row) => row.amountCents)).toEqual([
+    -1000, 20, -200, -2000, 40, 10000, -500, 5000, -1250,
+  ]);
+  expect(result.rows[1]).toMatchObject({
+    date: "2025-12-30",
+    description: "29DEC25 111111 Grocery Cashback",
+    categoryId: "income",
+  });
+  expect(result.rows[6]).toMatchObject({
+    date: "2026-01-01",
+    amountCents: -500,
+    categoryId: null,
+  });
+  expect(result.rows[8]).toMatchObject({
+    amountCents: -1250,
+    categoryId: null,
+  });
+  expect(result.rows.every((row) => row.include && !row.error)).toBe(true);
+  expect(
+    result.details.lines.find((line) => line.text.includes("29DEC25")),
+  ).toMatchObject({ rowNumber: 2, status: "transaction", dateText: "30 Dec" });
 });

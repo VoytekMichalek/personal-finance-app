@@ -1,5 +1,17 @@
 [
   {
+    "version": "0.0.14",
+    "date": "2026-11-08",
+    "highlights": [
+      "Institution logos and soft account colours, with custom logos, icons, colours and reusable institution branding.",
+      "A consistent visual refresh across accounts, transactions, budgets, bills, imports, assets and net worth, including editable category and bill icons.",
+      "Overview shortcuts for This month and This year, with calendar-year-to-date totals and matching transaction drill-downs.",
+      "Clearer mobile filters, active selections, import progress and reachable save controls.",
+      "Improved HSBC and Qantas Pay AUD statement reading, source-protected dates and amounts, and recovery for incomplete reviews.",
+      "Apply saved category rules to reviewed uncategorised transactions, select all categories then untick exceptions, and see each account’s latest transaction date."
+    ]
+  },
+  {
     "version": "0.0.13",
     "date": "2026-11-03",
     "highlights": [

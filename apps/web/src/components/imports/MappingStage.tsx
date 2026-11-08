@@ -1,3 +1,4 @@
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { Link } from "react-router-dom";
 import { isCashAccount, type Mapping, type Snapshot } from "@finance/shared";
 import { ArrowRight, Sparkles, Upload } from "lucide-react";
@@ -30,7 +31,10 @@ export function MappingStage({
               .filter((a) => !a.archived)
               .map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {a.name}
+                  <AccountIdentity
+                    account={a}
+                    institutions={data.institutions}
+                  />
                 </SelectItem>
               ))}
           </Select>

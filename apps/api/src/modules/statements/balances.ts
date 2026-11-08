@@ -4,7 +4,7 @@ import {
   closingLabel,
   statementLedgerAmount,
   statementMoneyPattern,
-} from "./parser.js";
+} from "./amounts.js";
 // Some cards print a row of headings followed by a row of values. Match columns,
 // never borrow a minimum payment, credit limit or dated transaction amount.
 export function recoverBalances(

@@ -1,5 +1,5 @@
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { ActionError } from "../common/ActionError";
-import { accountLabel } from "@finance/shared";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -95,7 +95,10 @@ export function RuleForm({
                 .filter((a) => !a.archived)
                 .map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {accountLabel(a)}
+                    <AccountIdentity
+                      account={a}
+                      institutions={data.institutions}
+                    />
                   </SelectItem>
                 ))}
             </FormSelect>
@@ -110,7 +113,10 @@ export function RuleForm({
                 .filter((a) => !a.archived && a.id !== form.watch("accountId"))
                 .map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {accountLabel(a)}
+                    <AccountIdentity
+                      account={a}
+                      institutions={data.institutions}
+                    />
                   </SelectItem>
                 ))}
             </FormSelect>

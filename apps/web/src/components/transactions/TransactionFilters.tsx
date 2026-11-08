@@ -8,6 +8,8 @@ import { FilterToolbar } from "../common/FilterToolbar";
 import { DateRangeFilter } from "../common/DateRangeFilter";
 import { SearchInput } from "../common/SearchInput";
 import { MultiSelect } from "../ui/multi-select";
+import { AccountIdentity } from "../accounts/AccountIdentity";
+import { CategoryChip } from "../common/EntityChip";
 
 export function TransactionFilters({
   data,
@@ -53,6 +55,43 @@ export function TransactionFilters({
       <FilterToolbar
         label="Transaction filters"
         active={!!active}
+        tags={[
+          ...(filters.from || filters.to
+            ? [
+                {
+                  label: summary[0]!,
+                  remove: () => update({ from: null, to: null }),
+                },
+              ]
+            : []),
+          ...(filters.accountIds?.length
+            ? [
+                {
+                  label: `${filters.accountIds.length} account${filters.accountIds.length === 1 ? "" : "s"}`,
+                  remove: () => update({ accountIds: [] }),
+                },
+              ]
+            : []),
+          ...(filters.categoryIds?.length
+            ? [
+                {
+                  label: `${filters.categoryIds.length} categor${filters.categoryIds.length === 1 ? "y" : "ies"}`,
+                  remove: () => update({ categoryIds: [] }),
+                },
+              ]
+            : []),
+          ...(filters.owners?.length
+            ? [{ label: summary[1]!, remove: () => update({ owners: [] }) }]
+            : []),
+          ...(filters.kinds?.length
+            ? [
+                {
+                  label: filters.kinds.join(", "),
+                  remove: () => update({ kinds: [] }),
+                },
+              ]
+            : []),
+        ]}
         summary={summary.filter(Boolean).join(" · ")}
         clear={() =>
           update({
@@ -97,6 +136,12 @@ export function TransactionFilters({
               options={data.accounts.map((a) => ({
                 value: a.id,
                 label: a.name,
+                content: (
+                  <AccountIdentity
+                    account={a}
+                    institutions={data.institutions}
+                  />
+                ),
               }))}
             />
           </div>
@@ -107,12 +152,19 @@ export function TransactionFilters({
             selectionLabel="Categories"
             value={filters.categoryIds ?? []}
             onChange={(categoryIds) => update({ categoryIds })}
+            onSelectAll={(categoryIds) => update({ categoryIds })}
             allLabel="All categories"
             options={[
               { value: "none", label: "Uncategorised" },
               ...data.categories.map((c) => ({
                 value: c.id,
                 label: categoryLabel(c, data.categories),
+                content: (
+                  <CategoryChip
+                    categoryId={c.id}
+                    categories={data.categories}
+                  />
+                ),
               })),
             ]}
           />

@@ -7,6 +7,8 @@ import { FilterToolbar } from "../common/FilterToolbar";
 import { DateRangeFilter } from "../common/DateRangeFilter";
 import { SearchInput } from "../common/SearchInput";
 import { MultiSelect } from "../ui/multi-select";
+import { AccountIdentity } from "../accounts/AccountIdentity";
+import { CategoryChip } from "../common/EntityChip";
 
 export function ExpenseToolbar({
   data,
@@ -31,6 +33,41 @@ export function ExpenseToolbar({
     <FilterToolbar
       label="Expense filters"
       active={active}
+      tags={[
+        ...(filters.from !== allFrom || filters.to !== data.today
+          ? [
+              {
+                label: `${filters.from} – ${filters.to}`,
+                remove: () => onChange({ from: allFrom, to: data.today }),
+              },
+            ]
+          : []),
+        ...(filters.accountIds?.length
+          ? [
+              {
+                label: `${filters.accountIds.length} account${filters.accountIds.length === 1 ? "" : "s"}`,
+                remove: () => onChange({ accountIds: [] }),
+              },
+            ]
+          : []),
+        ...(filters.categoryIds?.length
+          ? [
+              {
+                label: `${filters.categoryIds.length} categor${filters.categoryIds.length === 1 ? "y" : "ies"}`,
+                remove: () =>
+                  onChange({ categoryIds: [], categoryMatch: undefined }),
+              },
+            ]
+          : []),
+        ...(filters.owners?.length
+          ? [
+              {
+                label: `${filters.owners.length} people`,
+                remove: () => onChange({ owners: [] }),
+              },
+            ]
+          : []),
+      ]}
       clear={() =>
         onChange({
           from: allFrom,
@@ -39,6 +76,7 @@ export function ExpenseToolbar({
           accountIds: [],
           owners: [],
           categoryIds: [],
+          categoryMatch: undefined,
         })
       }
     >
@@ -69,6 +107,12 @@ export function ExpenseToolbar({
           options={data.accounts.map((account) => ({
             value: account.id,
             label: account.name,
+            content: (
+              <AccountIdentity
+                account={account}
+                institutions={data.institutions}
+              />
+            ),
           }))}
         />
       </div>
@@ -93,7 +137,17 @@ export function ExpenseToolbar({
           aria-label="Category"
           selectionLabel="Categories"
           value={filters.categoryIds ?? []}
-          onChange={(categoryIds) => onChange({ categoryIds })}
+          onChange={(categoryIds) =>
+            onChange({
+              categoryIds,
+              categoryMatch: categoryIds.length
+                ? filters.categoryMatch
+                : undefined,
+            })
+          }
+          onSelectAll={(categoryIds) =>
+            onChange({ categoryIds, categoryMatch: "exact" })
+          }
           allLabel="All categories"
           options={[
             { value: "uncategorised", label: "Uncategorised" },
@@ -102,6 +156,12 @@ export function ExpenseToolbar({
               .map((category) => ({
                 value: category.id,
                 label: categoryLabel(category, data.categories),
+                content: (
+                  <CategoryChip
+                    categoryId={category.id}
+                    categories={data.categories}
+                  />
+                ),
               })),
           ]}
         />

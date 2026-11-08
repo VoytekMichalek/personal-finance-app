@@ -5,11 +5,13 @@ import { Button } from "../ui/button";
 
 export function RememberButton({
   row,
+  compact = false,
   disabled,
   matchesRule = false,
   onClick,
 }: {
   row: Transaction;
+  compact?: boolean;
   disabled?: boolean;
   matchesRule?: boolean;
   onClick: () => void;
@@ -20,14 +22,16 @@ export function RememberButton({
     <Button
       variant="ghost"
       size="sm"
-      className={`max-w-full gap-1 px-2 ${matchesRule ? "h-auto min-h-11 w-28 py-1.5 text-xs whitespace-normal sm:w-40 text-emerald-700 hover:bg-emerald-100 md:min-h-9" : "text-primary"}`}
+      className={`max-w-full gap-1 px-2 ${compact ? "size-11 shrink-0 " + (matchesRule ? "text-emerald-700" : "text-primary") : matchesRule ? "h-auto min-h-11 w-28 py-1.5 text-xs whitespace-normal sm:w-40 text-emerald-700 hover:bg-emerald-100 md:min-h-9" : "text-primary"}`}
       disabled={disabled || saving}
       aria-label={`${matchesRule ? "Matches saved rule for" : "Remember"} ${row.description}`}
       title={matchesRule ? "Review matching transactions" : undefined}
       onClick={onClick}
     >
       <Icon size={14} className="shrink-0" aria-hidden="true" />
-      <span>{matchesRule ? "Matches saved rule" : "Remember"}</span>
+      <span className={compact ? "sr-only" : undefined}>
+        {matchesRule ? "Matches saved rule" : "Remember"}
+      </span>
     </Button>
   );
 }

@@ -17,6 +17,8 @@ export const expenseFiltersSchema = z.object({
     .array(z.union([z.uuid(), z.literal("uncategorised")]))
     .max(10000)
     .optional(),
+  // Select-all selections match each tick independently, even under a selected parent.
+  categoryMatch: z.enum(["exact", "descendants"]).optional(),
   search: z.string().max(250).optional(),
   detail: z
     .object({
@@ -47,8 +49,9 @@ export function expenseReport(
           categoryId === "uncategorised"
             ? t.categoryId === null
             : t.categoryId === categoryId ||
-              data.categories.find((c) => c.id === t.categoryId)?.parentId ===
-                categoryId,
+              (filters.categoryMatch !== "exact" &&
+                data.categories.find((c) => c.id === t.categoryId)?.parentId ===
+                  categoryId),
         )),
   );
   const group = (key: (t: Transaction) => string) => {

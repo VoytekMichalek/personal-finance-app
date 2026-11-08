@@ -10,6 +10,8 @@ export function useExpenseFilters(data: Snapshot) {
     accountIds: params.getAll("account"),
     owners: params.getAll("owner"),
     categoryIds: params.getAll("category"),
+    categoryMatch:
+      params.get("categoryMatch") === "exact" ? "exact" : undefined,
     search: params.get("search") ?? "",
   };
   const group = params.get("detailGroup"),
@@ -36,6 +38,7 @@ export function useExpenseFilters(data: Snapshot) {
           accountIds: "account",
           owners: "owner",
           categoryIds: "category",
+          categoryMatch: "categoryMatch",
           search: "search",
         })) {
           if (!(key in change)) continue;

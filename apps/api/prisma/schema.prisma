@@ -103,6 +103,10 @@ model Account {
   name String
   type String
   institution String @default("")
+  institutionPreset String?
+  customInstitutionId String?
+  customInstitution Institution? @relation(fields: [customInstitutionId], references: [id], onDelete: Restrict)
+  appearance Json?
   owner String @default("household")
   openingDate String
   openingBalanceCents BigInt
@@ -115,7 +119,17 @@ model Account {
   rules Rule[] @relation("RuleAccount")
   counterRules Rule[] @relation("RuleCounterAccount")
 }
+model Institution {
+  id String @id @default(uuid())
+  name String
+  nameKey String @unique
+  color String
+  icon String
+  logoDataUrl String?
+  accounts Account[]
+}
 model Category {
+  icon String?
   parentId String?
   parent Category? @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: Restrict)
   children Category[] @relation("CategoryChildren")
@@ -195,6 +209,8 @@ model BudgetOverride {
   @@unique([categoryId,month])
 }
 model Schedule {
+  icon String?
+  color String?
   id String @id @default(uuid())
   name String
   accountId String

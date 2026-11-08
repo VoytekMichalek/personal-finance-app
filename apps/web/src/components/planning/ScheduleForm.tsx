@@ -1,6 +1,9 @@
+import { IconPicker } from "../common/IconPicker";
+import { ScheduleIdentity } from "./ScheduleIdentity";
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { ActionError } from "../common/ActionError";
 import { FormDatePicker } from "../ui/form-date-picker";
-import { accountLabel, isCashAccount } from "@finance/shared";
+import { isCashAccount } from "@finance/shared";
 import { SelectItem, FormSelect } from "../ui/select";
 import { CategoryChip } from "../common/EntityChip";
 import { useForm } from "react-hook-form";
@@ -70,6 +73,8 @@ export function ScheduleForm({
       subscription: schedule?.subscription ?? subscription,
       provider: schedule?.provider ?? "",
       cancelled: schedule?.cancelled ?? false,
+      icon: schedule?.icon ?? null,
+      color: schedule?.color ?? null,
     },
   });
   const kind = form.watch("kind");
@@ -126,7 +131,7 @@ export function ScheduleForm({
             .filter((a) => !a.archived || a.id === schedule?.accountId)
             .map((a) => (
               <SelectItem key={a.id} value={a.id}>
-                {accountLabel(a)}
+                <AccountIdentity account={a} institutions={data.institutions} />
               </SelectItem>
             ))}
         </FormSelect>
@@ -146,7 +151,10 @@ export function ScheduleForm({
               )
               .map((a) => (
                 <SelectItem key={a.id} value={a.id}>
-                  {accountLabel(a)}
+                  <AccountIdentity
+                    account={a}
+                    institutions={data.institutions}
+                  />
                 </SelectItem>
               ))}
           </FormSelect>
@@ -222,6 +230,42 @@ export function ScheduleForm({
           <Input {...form.register("provider")} />
         </Field>
       )}
+      <section
+        className="grid gap-4 rounded-xl border p-4"
+        aria-label="Schedule appearance"
+      >
+        <h3 className="text-sm font-semibold">Appearance</h3>
+        <ScheduleIdentity
+          schedule={{
+            ...form.watch(),
+            name: form.watch("name") || "Payment preview",
+          }}
+          categories={data.categories}
+        />
+        <IconPicker
+          value={form.watch("icon")}
+          onChange={(icon) => form.setValue("icon", icon)}
+        />
+        <Field label="Colour" error={form.formState.errors.color?.message}>
+          <input
+            type="color"
+            className="h-11 w-14 cursor-pointer rounded-lg border bg-white p-1"
+            value={form.watch("color") ?? "#738caa"}
+            onChange={(e) => form.setValue("color", e.target.value)}
+          />
+        </Field>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            form.setValue("icon", null);
+            form.setValue("color", null);
+          }}
+        >
+          Use automatic appearance
+        </Button>
+      </section>
       {schedule && (
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" {...form.register("cancelled")} />

@@ -8,6 +8,74 @@ import {
   type Transaction,
 } from "@finance/shared";
 
+it("keeps an unchecked child outside remembered matches after selecting all expense categories", async () => {
+  const accountId = await account();
+  const parent = await prisma.category.findFirstOrThrow({
+    where: { name: "Home" },
+  });
+  const child = await prisma.category.create({
+    data: {
+      name: "Insurance",
+      kind: "expense",
+      color: "#123456",
+      parentId: parent.id,
+    },
+  });
+  const target = await prisma.category.findFirstOrThrow({
+    where: { name: "Dining" },
+  });
+  const base = {
+    accountId,
+    date: "2026-11-08",
+    description: "Local Shop",
+    kind: "expense",
+    amountCents: -1000n,
+  };
+  const included = await prisma.transaction.create({
+    data: { ...base, categoryId: parent.id },
+  });
+  const excluded = await prisma.transaction.create({
+    data: { ...base, categoryId: child.id },
+  });
+  const body = {
+    source: { id: included.id, version: included.version },
+    records: [{ id: included.id, version: included.version }],
+    categoryId: target.id,
+    pattern: "Local Shop",
+    matchMode: "exact",
+    filters: {
+      expenses: {
+        from: "2026-11-01",
+        to: "2026-11-30",
+        categoryMatch: "exact",
+        categoryIds: [
+          "uncategorised",
+          ...(
+            await prisma.category.findMany({
+              where: { kind: "expense", id: { not: child.id } },
+            })
+          ).map((category) => category.id),
+        ],
+      },
+    },
+  };
+  const rejected = await post("/transactions/remember", {
+    ...body,
+    records: [...body.records, { id: excluded.id, version: excluded.version }],
+  });
+  expect(rejected.status).toBe(409);
+  expect(await prisma.rule.count()).toBe(0);
+  const response = await post("/transactions/remember", body);
+  expect(response.status, response.body.error).toBe(200);
+  expect(response.body).toMatchObject({ matched: 1, changed: 1 });
+  expect(
+    await prisma.transaction.findUniqueOrThrow({ where: { id: included.id } }),
+  ).toMatchObject({ categoryId: target.id, version: 2 });
+  expect(
+    await prisma.transaction.findUniqueOrThrow({ where: { id: excluded.id } }),
+  ).toEqual(excluded);
+});
+
 it("remembers precisely the expense report's month, multi-account, owner, parent category, search and drill-down intersection", async () => {
   const [bank, card, hidden] = await Promise.all([
     account(),

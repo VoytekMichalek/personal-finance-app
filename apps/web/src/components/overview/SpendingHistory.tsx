@@ -38,7 +38,8 @@ export function SpendingHistory({
       />
       <p className="text-2xl font-semibold tabular-nums">{money(total)}</p>
       <p className="mt-1 mb-4 text-xs text-muted-foreground">
-        {money(Math.round(total / 6))} monthly average
+        {money(Math.round(total / 6))} monthly average · last six complete
+        months
       </p>
       <div className="grid gap-1">
         {months.map((m) => (

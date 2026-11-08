@@ -1,8 +1,12 @@
+import { CategoryIcon } from "../common/VisualIcon";
+import { AccountIdentity } from "../accounts/AccountIdentity";
+import { PersonChip } from "../common/EntityChip";
 import { VisualTitle } from "../common/VisualTitle";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import {
   categoryColour,
+  accountBrand,
   categoryLabel,
   identityColour,
   ownerColour,
@@ -57,7 +61,12 @@ export function ExpenseBreakdown({
               "Former member"),
       colour:
         group === "accounts"
-          ? identityColour("account:" + id)
+          ? data.accounts.find((a) => a.id === id)
+            ? accountBrand(
+                data.accounts.find((a) => a.id === id)!,
+                data.institutions,
+              ).color
+            : "#788ca6"
           : ownerColour(id, data.people),
     };
   };
@@ -118,7 +127,25 @@ export function ExpenseBreakdown({
               className="block w-full rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
             >
               <div className="mb-1.5 flex justify-between gap-3 text-xs">
-                <span className="min-w-0 break-words">{title}</span>
+                <span className="flex min-w-0 items-center gap-2 break-words">
+                  {group === "accounts" ? (
+                    <AccountIdentity
+                      account={data.accounts.find((a) => a.id === row.id)}
+                      institutions={data.institutions}
+                    />
+                  ) : group === "people" ? (
+                    <PersonChip owner={row.id} people={data.people} />
+                  ) : (
+                    <>
+                      <CategoryIcon
+                        category={data.categories.find((c) => c.id === row.id)}
+                        categories={data.categories}
+                        small
+                      />
+                      {title}
+                    </>
+                  )}
+                </span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   <strong className="tabular-nums">
                     {money(row.amountCents)}

@@ -1,6 +1,7 @@
 import { matchOccurrence, saveSchedule } from "./schedules.js";
 import { rememberTransaction } from "./remember-transaction.js";
 import { saveRule } from "./rules.js";
+import { applyCategoryRules } from "./apply-category-rules.js";
 import { saveAsset } from "./assets.js";
 import { saveBudget, overrideBudget, restoreBudget } from "./budgets.js";
 import { bulkCategory } from "./bulk-category.js";
@@ -9,19 +10,11 @@ import { bulkDelete } from "./bulk-delete.js";
 import { deleteTransaction } from "./delete-transaction.js";
 import { Router } from "express";
 import { z } from "zod";
-import {
-  accountSchema,
-  valuationSchema,
-  forecast,
-  netWorth,
-  date,
-  today,
-} from "@finance/shared";
+import { valuationSchema, forecast, netWorth, date } from "@finance/shared";
 import { prisma, json } from "../../lib/db.js";
-import { HttpError } from "../../lib/errors.js";
+import { saveAccount } from "./accounts.js";
 import {
   snapshot,
-  validateOwner,
   createTransaction,
   createTransfer,
   updateTransaction,
@@ -48,51 +41,10 @@ financeRouter.get("/net-worth", async (req, res) => {
   res.json({ date: day, amountCents: netWorth(await snapshot(), day) });
 });
 financeRouter.post("/accounts", async (req, res) => {
-  const input = accountSchema.parse(req.body);
-  await validateOwner(prisma, input.owner);
-  if (input.openingDate > today())
-    throw new HttpError(400, "Choose today or an earlier opening date.");
-  res.status(201).json(
-    json(
-      await prisma.account.create({
-        data: {
-          ...input,
-          openingBalanceCents: BigInt(input.openingBalanceCents),
-        },
-      }),
-    ),
-  );
+  res.status(201).json(await saveAccount(req.body));
 });
 financeRouter.put("/accounts/:id", async (req, res) => {
-  const id = z.uuid().parse((req.params as Record<string, string>).id);
-  if ((await prisma.account.findUnique({ where: { id } }))?.assetId)
-    throw new HttpError(
-      400,
-      "Edit this item's details and valuations in Assets & Liabilities.",
-    );
-  const input = accountSchema.parse(req.body);
-  await validateOwner(prisma, input.owner);
-  if (input.openingDate > today())
-    throw new HttpError(400, "Choose today or an earlier opening date.");
-  const earlier = await prisma.transaction.findFirst({
-    where: { accountId: id, date: { lt: input.openingDate } },
-  });
-  if (earlier)
-    throw new HttpError(
-      409,
-      "Opening date would exclude existing transactions.",
-    );
-  res.json(
-    json(
-      await prisma.account.update({
-        where: { id },
-        data: {
-          ...input,
-          openingBalanceCents: BigInt(input.openingBalanceCents),
-        },
-      }),
-    ),
-  );
+  res.json(await saveAccount(req.body, z.uuid().parse(req.params.id)));
 });
 financeRouter.post("/transactions", async (req, res) =>
   res
@@ -130,6 +82,9 @@ financeRouter.post("/transactions/remember", async (req, res) => {
 financeRouter.post("/transactions/bulk-category", async (req, res) => {
   await bulkCategory(req.body);
   res.json({ ok: true });
+});
+financeRouter.post("/rules/apply-categories", async (req, res) => {
+  res.json(await applyCategoryRules(req.body));
 });
 financeRouter.put("/transactions/:id/type", async (req, res) => {
   res.json(

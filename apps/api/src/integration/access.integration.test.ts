@@ -17,6 +17,17 @@ import {
   post,
 } from "./fixtures.js";
 describe("database-backed authorization and lifecycle", () => {
+  it("does not expose demo admin sign-in in the ordinary application", async () => {
+    expect((await post("/auth/demo-login", {}, "")).status).toBe(404);
+    expect(
+      (await request(app).get("/api/access/status")).body.demoLoginAvailable,
+    ).toBe(false);
+    expect(
+      await prisma.user.count({
+        where: { email: "admin@finance-demo.invalid" },
+      }),
+    ).toBe(0);
+  });
   it("rejects unauthenticated finance and direct member access to user management", async () => {
     expect((await request(app).get("/api/snapshot")).status).toBe(401);
     expect(

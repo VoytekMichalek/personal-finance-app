@@ -104,6 +104,15 @@ try {
     }
   });
   assert.equal((await fetch(base + "/api/snapshot")).status, 401);
+  const accessStatus = await (await fetch(base + "/api/access/status")).json();
+  assert.equal(accessStatus.demoLoginAvailable, false);
+  assert.equal(
+    (await fetch(base + "/api/auth/demo-login", {
+      method: "POST",
+      headers: { Origin: "https://finance.example.test" },
+    })).status,
+    404,
+  );
   assert.equal((await fetch(base + "/api/missing")).status, 401);
   assert.equal((await fetch(base + "/")).status, 200);
   const frontend = await (await fetch(base + "/")).text();

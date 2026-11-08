@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
 import {
   displayDate,
-  identityColour,
   money,
   type Snapshot,
   type Transaction,
 } from "@finance/shared";
-import { Pill } from "../common/primitives";
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { PersonChip } from "../common/EntityChip";
 import { TransactionCategory } from "../transactions/TransactionCategory";
 import { TransactionType } from "../transactions/TransactionType";
@@ -49,10 +48,10 @@ export function ExpenseTransactionRow({
           className="max-w-full rounded-full focus-visible:outline-primary"
           to={"/accounts/" + row.accountId}
         >
-          <Pill colour={identityColour("account:" + row.accountId)}>
-            {data.accounts.find((account) => account.id === row.accountId)
-              ?.name ?? "Account"}
-          </Pill>
+          <AccountIdentity
+            account={data.accounts.find((a) => a.id === row.accountId)}
+            institutions={data.institutions}
+          />
         </Link>
         <TransactionType row={row} data={data} onTransferred={onTransferred} />
         <TransactionCategory row={row} categories={data.categories} />

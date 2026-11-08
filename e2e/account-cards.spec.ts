@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { test, expect, session, database, choose } from "./fixtures";
 
-test("compact account cards distinguish owners, filter consistently and open editable account details", async ({
+test("branded account cards distinguish owners, filter consistently and open editable account details", async ({
   page,
 }, info) => {
   const owner = await session(page);
@@ -48,18 +48,23 @@ test("compact account cards distinguish owners, filter consistently and open edi
     });
     await page.goto("/accounts");
     const cards = page.getByRole("list", { name: "Accounts", exact: true });
-    const buttons = cards.getByRole("button");
+    const buttons = cards.getByRole("button", { name: /^Open account:/ });
     await expect(buttons).toHaveCount(11);
     const card = (name: string) =>
       buttons.filter({ has: page.getByText(name, { exact: true }) });
     const first = card("Sample account 1");
     await expect(first).toContainText("$975.00");
+    await expect(first).toContainText("Last recorded transaction: 5 Jan 2026");
+    await expect(card("Sample account 2")).toContainText(
+      "No transactions recorded",
+    );
     await expect(buttons.filter({ hasText: "Sample account 3" })).toContainText(
-      "-$425.00",
+      "Amount owed$425.00",
     );
     const colour = (name: string, person: string) =>
       card(name)
-        .getByText(person, { exact: true })
+        .getByLabel(`Owner: ${person}`, { exact: true })
+        .locator('[aria-hidden="true"]')
         .evaluate((element) => getComputedStyle(element).backgroundColor);
     const voytekColour = await colour("Sample account 1", "Voytek");
     const nicolaColour = await colour("Sample account 5", "Nicola");
@@ -83,12 +88,12 @@ test("compact account cards distinguish owners, filter consistently and open edi
         boxes.filter((box) => Math.abs(box.y - boxes[0].y) < 1).length,
       ).toBeGreaterThanOrEqual(4);
       expect(Math.max(...boxes.map((box) => box.height))).toBeLessThanOrEqual(
-        180,
+        280,
       );
     } else {
       expect(boxes[1].y).toBeGreaterThan(boxes[0].y);
       expect(Math.max(...boxes.map((box) => box.height))).toBeLessThanOrEqual(
-        200,
+        280,
       );
     }
     expect(
@@ -134,6 +139,22 @@ test("compact account cards distinguish owners, filter consistently and open edi
     await expect(
       page.getByRole("heading", { name: "Sample account 1", exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByText("Last recorded transaction: 5 Jan 2026", { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Import transactions", exact: true })
+      .click();
+    const importDialog = page.getByRole("dialog", {
+      name: "Import transactions",
+      exact: true,
+    });
+    await expect(importDialog).toContainText(
+      "Last recorded transaction: 5 Jan 2026",
+    );
+    await importDialog
+      .getByRole("button", { name: "Close dialog", exact: true })
+      .click();
     await page
       .getByRole("button", { name: "Edit account", exact: true })
       .click();

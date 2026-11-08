@@ -1,10 +1,10 @@
+import { CategoryIcon } from "../common/VisualIcon";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import {
   categoryColour,
   expenseReport,
   money,
-  spendingHistory,
   type Snapshot,
 } from "@finance/shared";
 import { Card } from "../common/primitives";
@@ -13,14 +13,17 @@ import { VisualTitle } from "../common/VisualTitle";
 export function SpendingCategories({
   data,
   owner,
+  from,
+  to,
 }: {
   data: Snapshot;
   owner: string;
+  from: string;
+  to: string;
 }) {
-  const months = spendingHistory(data, owner);
   const filters = {
-    from: months[0]!.from,
-    to: months.at(-1)!.to,
+    from,
+    to,
     owners: owner === "all" ? [] : [owner],
   };
   const report = expenseReport(data, filters);
@@ -37,7 +40,7 @@ export function SpendingCategories({
     <Card>
       <VisualTitle
         title="Top spending categories"
-        context="The five largest categories by recorded expenses less refunds in the last six complete months. Transfers and income are excluded. This follows your ownership filter."
+        context="The five largest categories by recorded expenses less refunds in the selected period. Transfers and income are excluded. This follows your ownership filter."
         action={
           <Link className="text-xs text-primary" to={`/expenses?${params}`}>
             All categories
@@ -60,6 +63,11 @@ export function SpendingCategories({
               className="rounded-lg p-2.5 hover:bg-muted"
             >
               <div className="mb-2 flex items-center gap-2 text-xs">
+                <CategoryIcon
+                  category={category}
+                  categories={data.categories}
+                  small
+                />
                 <span className="flex-1">
                   {category?.name ?? "Uncategorised"}
                 </span>
@@ -83,7 +91,7 @@ export function SpendingCategories({
       </div>
       {!categories.length && (
         <p className="py-8 text-sm text-muted-foreground">
-          No spending recorded in the last six complete months.
+          No spending recorded in the selected period.
         </p>
       )}
     </Card>

@@ -1,4 +1,4 @@
-import { test, expect, choosePeriod } from "./fixtures";
+import { test, expect, choosePeriod, revealFilter } from "./fixtures";
 import { seed } from "./ux-fixtures";
 
 test("filters fit one desktop row and chart controls align right within their titles with accessible context", async ({
@@ -16,6 +16,7 @@ test("filters fit one desktop row and chart controls align right within their ti
       expect((await filters.boundingBox())!.height).toBeLessThan(90);
       const positions = await filters
         .locator("input, button")
+        .filter({ visible: true })
         .evaluateAll((controls) =>
           controls.map((c) => c.getBoundingClientRect().y),
         );
@@ -206,6 +207,7 @@ test("date range opens beside its left-aligned trigger and supports presets, nes
       name: "Date range",
       exact: true,
     });
+    await revealFilter(page, trigger);
     await expect(trigger.locator("span")).toHaveCSS("text-align", "left");
     await trigger.click();
     const panel = page.getByRole("dialog", { name: "Date range", exact: true });

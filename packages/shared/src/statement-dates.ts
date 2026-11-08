@@ -41,7 +41,10 @@ export function statementRowDateText(
 ) {
   return details.lines
     .filter((line) => line.rowNumber === rowNumber)
-    .map((line) => line.text.trim().match(statementDatePattern)?.[1])
+    .map(
+      (line) =>
+        line.dateText || line.text.trim().match(statementDatePattern)?.[1],
+    )
     .find((text): text is string => !!text);
 }
 

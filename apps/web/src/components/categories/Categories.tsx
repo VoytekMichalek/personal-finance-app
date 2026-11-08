@@ -1,10 +1,13 @@
+import { IconPicker } from "../common/IconPicker";
+import { CategoryIcon } from "../common/VisualIcon";
 import { AssignColours } from "./AssignColours";
+import { ApplySavedRules } from "./ApplySavedRules";
 import { useSearchParams } from "react-router-dom";
 import { SearchInput } from "../common/SearchInput";
 import { ActionError } from "../common/ActionError";
 import { RuleForm } from "./RuleForm";
 import { SelectItem, FormSelect } from "../ui/select";
-import { categoryColour, identityColour } from "@finance/shared";
+import { identityColour } from "@finance/shared";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,14 +47,17 @@ export function Categories({ data }: { data: Snapshot }) {
       <div
         role="tablist"
         aria-label="Categories and rules"
-        className="mb-4 flex gap-2"
+        className="mb-4 flex w-fit gap-1 rounded-xl bg-muted p-1"
       >
         {(["categories", "rules"] as const).map((value) => (
           <Button
             key={value}
             role="tab"
             aria-selected={tab === value}
-            variant={tab === value ? "default" : "secondary"}
+            variant="ghost"
+            className={
+              tab === value ? "bg-white shadow-sm" : "text-muted-foreground"
+            }
             onClick={() => {
               setParams({ tab: value });
               setSearch("");
@@ -137,11 +143,9 @@ export function Categories({ data }: { data: Snapshot }) {
                     setOpen(true);
                   }}
                 >
-                  <span
-                    className="size-2.5 rounded-full"
-                    style={{
-                      background: categoryColour(category, data.categories),
-                    }}
+                  <CategoryIcon
+                    category={category}
+                    categories={data.categories}
                   />
                   <span className="flex-1 text-xs font-medium">
                     {category.parentId
@@ -191,6 +195,9 @@ export function Categories({ data }: { data: Snapshot }) {
             chosen category takes precedence. Transfer rules also remember the
             source account, direction and other account.
           </p>
+          <div className="mb-4">
+            <ApplySavedRules data={data} />
+          </div>
           <div className="divide-y">
             {data.rules
               .filter(
@@ -298,6 +305,7 @@ export function CategoryForm({
       kind: category?.kind ?? defaultKind,
       color: category?.color ?? "#007aff",
       archived: category?.archived ?? false,
+      icon: category?.icon ?? null,
     },
   });
   const action = useAction(done);
@@ -345,6 +353,26 @@ export function CategoryForm({
             ))}
         </Select>
       </Field>
+      <div className="flex items-center gap-3 rounded-xl border bg-muted/30 p-4">
+        <CategoryIcon
+          category={{
+            ...form.watch(),
+            color: form.watch("color") ?? "#007aff",
+            archived: form.watch("archived") ?? false,
+            parentId: form.watch("parentId") ?? null,
+            id: category?.id ?? "preview",
+            name: form.watch("name") || "Category",
+          }}
+          categories={categories}
+        />
+        <span className="text-sm font-medium">
+          {form.watch("name") || "Category preview"}
+        </span>
+      </div>
+      <IconPicker
+        value={form.watch("icon")}
+        onChange={(icon) => form.setValue("icon", icon)}
+      />
       <Field label="Colour" error={form.formState.errors.color?.message}>
         <input
           type="color"

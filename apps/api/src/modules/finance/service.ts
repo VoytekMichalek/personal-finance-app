@@ -20,6 +20,7 @@ export async function snapshot(): Promise<Snapshot> {
     schedules,
     assets,
     people,
+    institutions,
   ] = await Promise.all([
     prisma.account.findMany({ orderBy: { name: "asc" } }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
@@ -37,6 +38,16 @@ export async function snapshot(): Promise<Snapshot> {
       where: { state: { not: "pending" } },
       select: { id: true, name: true, email: true, role: true, state: true },
     }),
+    prisma.institution.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        color: true,
+        icon: true,
+        logoDataUrl: true,
+      },
+    }),
   ]);
   return json({
     accounts,
@@ -51,6 +62,7 @@ export async function snapshot(): Promise<Snapshot> {
       accountId: account?.id ?? null,
     })),
     people,
+    institutions,
     today: today(),
   });
 }

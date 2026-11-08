@@ -9,6 +9,7 @@ import { authClient } from "../lib/auth";
 import { Button } from "../components/ui/button";
 import { Attribution } from "../components/common/Attribution";
 import { Field, Input, ErrorState } from "../components/common/primitives";
+import { DemoLogin } from "../components/access/DemoLogin";
 const setupSchema = z.object({
   name: z.string().min(1),
   email: z.email(),
@@ -21,9 +22,11 @@ export function Access() {
   const status = useQuery({
     queryKey: ["access-status"],
     queryFn: () =>
-      api<{ bootstrapAvailable: boolean; bootstrapConfigured: boolean }>(
-        "/access/status",
-      ),
+      api<{
+        bootstrapAvailable: boolean;
+        bootstrapConfigured: boolean;
+        demoLoginAvailable: boolean;
+      }>("/access/status"),
   });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -245,6 +248,9 @@ export function Access() {
             </form>
           ) : (
             <>
+              {import.meta.env.DEV &&
+                import.meta.env.VITE_DEMO_DATA === "1" &&
+                status.data?.demoLoginAvailable && <DemoLogin />}
               <Button
                 className="w-full"
                 disabled={busy}

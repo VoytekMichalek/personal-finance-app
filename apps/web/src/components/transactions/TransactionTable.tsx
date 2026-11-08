@@ -8,14 +8,14 @@ import {
   matchingTransferTransactions,
   suggestRememberedRule,
   displayDate,
-  identityColour,
   money,
   type Snapshot,
   type Transaction,
   type TransactionFilters,
 } from "@finance/shared";
 import { useAction } from "../../hooks/data";
-import { Card, Pill, Select } from "../common/primitives";
+import { Card, Select } from "../common/primitives";
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { CategoryChip, PersonChip } from "../common/EntityChip";
 import { Button } from "../ui/button";
 import { SelectItem } from "../ui/select";
@@ -194,8 +194,8 @@ export function TransactionTable({
       {rows.length ? (
         <Card className="overflow-hidden p-0!">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b bg-[#fafafa] text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b bg-[#fafafa] text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 <tr>
                   <th className="w-10 p-3">
                     <input
@@ -232,7 +232,7 @@ export function TransactionTable({
                           : "hover:bg-[#fafbfc]"
                       }
                     >
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3">
                         <input
                           type="checkbox"
                           aria-label={"Select " + row.description}
@@ -247,19 +247,27 @@ export function TransactionTable({
                           }
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3">
                         <button
                           className="text-left [overflow-wrap:anywhere]"
                           onClick={() => onOpen(row)}
                         >
-                          <span className="block font-medium">
+                          <span className="block font-semibold">
                             {row.description}
                           </span>
-                          <span className="mt-1 block text-[10px] text-muted-foreground">
+                          <span className="mt-1 block text-xs text-muted-foreground">
                             {displayDate(row.date)}
                             {row.kind === "refund" ? " · Refund" : ""}
                           </span>
                         </button>
+                        <div className="mt-1 text-xs text-muted-foreground md:hidden">
+                          <AccountIdentity
+                            account={data.accounts.find(
+                              (a) => a.id === row.accountId,
+                            )}
+                            institutions={data.institutions}
+                          />
+                        </div>
                         <div className="mt-2 flex flex-wrap gap-1 sm:hidden">
                           <TransactionType
                             onTransferred={() => offerSimilarTransfers(row)}
@@ -276,14 +284,12 @@ export function TransactionTable({
                         </div>
                       </td>
                       <td className="hidden p-3 md:table-cell">
-                        <Pill
-                          colour={identityColour("account:" + row.accountId)}
-                        >
-                          {
-                            data.accounts.find((a) => a.id === row.accountId)
-                              ?.name
-                          }
-                        </Pill>
+                        <AccountIdentity
+                          account={data.accounts.find(
+                            (a) => a.id === row.accountId,
+                          )}
+                          institutions={data.institutions}
+                        />
                       </td>
                       <td className="hidden p-3 sm:table-cell">
                         <TransactionType
@@ -305,7 +311,7 @@ export function TransactionTable({
                       </td>
                       <td
                         className={
-                          "p-3 text-right font-semibold whitespace-nowrap tabular-nums " +
+                          "p-2 align-top pt-4 sm:p-3 sm:align-middle text-right font-semibold whitespace-nowrap tabular-nums " +
                           (row.kind !== "transfer" && row.amountCents > 0
                             ? "text-emerald-700"
                             : "")
@@ -315,8 +321,9 @@ export function TransactionTable({
                           {row.amountCents > 0 ? "+" : ""}
                           {money(row.amountCents)}
                         </span>
-                        <div className="mt-2 sm:hidden">
+                        <div className="mt-2 flex justify-end sm:hidden">
                           <RememberButton
+                            compact
                             matchesRule={ruleMatches.has(row.id)}
                             row={row}
                             disabled={action.isPending}

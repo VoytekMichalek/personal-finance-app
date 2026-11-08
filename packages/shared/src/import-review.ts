@@ -42,6 +42,7 @@ export function updateImportRows(
       : {
           ...row,
           ...patch,
+          ...(Object.hasOwn(patch, "kind") ? { kindChosen: true } : {}),
           ...(!Object.hasOwn(patch, "reconcileExisting") &&
           (categoryEdit ||
             patch.include === false ||
@@ -60,10 +61,12 @@ export function updateImportRows(
             : {}),
           ...(categoryEdit || patch.rememberCategory === true
             ? {
-                ...(Object.hasOwn(patch, "categoryId") ||
-                patch.rememberCategory === true
-                  ? { categoryChosen: true }
-                  : {}),
+                ...(Object.hasOwn(patch, "kind")
+                  ? { categoryChosen: false }
+                  : Object.hasOwn(patch, "categoryId") ||
+                      patch.rememberCategory === true
+                    ? { categoryChosen: true }
+                    : {}),
                 categorySource: undefined,
                 rememberedFrom: undefined,
                 previousCategory: undefined,

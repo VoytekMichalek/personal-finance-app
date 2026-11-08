@@ -1,3 +1,4 @@
+import type { AccountAppearance, Institution } from "./institutions.js";
 export type Person = {
   id: string;
   name: string;
@@ -11,12 +12,16 @@ export type Account = {
   type: "bank" | "cash" | "credit" | "asset" | "liability";
   assetId?: string | null;
   institution: string;
+  institutionPreset?: string | null;
+  customInstitutionId?: string | null;
+  appearance?: AccountAppearance | null;
   owner: string;
   openingDate: string;
   openingBalanceCents: number;
   archived: boolean;
 };
 export type Category = {
+  icon?: import("./visuals.js").VisualIcon | null;
   parentId?: string | null;
   id: string;
   name: string;
@@ -67,6 +72,8 @@ export type EffectiveBudget = Budget & {
   plannedAmountCents: number | null;
 };
 export type Schedule = {
+  icon?: import("./visuals.js").VisualIcon | null;
+  color?: string | null;
   id: string;
   name: string;
   accountId: string;
@@ -107,6 +114,7 @@ export type Receipt = {
   createdAt: string;
 };
 export type Snapshot = {
+  institutions?: Institution[];
   accounts: Account[];
   categories: Category[];
   transactions: Transaction[];
@@ -137,6 +145,7 @@ export type ImportRow = {
     counterpartVersion: number;
   };
   categoryChosen?: boolean;
+  kindChosen?: boolean;
   kind: "income" | "expense" | "refund" | "transfer";
   counterAccountId: string | null;
   rowNumber: number;

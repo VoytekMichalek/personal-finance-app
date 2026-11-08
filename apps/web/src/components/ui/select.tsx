@@ -17,7 +17,7 @@ type Props = {
   className?: string;
   disabled?: boolean;
   scrollButtons?: boolean;
-  chip?: { colour: string; label: string };
+  chip?: { colour: string; label: string; icon?: ReactNode };
   id?: string;
   "aria-label"?: string;
   "aria-labelledby"?: string;
@@ -85,7 +85,8 @@ export function Select({
               : undefined
           }
         >
-          <span className="min-w-0 flex-1 truncate">
+          <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 truncate">
+            {chip?.icon}
             <Radix.Value placeholder="Choose an option">
               {chip?.label}
             </Radix.Value>

@@ -21,6 +21,7 @@ import {
   moneyInput,
   parseMoney,
   updateImportRows,
+  refreshImportRules,
   scheduleSchema,
   mergeStatementDateRepairs,
   type Account,
@@ -45,7 +46,8 @@ export function StatementReview({
   data: Snapshot;
   account: Account;
 }) {
-  const [rows, setRows] = useState(preview.rows);
+  const [reviewRows, setRows] = useState(preview.rows);
+  const rows = refreshImportRules(reviewRows, data, account.id);
   const [page, setPage] = useState(0);
   const [step, setStep] = useState(0);
   const [changingStep, startTransition] = useTransition();
@@ -55,7 +57,16 @@ export function StatementReview({
       setError("");
     });
   const [accepted, setAccepted] = useState<AcceptedRecurring[]>([]);
-  const [reviewed, setReviewed] = useState(false);
+  const reviewKey = JSON.stringify(
+    rows.map((row) => [
+      row.rowNumber,
+      row.kind,
+      row.categoryId,
+      row.counterAccountId,
+    ]),
+  );
+  const [reviewedKey, setReviewedKey] = useState("");
+  const reviewed = reviewedKey === reviewKey;
   const empty = !data.transactions.some((t) => t.accountId === account.id);
   const canApplyOpening = empty && account.openingBalanceCents === 0;
   const [openingRequested, setApplyOpening] = useState(canApplyOpening);
@@ -88,7 +99,7 @@ export function StatementReview({
   };
   const dateRepair = useStatementDateCorrection(preview.id, (corrected) => {
     setRows((current) => mergeStatementDateRepairs(current, corrected.rows));
-    setReviewed(false);
+    setReviewedKey("");
     commit.reset();
     const first = corrected.rows
       .map((row) => row.date)
@@ -110,10 +121,16 @@ export function StatementReview({
   const updateRow = useCallback(
     (n: number, patch: Partial<ImportRow>) => {
       clearError();
-      setReviewed(false);
-      setRows((current) => updateImportRows(current, n, patch));
+      setReviewedKey("");
+      setRows((current) =>
+        updateImportRows(
+          refreshImportRules(current, data, account.id),
+          n,
+          patch,
+        ),
+      );
     },
-    [clearError],
+    [clearError, data, account.id],
   );
   const firstDate = selected.map((r) => r.date).sort()[0];
   const dateProblem =
@@ -332,7 +349,7 @@ export function StatementReview({
           openingAmount={openingAmount}
           openingDate={openingDate}
           reviewed={reviewed}
-          setReviewed={setReviewed}
+          setReviewed={(value) => setReviewedKey(value ? reviewKey : "")}
           dateProblem={!!dateProblem}
           transferProblems={transferProblems}
           recurringProblems={accepted.some(

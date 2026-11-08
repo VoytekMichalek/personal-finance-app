@@ -30,7 +30,7 @@ export async function database() {
 export async function reset() {
   const db = await database();
   await db.$executeRawUnsafe(
-    'TRUNCATE "Receipt", "Transaction", "ImportBatch", "ImportMapping", "Budget", "Rule", "Schedule", "Valuation", "Asset", "Category", "Account", "AuditEvent", "RegistrationGrant", "Passkey", "Session", "AuthAccount", "Verification", "User", "Setup" CASCADE',
+    'TRUNCATE "Institution", "Receipt", "Transaction", "ImportBatch", "ImportMapping", "Budget", "Rule", "Schedule", "Valuation", "Asset", "Category", "Account", "AuditEvent", "RegistrationGrant", "Passkey", "Session", "AuthAccount", "Verification", "User", "Setup" CASCADE',
   );
   // Restore the seeded category baseline too: review-created categories must not
   // accumulate across repeat runs and change the next journey's dropdowns.
@@ -117,7 +117,19 @@ export async function account(page: Page, name = "Everyday", balance = "5000") {
   ).toBeVisible();
 }
 
+export async function revealFilter(page: Page, target: Locator) {
+  const toggle = page.getByRole("button", { name: /^Filters(?: · \d+)?$/ });
+  await expect(
+    target.or(toggle).filter({ visible: true }).first(),
+  ).toBeVisible();
+  if (!(await target.isVisible()) && (await toggle.isVisible())) {
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  }
+}
+
 export async function choose(page: Page, locator: Locator, label: string) {
+  await revealFilter(page, locator);
   await locator.click();
   if (await page.getByRole("menuitemcheckbox").count()) {
     const all = page.getByRole("menuitemcheckbox").first();
@@ -140,6 +152,7 @@ export async function choose(page: Page, locator: Locator, label: string) {
 
 export async function chooseDate(page: Page, locator: Locator, date: string) {
   const range = page.getByRole("button", { name: "Date range", exact: true });
+  await revealFilter(page, locator.or(range));
   // Wait for async page data before deciding whether this is a filter or form date.
   await expect(locator.or(range).first()).toBeVisible();
   if (!(await locator.isVisible())) await range.click();
@@ -178,6 +191,7 @@ export async function chooseDate(page: Page, locator: Locator, date: string) {
 
 export async function tickFilter(page: Page, name: string, labels: string[]) {
   const trigger = page.getByRole("button", { name, exact: true });
+  await revealFilter(page, trigger);
   await trigger.click();
   for (const label of labels) {
     const option = page.getByRole("menuitemcheckbox", {
@@ -194,6 +208,7 @@ export async function tickFilter(page: Page, name: string, labels: string[]) {
 export async function choosePeriod(page: Page, label: string) {
   const preset = page.getByRole("button", { name: label, exact: true });
   const trigger = page.getByRole("button", { name: "Date range", exact: true });
+  await revealFilter(page, preset.or(trigger));
   if (!(await preset.isVisible())) await trigger.click();
   await preset.click();
   await expect(preset).toBeHidden();

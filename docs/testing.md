@@ -1,5 +1,38 @@
 # Testing
 
+## Local demo administrator shortcut — 8 November 2026
+
+Verified the account-preview follow-up on the existing working tree (base
+`8148f084a8ebfd6e5e21b30163b95e4889f67533`), preserving unrelated in-progress work:
+
+- 19 policy unit cases pass: explicit opt-in/development mode, exact local demo
+  database, loopback origin/socket, Host matching and forwarded-header rejection.
+- 18 database-backed cases pass across `demo-login.integration.test.ts` and
+  `access.integration.test.ts` using only `finance_test`. They cover real Better
+  Auth cookies, the dedicated admin, one-hour expiry, logout revocation, blocked
+  cross-origin/foreign-host requests, disabled identities, the ordinary app's 404,
+  and existing role/bootstrap/invitation protections. The demo integration file
+  mocks only the environment gate to exercise its actual session flow in the
+  isolated test database; policy units cover the real gate separately.
+- `pnpm build`, API/web typechecks, affected ESLint, guardrails and diff whitespace
+  checks pass. The final API build includes the corrected expiry override. The
+  production frontend contains neither the demo button nor its sign-in request.
+- Focused Playwright `demo-boundary.spec.ts` plus `access.spec.ts`, one worker,
+  retries zero: 3 passed, 1 existing mobile WebAuthn skip. Desktop verifies the
+  real passkey lifecycle; desktop Chromium/mobile WebKit verify the production UI
+  omits the shortcut even when status metadata advertises it. Negative assertions
+  follow visible status completion. No new timing-sensitive tests or sleeps.
+- Live Vite preview on localhost:5174 verified the actual demo button, successful
+  admin sign-in, demo banner and all 14 sample account cards. Its proxy preserves
+  the incoming Host for the demo guard. The API binds to 127.0.0.1. Screenshot:
+  ignored `artifacts/demo-admin-signed-in.png`.
+
+R17/R18 source review: process-only demo flag and secret, no new deployment input,
+no frontend secrets, production guard fails closed, existing image/startup remain.
+R19 source review: expected denials retain quiet existing handling; the success
+audit contains IDs/action only. Production-image R17–R19 verification is not
+claimed for this local-only preview; no release or deployment was requested.
+
 Use Node/pnpm from mise. Start the local PostgreSQL service and run `pnpm ci:prepare` to compile shared schemas and generate Prisma, then run `pnpm ci:validate`. Install only the two required browsers once: `pnpm exec playwright install --with-deps chromium webkit`. CI installs native libraries; developer machines may need the same installation. E2E serves the existing production build; it never rebuilds or installs browsers.
 
 Unit tests own integer money/date calculations, owner filtering, refunds/transfers, budget boundaries, month-end recurrence, forecast double counting, recorded net worth and CSV/AI validation. Integration tests use actual PostgreSQL plus the Express API for permission, persistence, optimistic races, serialized admin safeguards, atomic imports, duplicate confirmation, occurrence uniqueness and authenticated private receipts. R2 failure fixtures test compensation and retry semantics; live R2/OpenRouter account verification is separate.
@@ -830,3 +863,400 @@ then passed all 14 desktop/mobile cases in 1.6 minutes. Both runs reused the exi
 production build on port 3002 and only finance_e2e. Final guardrails, ESLint and
 whitespace checks passed; application sources and the previously checked production
 bundle were unchanged by these test corrections.
+
+## HSBC grouped statements — 8 November 2026
+
+`hsbc.test.ts` owns column signs, blank posting dates, cross-page descriptions,
+New Year, overdrafts, source provenance, malformed amount rejection, multiple
+accounts/currencies and printed balance/total/count reconciliation. Its fixture
+contains fictional transactions and is extracted through real Poppler.
+`ai-reader.test.ts` proves omitted HSBC rows survive partial AI output and that
+invented dates/signs/footer rows cannot replace deterministic source evidence.
+Shared date tests retain the posting date ahead of dates inside descriptions.
+
+`hsbc-statements.integration.test.ts` owns real PDF upload, durable replacement
+of a partial saved review, atomic/idempotent import, source amount/date protection,
+refund preservation and inherited-date correction through the real API/database.
+The existing statement, bank-layout, job and date integration suites remain intact.
+`hsbc-statement.spec.ts` owns upload/review/reload/import, cross-page descriptions,
+displayed posting dates, final account balance and overflow on desktop/mobile.
+
+Focused local checks on Node 24.21.0 / pnpm 10.34.6 passed 52 unit cases across
+statement readers, shared dates and import review, and 25 database integration
+cases across the five statement/HSBC suites. Units use four workers on this
+20-CPU host; integration uses the existing single-worker `finance_test` fixture
+because it resets shared records. They ran independently. OCR checks reuse the
+installed local Docker Tesseract wrapper; initial sandbox/runtime failures were
+resolved by allowing local service access, without skipping OCR assertions.
+All workspace typechecks, focused ESLint, guardrails and production builds passed.
+
+The supplied ten-page household statement was checked locally without uploading it
+to an AI service or changing household records. The old reader produced 41 rows.
+The new full extraction pipeline produces 149 rows: 72 debits and 77 credits,
+matching the bank's printed counts and debit/credit totals. An independent
+decimal-arithmetic reference matched every row's posting date, signed amount,
+page and source line, all 41 running-balance checkpoints and the closing balance.
+There are no parser errors, unmatched transaction lines or reconciliation warnings.
+Regression fixtures contain only fictional data; the private PDF and extracted
+data stay outside the repository.
+
+Browser checks reuse the production build on port 3002 and `finance_e2e`, with one
+worker because journeys reset the same household fixture. The regular development
+server and household database remain untouched. A temporary harness changes only
+test origins to port 3002; existing Chromium/WebKit engines and native dependencies
+are reused. Backend PDF/database completion uses observable readiness. No timeout,
+retry or debounce behaviour changed. The affected missing-year recovery journey
+passed ten consecutive runs per engine with retries disabled: 20 passes in
+3.0 minutes (`artifacts/hsbc-date-repeats.log`). The complete selected files
+`hsbc-statement.spec.ts`, `statement-date-recovery.spec.ts`,
+`statement-reread.spec.ts` and `statements.spec.ts` then passed all 16 journeys
+on both engines in 2.2 minutes (`artifacts/hsbc-browser-suite.log`). Desktop/mobile
+HSBC review screenshots were visually inspected. Formatting and whitespace
+checks also pass. These are focused local working-tree results; no full GitHub
+CI, new production image, release, publication or deployment is claimed.
+
+### Account import history, saved-rule recovery and account spending — 8 November 2026
+
+Scope: newest recorded transaction dates on cards, account details and import
+screens; current saved-rule suggestions in new entries and CSV/PDF reviews;
+reviewed bulk application to existing uncategorised records; and account-only
+spending/category drill-downs. The latter reproduced an obsolete `accountId`
+filter at the call site while the report requires `accountIds`. The regression
+fixture includes both uncategorised and same-category spending in another account.
+
+Focused units passed 46 cases across 11 shared/web files with four workers.
+Database checks passed 51 cases across eight integration files: category-rule
+application, date repair/saved reviews, remembered categories, finance, HSBC,
+CSV, reconciliations and remembered transfers. Stale transactions/rules/categories/
+accounts, explicit choices, exact-rule precedence, refunds, transfer exclusion,
+reviewed-ID boundaries, atomic rejection and source date/amount protections are
+covered. A new test initially compared the automatic `updatedAt` timestamp as a
+ledger fact; its expectation now permits that timestamp while checking every
+other field. The corrected suite passes. All workspace typechecks, focused lint,
+source/file guardrails and production builds pass.
+
+Checks use Node 24.21.0 / pnpm 10.34.6, isolated `finance_test` and `finance_e2e`,
+and the existing port-3002 browser harness. Unit and independent database/browser
+checks run concurrently; each database fixture retains one worker because its
+reset is shared. Browser engines and compiled output are reused. The user guide
+explains latest dates, explicit rule choices, recovery from stale bulk matches,
+and the account boundary. No household records, schema or release identity change.
+
+## Category slicer Select all — 8 November 2026
+
+`category-select-all.spec.ts` covers Transactions, account ledgers and Expenses on
+both desktop Chromium and mobile WebKit: keyboard activation, every option ticked
+(including archived categories and Uncategorised), keeping the menu open, excluding
+one child while its parent stays ticked, reload persistence, selecting all again,
+clearing and restoring ordinary parent/subcategory behaviour. Menu bounds and
+screenshots cover small-screen layout. Shared expense units own exact-category
+exclusion and refund totals; the real API/database case in
+`expense-categories.integration.test.ts` rejects an excluded child's ID and keeps
+it unchanged when remembering visible matches.
+
+The checks use Node 24.21.0 / pnpm 10.34.6. Browser verification uses port 3107 and a
+separate `category_slicer_20261108` schema in isolated `finance_e2e`, with its own
+environment file, to preserve the existing local test preview on port 3002. One
+browser worker remains necessary for shared fixture resets within that schema.
+API checks use `finance_test`; independent units, static checks and API checks run
+concurrently. Existing compiled output and installed engines are reused. These
+interactions introduce no browser-owned deadlines or timing-wait conversions;
+assertions use rendered state and completion, without sleeps or retries.
+
+Verification passed: all workspace typechecks, production shared/API/web builds,
+source/file guardrails, changed-file ESLint and whitespace checks; 22 focused unit
+cases (`expenses`, `expense-category-trend`, `transaction-rules`, `chart-groups`);
+5 API/database cases (`expense-categories`, `ui-flow`); and 12 browser cases across
+both projects (`category-select-all`, `expense-filters`, `uncategorised-filters`).
+The first new browser run incorrectly queried the trigger while Radix hid the
+background from accessibility queries. Moving that text assertion until after
+Escape corrected the test; all six new cases then passed in 52.2 seconds, with
+retries disabled. The six existing cases passed against the same application build.
+Desktop/mobile screenshots of all three category menus were inspected. Full GitHub
+CI, a commit, publication and deployment are not claimed for this local change.
+
+The initial desktop/mobile pass completed all 24 selected journeys (2.7 minutes).
+The affected timing flows—CSV AI batch recovery, remembering PDF categories across
+pages, and PDF date repair—then each passed ten consecutive runs on both Chromium
+and WebKit with retries disabled: 60 passes in 9.0 minutes
+(`artifacts/account-rule-timing-repeats.log`). Existing browser clocks and response
+barriers remain; PDF extraction and database readiness still use real observable
+completion. Desktop/mobile screenshots of the account dates and saved-rule review
+were visually inspected, with no horizontal overflow.
+
+The final affected suite then passed all 46 journeys on desktop Chromium and
+mobile WebKit in 5.0 minutes, with retries disabled
+(`artifacts/account-rule-browser-suite.log`). Files: account cards/insights,
+category rules, saved-rule application, CSV AI/import, remembered categories,
+HSBC statements, date recovery, rereading and the statement/account journeys.
+The chart regression verifies that another account's uncategorised and grocery
+spending appears in neither the account bars nor the category drill-down, while
+refunds, transfers and balance figures remain correct. These are focused local
+working-tree results, not a full CI, image, release or deployment assessment.
+
+Candidate boundary: the browser server reused the production build prepared for
+this task. During verification, separate account-branding/schema and category-filter
+work appeared in the shared checkout, including later edits to AccountCard and its
+fixtures. Those edits were preserved; the latest-date props, saved-rule route and
+accountIds spending fix remain present. The results above do not certify the
+subsequently combined working tree or its new branding/migration work. That work
+needs its own rebuilt-candidate verification; this task did not release or deploy.
+
+
+## Institution branding and soft account cards — 8 November 2026
+
+Scope: nine bundled institution presets, exact-name recognition, per-account
+appearance overrides, bounded PNG logo persistence, reusable custom institutions,
+soft-tinted cards, amount-owed labels and retained last-transaction/owner behaviour.
+Verification used Node 24.21.0 / pnpm 10.34.6 on the local worktree based on
+`8148f084a8ebfd6e5e21b30163b95e4889f67533`, including the pre-existing uncommitted
+account/import/category changes. No household database reset, release or deployment
+was performed. Migration checks used only finance_test and finance_e2e.
+
+Coverage ownership:
+
+- Shared `institutions.test.ts` owns exact aliases, unknown/cash fallback, icon/logo
+  precedence, per-account override isolation and rejecting executable URLs, SVGs,
+  arbitrary CSS, oversized logo strings and unsupported presets. Existing account
+  and finance units retain exact-cent ledger semantics.
+- `account-branding.integration.test.ts` owns authenticated member persistence,
+  reusable institution creation plus account save atomicity, duplicate-name rollback,
+  invalid relations, PNG signature/dimension checks, preserved omitted overrides and
+  round-tripping existing null appearance while correcting opening dates. Finance,
+  UI-flow, statements and asset-transfer integration tests protect surrounding routes.
+- `account-branding.spec.ts` owns existing-name recognition, restore defaults,
+  persisted edits, PNG conversion, invalid-file recovery, held save-pending state,
+  save failure preserving inputs, explicit retry and reuse on another account.
+  `account-cards.spec.ts` retains owner-colour consistency, filtering/archival,
+  last-transaction dates, long names, detail editing and no horizontal overflow.
+  The approved taller branded layout replaces the earlier 180/200px compact-card
+  limits with a 280px maximum; four desktop columns and single-column mobile
+  checks remain. Credit debt now asserts the explicit Amount owed label plus its
+  positive displayed magnitude; ledger/combined balances stay signed.
+
+One browser worker remains necessary because both projects reset finance_e2e. API
+checks use separate finance_test; types, lint and pure units ran independently.
+Real browser image decoding and API/database completion use observable readiness.
+A response barrier is installed before save, asserts pending, then releases the
+503 response; no timeout, debounce or scheduled retry is introduced. No arbitrary
+sleeps, retries, new browser installs or rebuilt E2E server setup were used.
+
+Local verification results:
+
+- `pnpm guardrails`, affected-file ESLint, all three workspace typechecks,
+  `git diff --check` and `pnpm build`: passed.
+- Selected units: institutions, accounts and finance — 22 tests passed.
+- Selected real API/database integration: account-branding, finance, ui-flow,
+  statements and asset-transfers — 31 tests passed.
+- Ten sequential invocations of `playwright test e2e/account-branding.spec.ts
+  --retries=0`, desktop Chromium and mobile WebKit, one worker: 10/10 passes,
+  40 checks total, approximately 26–27 seconds per invocation. Logs are ignored
+  `artifacts/account-branding-run-1.log` through `-10.log`. The same built output
+  was reused. The host uses the existing `/tmp/finance-csv-webkit.sh` native-library
+  launcher; no project/browser configuration was changed.
+- Desktop/mobile account and Appearance screenshots inspected; all nine bundled
+  logo files decode/parse, and SVGs contain no scripts or external images.
+
+Verified build identity: API account service SHA-256
+`e84fd2335fa6f7da430d54101c9f281de71ef2b6abe5e37fd52b18c2944c72ab`;
+Accounts chunk `Accounts-Ne6PV9UO.js`, AccountForm chunk `AccountForm-CLoCal9n.js`.
+These are focused local checks, not full GitHub CI or production-image/readiness
+certification. No version or release notes change is required before a release is
+requested.
+
+Final affected browser suite: `playwright test e2e/account-branding.spec.ts
+e2e/account-cards.spec.ts e2e/account-insights.spec.ts e2e/statements.spec.ts
+e2e/statement-date-recovery.spec.ts --retries=0` — all 22 desktop/mobile checks
+passed in 2.4 minutes after the ten-run streak. The same production build was used;
+all nine local institution assets also match the files packaged into that build.
+
+
+## Qantas Pay AUD statement reader — 8 November 2026
+
+Scope: Qantas prepaid statement columns, currency selection, wrapped merchants,
+cross-page amounts, full dates across New Year, refund/reload suggestions and
+unmatched settlement warnings. The supplied PDF was checked locally read-only
+through the actual reader: all 23 identifiable transactions are retained and
+one undated monetary line remains highlighted. Household data is not committed
+as a fixture or sent to an AI provider.
+
+Coverage ownership:
+
+- Parser units use a synthetic three-page PDF through real Poppler. They own
+  exact cents/dates, balance currencies, continuation lines, malformed amounts,
+  ambiguous/missing/foreign wallet values, conflicting signs, refunds and reloads.
+- The mocked AI provider case owns preservation of every verified source row,
+  signed wallet amounts, source descriptions, refund category eligibility,
+  category-free transfers and refusal to invent an undated payment.
+- Real API/database tests own durable previews, rereading an old partial review,
+  source date/amount tampering, atomic approval, refund persistence, paired
+  reload transfers, idempotency and warnings surviving a reload.
+- Desktop/mobile browser journeys own upload, opening balance, source notes,
+  incomplete-entry recovery controls, merchant/refund display, funding-account
+  choice and a complete import. No new timer, debounce or timeout is introduced.
+  Real PDF worker/database completion uses observable readiness.
+
+Focused local checks use Node 24.21.0 / pnpm 10.34.6 on the worktree based on
+`8148f084a8ebfd6e5e21b30163b95e4889f67533`. Unrelated in-progress UI/schema work
+is preserved. Statement units (all module test files plus shared statement dates):
+54 passed. The six affected integration files (Qantas, HSBC, statements, jobs,
+bank statements and dates): 28 passed in 29.82 seconds. Final integration uses
+only schema `qantas_reader_20261108` in finance_test. Guardrails, affected ESLint,
+API/shared/web typechecks and the production build passed. A transient web
+typecheck failure in concurrent category/schedule work cleared on recheck; those
+files were not modified for this fix.
+
+Browser validation uses a temporary harness at `/tmp/finance-qantas-e2e`, port
+3109 and task-specific schemas in finance_e2e because the regular
+preview port is occupied. The harness changes only test origins/paths and server
+binding; assertions and timeouts remain. Both existing Chromium and WebKit engines
+are reused with `/tmp/finance-csv-webkit.sh`. One browser worker remains necessary
+within this schema because each journey resets it. Database integration and
+independent static/unit checks can run alongside the browser checks. The existing
+production build is reused. An initial source-notes locator selected a hidden
+paragraph; it was corrected to target the visible disclosure without weakening
+assertions or extending timeouts.
+
+Verified reader build SHA-256: Qantas module
+`b9bdb65a641750baae30a7d842b5b204ebcc6e60875d8d8778e090813708432d`;
+AI reader `c3ac9f3b3472eaed1e0822774afeacbb4db925c25baa2b490ba22d618e782e20`.
+No configuration or logging sink changes apply: source inspection retains quiet
+expected validation failures and existing worker error redaction. This is focused
+local verification, not full CI, production-image R17–R19 certification, release
+or deployment evidence.
+
+The four new Qantas desktop/mobile journeys passed in 43.5 seconds after the
+source-notes locator correction. Desktop source-note and mobile transfer-review
+screenshots were inspected, including no horizontal overflow. A later rerun
+encountered a concurrent rename of another task's visual-identity migration:
+the test schema had already applied the same columns under the earlier name.
+No application change or household database was involved. Stability verification
+therefore uses fresh schema `qantas_reader_20261108_v3`, migrated once, with
+compatible setup reused for subsequent invocations. The previous failed schema
+is unused; no migration history was rewritten.
+
+Saved-review timing recovery: ten sequential invocations of
+`playwright test e2e/statement-reread.spec.ts --retries=0` passed on desktop
+Chromium and mobile WebKit, one worker (20 checks total). Logs:
+`/tmp/finance-qantas-e2e/artifacts/reread-1.log` through `reread-10.log`.
+Existing browser-clock and response-barrier assertions are unchanged. The final
+affected statement suite follows the streak using the same build/setup.
+
+The affected browser suite passed all 20 desktop/mobile checks in 3.3 minutes
+with retries disabled: Qantas, HSBC, statement dates, saved rereading and the
+statement/account journeys. Log:
+`/tmp/finance-qantas-e2e/artifacts/final-statement-suite.log`.
+
+Final review added a narrow fail-closed guard for a recognised Qantas layout
+with no complete AUD transactions: it returns export/retry guidance instead of
+falling through to generic OCR/AI. A provider regression verifies that no AI
+request is made for a foreign-only wallet. The complete affected unit/OCR
+selection then passed 56 cases, the API was rebuilt, and the supplied PDF passed
+the compiled reader again (3 pages, 23 complete source rows). Final Qantas build
+SHA-256 is `2b87611922e36942e249a9dbf0349cd59c4ab41109264e19bcff5deb8fffb612`;
+the AI reader hash is unchanged. The existing broader browser results cover the
+unchanged generic/HSBC paths; Qantas desktop/mobile checks are repeated against
+this last build. No timer or recovery-control behaviour changed in that guard.
+
+Final rebuilt-reader Qantas browser rerun: all four desktop/mobile cases passed
+in 48.8 seconds, retries disabled, same isolated setup. Log:
+`/tmp/finance-qantas-e2e/artifacts/qantas-final-guard.log`. The final highlighted
+orphan-source screenshot was inspected. Final affected lint, guardrails and
+diff-whitespace checks pass. Temporary environment files containing test session
+secrets are removed after verification; logs and synthetic screenshots remain.
+
+## Visual consistency and calendar-year dashboard — 8 November 2026
+
+Scope: institution identity across selectors/detail/imports; persisted category
+icons and schedule icons/colours; tinted overview, budget, forecast and net-worth
+summaries; asset identity; compact mobile filters, visible active selections and
+clear controls; import progress; loading/empty states and the mobile account
+form's sticky Save button. The year shortcut uses calendar year to date and net
+income; monthly budgets remain monthly. Top categories and drill-down dates
+follow the selected period; available balance stays current.
+
+Validation used Node 24.21.0 / pnpm 10.34.6 and the existing build server. API
+checks used finance_test, browser checks finance_e2e, and only additive migrations
+were applied to finance_demo. Existing demo records were preserved; the real
+finance database was not reset or migrated. The initial renamed migration failed
+because the original migration had already run in finance_test; restoring its
+original identity and marking only the failed duplicate attempt rolled back
+recovered the test setup without deleting data or changing schema history in the
+real database.
+
+- Shared period/icon tests cover January boundaries, leap February, historical
+  month end, today cutoffs, owner selection, refunds, transfer exclusion, current
+  balances and explicit/inherited/default icons.
+- `pnpm test`: 203 passed. The first run lacked host Tesseract; rerunning with
+  `PATH=/tmp/finance-ocr-bin:$PATH` used the pre-existing OCR container wrapper and
+  passed all tests, including real PDF/scan extraction.
+- Focused API integration: 17 passed across visual-identity, finance,
+  account-branding and expense-categories. New appearance fields survive snapshot
+  reload, preserve omitted fields from older clients, support null resets and
+  reject invalid icon/colour values.
+- Broad desktop/mobile regression: 69/70 initially passed across 15 files. The
+  remaining assertion exposed the account form's nested fieldset bypassing the
+  existing sticky-submit selector. Extending that selector restored visible Save
+  on mobile without weakening the test. Final ui-polish, ux-flow and
+  visual-refresh journeys then passed 18/18, including that assertion and the
+  appearance reset staying unsaved until Save is pressed.
+- Browser screenshots under `artifacts/visual-*.png` cover Overview, transactions,
+  expenses, account detail, CSV/PDF import, schedule appearance, assets, net worth
+  and Settings on desktop/mobile. Screenshots were visually inspected; overflow
+  assertions are retained. Long mobile pages use CSS-scale captures rather than
+  exceeding WebKit's bitmap size limit.
+- Production build, all workspace typechecks, repository lint, guardrails and
+  `git diff --check` passed. No release, deployment or full readiness decision is
+  claimed by this visual change.
+
+Browser tests retain one worker because their reset fixtures share finance_e2e.
+Independent unit/API verification ran alongside browser checks on separate data.
+New tests wait for visible state and completed saves; no arbitrary sleeps were
+introduced. Filter helpers reveal the mobile panel before choosing a hidden
+control, preserving their selection, date, focus and recovery assertions.
+
+The affected date-popover and inline-category pending/recovery tests subsequently
+passed ten consecutive repetitions per desktop/mobile project with retries
+explicitly disabled: **40/40 passed**. Command: `FINANCE_WEBKIT_EXECUTABLE=/tmp/finance-csv-webkit.sh mise exec -- pnpm exec playwright test e2e/ui-polish.spec.ts e2e/transaction-categories.spec.ts --grep '@timing' --repeat-each=10 --retries=0`.
+The full affected `ui-polish.spec.ts` and `transaction-categories.spec.ts` suites
+then passed **14/14** on the same build, with retries disabled. Final local demo
+startup uses `BETTER_AUTH_URL=http://localhost:5174 mise exec -- pnpm dev:demo`;
+it retains the separate finance_demo database and existing admin login boundary.
+Manual preview: signed in as Demo Admin at localhost:5174; verified populated
+month totals, then selected This year and confirmed the year-to-date label,
+net-income card and January-to-today category drill-down URLs. The current
+balance remained unchanged. `artifacts/visual-demo-overview.png` records the
+signed-in preview left open for the owner.
+
+
+## v0.0.14 release candidate — 8 November 2026
+
+Release scope combines the already documented institution/visual/period changes
+with pending HSBC/Qantas readers, saved-rule recovery and category selection.
+Root/API/web/shared manifests and in-app release highlights agree on 0.0.14.
+The existing desktop/mobile screenshots and timing repetition evidence above
+cover the unchanged application candidate; release metadata introduces no new UI.
+
+Focused pre-commit verification on Node 24.21.0 / pnpm 10.34.6 passed guardrails,
+repository ESLint, all workspace typechecks and whitespace checks. Eleven selected
+unit files passed 69 tests (periods, branding, accounts, import rules, statement
+dates, expenses, demo policy and statement providers). Ten isolated finance_test
+API files passed 43 tests: access, account branding, saved-rule application, demo
+sessions, expense categories, HSBC, Qantas, statement dates, visual identity and
+diagnostics. Logs are `/tmp/finance-release-unit.log` and
+`/tmp/finance-release-integration.log`. Existing test fixtures retain their
+sequential shared-database group; independent unit/static verification ran in
+parallel. No household/demo data was reset.
+
+R17/R18 inspection found no changed production inputs: the single API/webapp
+service still owns root `.env.example` with runtime-only database/auth/optional
+provider inputs; local `.env.local.example` remains separate and Docker excludes
+real environment files. The development-only demo flag is launcher-owned, not
+a deployment input. R19 retains quiet auth/validation paths, disabled Better Auth
+logging and safe SIGUSR2 diagnostics; focused diagnostics/access tests passed.
+Both migrations only add nullable appearance fields and the institution table.
+The existing production-image smoke suite exercises migrations, durable data/setup,
+configuration, metadata, log silence, diagnostics and redacted genuine failures.
+It now also asserts the production access status disables demo login and the
+demo endpoint returns 404. Exact-candidate image smoke/scan evidence and complete
+application validation are required in GitHub before tagging/publication.

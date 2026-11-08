@@ -1,5 +1,5 @@
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { reviewStatus, type ReviewStatus } from "./review-status";
-import { accountLabel } from "@finance/shared";
 import { TransferValueNote } from "../assets/TransferValueNote";
 import { RememberCategory } from "./RememberCategory";
 import { EditAccountButton } from "../accounts/EditAccountButton";
@@ -213,9 +213,10 @@ const ReviewRow = memo(function ReviewRow({
                 .filter((a) => !a.archived && a.id !== accountId)
                 .map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    <Pill colour={identityColour("account:" + a.id)}>
-                      {accountLabel(a)}
-                    </Pill>
+                    <AccountIdentity
+                      account={a}
+                      institutions={data.institutions}
+                    />
                   </SelectItem>
                 ))}
             </Select>

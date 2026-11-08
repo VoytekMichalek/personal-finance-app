@@ -10,6 +10,7 @@ import {
   identityColour,
   money,
   type Account,
+  type ExpenseFilters,
   type Snapshot,
 } from "@finance/shared";
 import { Card, SectionTitle } from "../common/primitives";
@@ -38,7 +39,11 @@ export function AccountInsights({
     valid ? from : data.today,
     valid ? to : "",
   );
-  const filters = { accountId: account.id, from: history.from, to };
+  const filters: ExpenseFilters = {
+    accountIds: [account.id],
+    from: history.from,
+    to,
+  };
   const report = expenseReport(data, filters);
   const max = Math.max(
     1,

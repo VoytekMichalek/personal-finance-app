@@ -76,8 +76,16 @@ regular dev server, then run `pnpm dev:demo`. Open
 `http://localhost:5173/budget-report`. This creates a separate `finance_demo`
 database with six months of fictional transactions, category budgets, monthly
 overrides and recurring bills. Existing local users, passkeys and unexpired
-sessions are copied only so the same local sign-in works; household financial
+sessions are copied during preparation; household financial
 records are not copied or edited. The demo shows an explicit banner.
+
+Choose **Continue as demo admin** on the demo sign-in screen to preview without
+a passkey. It signs in as a separate **Demo Admin** with access only to the demo
+database. Sessions expire after one hour; logging out or restarting the demo ends
+access. Existing local passkeys can also sign in to the demo.
+If port 5173 is occupied, launch with
+`BETTER_AUTH_URL=http://localhost:5174 pnpm dev:demo` and open the printed Vite
+address using `localhost` (the hostname and port must match the auth URL).
 
 Preparation refuses remote databases and production mode, and never overwrites
 an existing demo with accounts. Repeating it preserves edits made while testing.
@@ -85,4 +93,10 @@ External AI and object storage configuration is disabled for the demo process.
 Stop the demo process and run `pnpm dev` to return to the regular `finance`
 database. `.env` is unchanged. `VITE_DEMO_DATA` is a non-secret development-only
 UI flag set by the demo launcher; `DATABASE_URL` is overridden only for that
-process. No demo flag, dataset or credentials are included in a production build.
+process. The launcher also sets server-only `FINANCE_DEMO_LOGIN=1`, explicit
+development mode and a fresh authentication secret for that process. The API
+requires a loopback origin, connection and database host, the exact `finance_demo`
+database, and an exact Host match. It binds to loopback and uses separate demo
+cookies. This sign-in is unavailable in production or the ordinary household
+process; do not add the demo flag to deployment configuration. The demo button
+is omitted from production frontend builds.

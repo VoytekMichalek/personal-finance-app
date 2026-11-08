@@ -142,14 +142,14 @@ export function ExpenseCategoryChart({
                           tickFormatter={period}
                           interval="preserveStartEnd"
                           minTickGap={32}
-                          tick={{ fontSize: 11 }}
+                          tick={{ fontSize: 12 }}
                           tickLine={false}
                           axisLine={false}
                         />
                         <YAxis
                           width={64}
                           tickFormatter={(value) => money(Number(value), true)}
-                          tick={{ fontSize: 11 }}
+                          tick={{ fontSize: 12 }}
                           tickLine={false}
                           axisLine={false}
                         />

@@ -1,6 +1,7 @@
 import {
   statementCommitSchema,
   today,
+  refreshImportRules,
   type StatementDetails,
   type ImportRow,
   type StatementResult,
@@ -40,12 +41,22 @@ export async function statementPreview(id: string): Promise<StatementResult> {
   const account = await prisma.account.findUniqueOrThrow({
     where: { id: item.accountId },
   });
-  const rows = json<ImportRow[]>(item.importBatch.preview).map((row) => ({
+  let rows = json<ImportRow[]>(item.importBatch.preview).map((row) => ({
     ...row,
     owner: account.owner,
   }));
   const details = json<StatementDetails>(item.details);
   if (!item.importBatch.committedAt) {
+    const [accounts, categories, rules] = await Promise.all([
+      prisma.account.findMany(),
+      prisma.category.findMany(),
+      prisma.rule.findMany(),
+    ]);
+    rows = refreshImportRules(
+      rows,
+      json({ accounts, categories, rules }),
+      account.id,
+    );
     details.recurring = recurringSuggestions(rows, item.accountId, today());
     recoverBalances(details, rows, account.type);
   }

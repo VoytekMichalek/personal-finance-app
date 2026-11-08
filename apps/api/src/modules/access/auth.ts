@@ -6,7 +6,10 @@ import type { Request, Response } from "express";
 import { config } from "../../lib/config.js";
 import { accessLock, prisma, type DB } from "../../lib/db.js";
 import { validGrant } from "./grants.js";
+import { demoLoginEnabled, localDemoRequest } from "./demo-policy.js";
+import { demoLoginPlugin } from "./demo-login.js";
 export function makeAuth(db: DB) {
+  const demo = demoLoginEnabled();
   return betterAuth({
     database: prismaAdapter(db, { provider: "postgresql", transaction: false }),
     baseURL: config.BETTER_AUTH_URL,
@@ -21,7 +24,11 @@ export function makeAuth(db: DB) {
         state: { type: "string", defaultValue: "invited", input: false },
       },
     },
-    session: { cookieCache: { enabled: false } },
+    session: {
+      cookieCache: { enabled: false },
+      ...(demo ? { expiresIn: 3600, updateAge: 3600 } : {}),
+    },
+    advanced: demo ? { cookiePrefix: "finance-demo" } : undefined,
     logger: { disabled: true },
     databaseHooks: {
       session: {
@@ -40,6 +47,7 @@ export function makeAuth(db: DB) {
       },
     },
     plugins: [
+      ...(demo ? [demoLoginPlugin(db)] : []),
       passkey({
         rpID: new URL(config.BETTER_AUTH_URL).hostname,
         rpName: "Michalek Finance",
@@ -106,6 +114,7 @@ const allowed = new Set([
   "/passkey/list-user-passkeys",
   "/passkey/delete-passkey",
   "/passkey/update-passkey",
+  "/demo-login",
 ]);
 class AuthRollback extends Error {
   constructor(public response: globalThis.Response) {
@@ -114,7 +123,11 @@ class AuthRollback extends Error {
 }
 export async function authHandler(request: Request, response: Response) {
   const path = request.path.replace("/api/auth", "");
-  if (!allowed.has(path)) {
+  if (
+    !allowed.has(path) ||
+    (path === "/demo-login" &&
+      (!demoLoginEnabled() || !localDemoRequest(request)))
+  ) {
     response.status(404).json({ error: "Not found" });
     return;
   }

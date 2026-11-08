@@ -11,6 +11,7 @@ import { addDays, monthEnd } from "./money.js";
 import { scheduleImpact } from "./schedules.js";
 import { isCashAccount } from "./accounts.js";
 import { effectiveBudgets } from "./budgets.js";
+import { overviewPeriod } from "./overview-period.js";
 export function accountBalance(
   account: Account,
   transactions: Transaction[],
@@ -281,13 +282,13 @@ export function overview(
   snapshot: Snapshot,
   owner = "all",
   month = snapshot.today.slice(0, 7),
+  period: "month" | "year" = "month",
 ) {
+  const { from, to } = overviewPeriod(snapshot.today, month, period);
   const transactions = snapshot.transactions.filter(
     (t) => owner === "all" || t.owner === owner,
   );
-  const current = transactions.filter(
-    (t) => t.date.startsWith(month) && t.date <= snapshot.today,
-  );
+  const current = transactions.filter((t) => t.date >= from && t.date <= to);
   const income = current
     .filter((t) => t.kind === "income")
     .reduce((s, t) => s + t.amountCents, 0);

@@ -1,3 +1,5 @@
+import { AccountBanner } from "../components/accounts/AccountIdentity";
+import { ImportProgress } from "../components/imports/ImportProgress";
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +19,8 @@ import {
 } from "../components/common/primitives";
 import { StatementReview } from "../components/statements/StatementReview";
 import { StatementProcessing } from "../components/statements/StatementProcessing";
+import { latestTransactionDates } from "@finance/shared";
+import { LastTransaction } from "../components/accounts/LastTransaction";
 export function StatementImport() {
   const { id, statementId } = useParams();
   const query = useSnapshot();
@@ -81,6 +85,24 @@ export function StatementImport() {
         eyebrow={account.name}
         title={preview ? "Review statement" : "Upload statement"}
         description=""
+      />
+      <AccountBanner account={account} institutions={data.institutions}>
+        <LastTransaction
+          date={latestTransactionDates(data.transactions).get(account.id)}
+        />
+      </AccountBanner>
+      <ImportProgress
+        label="Statement import progress"
+        steps={["Upload PDF", "Read statement", "Review & approve"]}
+        current={
+          preview?.status === "ready"
+            ? preview.committedAt
+              ? 4
+              : 3
+            : preview
+              ? 2
+              : 1
+        }
       />
       {preview && preview.status !== "ready" ? (
         <StatementProcessing statement={preview} />

@@ -146,6 +146,35 @@ test("account balance history and category drill-down reconcile with refunds and
     const dining = await db.category.findFirstOrThrow({
       where: { name: "Dining" },
     });
+    const other = await db.account.create({
+      data: {
+        name: "Other spending account",
+        type: "bank",
+        owner: "household",
+        openingDate: "2026-01-01",
+        openingBalanceCents: 0n,
+      },
+    });
+    await db.transaction.createMany({
+      data: [
+        {
+          description: "Other account uncategorised",
+          categoryId: null,
+          amountCents: -99900n,
+        },
+        {
+          description: "Other account groceries",
+          categoryId: groceries.id,
+          amountCents: -25000n,
+        },
+      ].map((row) => ({
+        ...row,
+        kind: "expense",
+        accountId: other.id,
+        owner: "household",
+        date: "2026-01-03",
+      })),
+    });
     await db.transaction.createMany({
       data: [
         {
@@ -205,6 +234,9 @@ test("account balance history and category drill-down reconcile with refunds and
     await expect(
       page.getByText("$85.00 net expenses", { exact: false }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /^Uncategorised:/ }),
+    ).toHaveCount(0);
     await page.getByText("View balance values", { exact: true }).click();
     await expect(
       page
@@ -247,6 +279,9 @@ test("account balance history and category drill-down reconcile with refunds and
       detail.getByText("Food refund", { exact: true }),
     ).toBeVisible();
     await expect(detail.getByText("Transactions · 2")).toBeVisible();
+    await expect(
+      detail.getByText("Other account groceries", { exact: true }),
+    ).toHaveCount(0);
     await expect(
       detail.getByRole("img", { name: "Groceries spending trend" }),
     ).toBeVisible();

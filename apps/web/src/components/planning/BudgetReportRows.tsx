@@ -1,3 +1,4 @@
+import { CategoryIcon } from "../common/VisualIcon";
 import { Link } from "react-router-dom";
 import { BudgetUsage } from "./BudgetUsage";
 import {
@@ -25,12 +26,12 @@ export function BudgetReportRows({
       aria-label="Category budget performance"
     >
       <div
-        className="hidden grid-cols-[minmax(8rem,1.3fr)_12rem_repeat(5,minmax(4.5rem,1fr))] items-end gap-3 pb-3 text-right text-[11px] text-muted-foreground xl:grid [&>span+span]:border-l [&>span+span]:border-border/40 [&>span+span]:pl-3"
+        className="hidden grid-cols-[minmax(8rem,1.3fr)_12rem_repeat(5,minmax(4.5rem,1fr))] items-end gap-3 pb-3 text-right text-xs text-muted-foreground xl:grid [&>span+span]:border-l [&>span+span]:border-border/40 [&>span+span]:pl-3"
         aria-hidden="true"
       >
         <span className="text-left">Category</span>
         <span className="text-left">
-          Used + bills <span className="block text-[10px]">150% max</span>
+          Used + bills <span className="block text-xs">150% max</span>
         </span>
         <span>Budget</span>
         <span>Actual</span>
@@ -56,8 +57,15 @@ export function BudgetReportRows({
           >
             <div className="grid items-center gap-4 xl:grid-cols-[minmax(8rem,1.3fr)_12rem_repeat(5,minmax(4.5rem,1fr))] xl:gap-3">
               <div>
-                <p className="text-sm font-medium">{name}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <CategoryIcon
+                    category={category}
+                    categories={data.categories}
+                    small
+                  />
+                  {name}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
                   {row.budgetCents === null
                     ? "No budget set"
                     : row.overridden
@@ -70,7 +78,7 @@ export function BudgetReportRows({
               </div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm tabular-nums sm:grid-cols-5 xl:contents xl:[&>div]:flex xl:[&>div]:self-stretch xl:[&>div]:flex-col xl:[&>div]:justify-center xl:[&>div]:border-l xl:[&>div]:border-border/40 xl:[&>div]:pl-3">
                 <div className="xl:text-right">
-                  <dt className="text-[11px] text-muted-foreground xl:sr-only">
+                  <dt className="text-xs text-muted-foreground xl:sr-only">
                     Budget
                   </dt>
                   <dd>
@@ -78,7 +86,7 @@ export function BudgetReportRows({
                   </dd>
                 </div>
                 <div className="xl:text-right">
-                  <dt className="text-[11px] text-muted-foreground xl:sr-only">
+                  <dt className="text-xs text-muted-foreground xl:sr-only">
                     Actual
                   </dt>
                   <dd>
@@ -92,7 +100,7 @@ export function BudgetReportRows({
                   </dd>
                 </div>
                 <div className="xl:text-right">
-                  <dt className="text-[11px] text-muted-foreground xl:sr-only">
+                  <dt className="text-xs text-muted-foreground xl:sr-only">
                     Under / over
                   </dt>
                   <dd
@@ -108,13 +116,13 @@ export function BudgetReportRows({
                   </dd>
                 </div>
                 <div className="xl:text-right">
-                  <dt className="text-[11px] text-muted-foreground xl:sr-only">
+                  <dt className="text-xs text-muted-foreground xl:sr-only">
                     Upcoming bills
                   </dt>
                   <dd>{money(row.upcomingCents)}</dd>
                 </div>
                 <div className="xl:text-right">
-                  <dt className="text-[11px] text-muted-foreground xl:sr-only">
+                  <dt className="text-xs text-muted-foreground xl:sr-only">
                     After bills
                   </dt>
                   <dd

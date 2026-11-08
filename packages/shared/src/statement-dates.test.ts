@@ -77,4 +77,16 @@ describe("statement date recovery", () => {
     expect(result[1]).toBe(current[1]);
     expect(current[0]!.date).toBe("");
   });
+  it("uses a verified grouped posting date ahead of dates inside a description", () => {
+    const details = {
+      lines: [
+        {
+          rowNumber: 1,
+          text: "01 Jan reference Cashback 0.20",
+          dateText: "02 Jan",
+        },
+      ],
+    } as StatementDetails;
+    expect(statementRowDateText(details, 1)).toBe("02 Jan");
+  });
 });

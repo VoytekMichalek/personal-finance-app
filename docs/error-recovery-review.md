@@ -8,8 +8,10 @@ Scope: every maintained web page, form, query/mutation hook and explicit error/c
 | Account menu and passkeys | Persistent add/remove failures beside the name and passkey controls; list retry; failed logout opens a retry dialog. Last-passkey safeguards remain enforced. |
 | Overview, Accounts, Transactions, Expenses, Plan, Assets, Net Worth, Categories and Settings | Initial query errors have Try again; a failed background refresh retains the loaded screen and open form. Missing account/asset routes offer navigation to an existing item. |
 | Account, transaction, transfer, asset, valuation, category, rule, schedule and budget forms | Inline validation is associated with its control. Server failures remain beside the editable form with Refresh data. Refresh never replays a write. Old payment dates offer an in-place account editor. |
+| Account branding and logo uploads | Invalid images retain the current logo and other edits; choose another file, select an icon or remove the upload. Save failures keep the editor open with correction, refresh and save-again controls. Reset institution defaults is available without leaving the form. |
 | Budget plans and monthly overrides | Invalid repeat counts remain editable. Failed override saves retain the entered amount with Retry save and Refresh data. Restore plan failures retain the override and can be retried on the same row. Turning repetition off clears hidden count errors. |
 | Transaction table and detail mutations | Category/type controls retain persistent feedback and refresh current versions; bulk operations require deliberate confirmation. Refresh closes a stale bulk-delete confirmation for review. Failed detail deletion keeps receipts and other controls accessible. |
+| Apply saved category rules | Show the complete proposed changes before confirmation. A stale transaction/rule rejects the whole update; Refresh data recomputes the preview in the same dialog before an explicit retry. Empty previews explain which rule fields to check. Existing categories and transfers are preserved. |
 | CSV upload, mapping, AI suggestions and review | Reselect the same file, adjust mapping, retry interrupted suggestions, review manually, resolve duplicates/reconciliations or exclude rows. Invalid rows link directly to mapping controls. AI configuration has an actionable settings link. |
 | PDF upload and background processing | Retained-file upload retry; reselect the same file; retry saved source with editable year/AI options; download source; return to account. Failed external configuration can be restored then retried. |
 | PDF review and confirmation | Persist missing-year repairs without discarding category choices; per-row dates for New Year; reject altered printed day/month, future dates and source amounts. Source notes jump to a row; unreadable rows offer source download/reread and remain excluded. Final blockers link to the relevant editing step. |
@@ -20,3 +22,15 @@ Scope: every maintained web page, form, query/mutation hook and explicit error/c
 | Unexpected screen/chunk failure | A screen boundary offers reload and Overview, explaining that unsaved entries may need re-entering. |
 
 Verification evidence belongs in `docs/testing.md`; this inventory does not assert that every external outage or invalid source PDF can be repaired inside the app. Such cases retain clear local retry, exclusion or configuration guidance, while ordinary data/validation problems have controls at the point of failure. New error paths must follow this same pattern.
+
+Local demo sign-in keeps **Continue as demo admin** available after a failure and
+shows a retry instruction beside it. A disabled/demoted demo identity is not
+silently restored; the message explains that an existing local administrator
+must use a passkey and Settings → Users to restore access. Expiry/logout returns
+to the same sign-in screen. Ordinary household passkey recovery is unchanged.
+
+Category and schedule appearance uses the existing validated forms: failed saves
+retain icon/colour choices and previews, with correction, refresh and resubmit
+controls. Automatic appearance is available in the same editor. Compact mobile
+filters retain removable selection tags and a visible Clear filters control;
+invalid date ranges can be corrected by opening Filters → Date range.

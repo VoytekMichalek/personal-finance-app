@@ -5,6 +5,8 @@ export type StatementLine = {
   page: number;
   line: number;
   text: string;
+  /** Verified posting-column date, including a preceding HSBC group date. */
+  dateText?: string;
   rowNumber: number | null;
   status: "transaction" | "context" | "review";
 };

@@ -46,6 +46,18 @@ test("missing-year PDF dates recover in place after an error without losing cate
 }, info) => {
   await page.clock.install();
   const endpoint = await upload(page);
+  const before = await (await page.request.get("/api/snapshot")).json();
+  const dining = before.categories.find(
+    (item: { name: string }) => item.name === "Dining",
+  );
+  for (const pattern of ["Shop", "Other"]) {
+    const rule = await page.request.post("/api/rules", {
+      headers,
+      data: { pattern, categoryId: dining.id },
+    });
+    expect(rule.ok()).toBe(true);
+  }
+  await page.reload();
   await page
     .getByRole("button", { name: "2. Review transactions", exact: true })
     .click();
@@ -121,6 +133,12 @@ test("missing-year PDF dates recover in place after an error without losing cate
       page.getByRole("combobox", { name: "Category row 1", exact: true }),
     ).toHaveText("Groceries");
     await expect(
+      page.getByRole("combobox", { name: "Category row 2", exact: true }),
+    ).toHaveText("Dining");
+    await expect(
+      page.getByRole("article", { name: "Transaction row 2", exact: true }),
+    ).toContainText("Auto categorised · saved rule");
+    await expect(
       page.getByRole("checkbox", { name: "Include row 1", exact: true }),
     ).toBeChecked();
     await expect(
@@ -152,6 +170,11 @@ test("missing-year PDF dates recover in place after an error without losing cate
       amountCents: -2000,
       categoryId: groceries.id,
     });
+    expect(
+      snapshot.transactions.find(
+        (item: { description: string }) => item.description === "Other",
+      ),
+    ).toMatchObject({ categoryId: dining.id });
     await page.screenshot({
       path: `artifacts/statement-date-recovery-${info.project.name}.png`,
     });

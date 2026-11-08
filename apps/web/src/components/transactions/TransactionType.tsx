@@ -1,14 +1,9 @@
+import { AccountIdentity } from "../accounts/AccountIdentity";
 import { AccountDateIssue } from "../accounts/AccountDateIssue";
 import { InlineSaveStatus } from "../common/InlineSaveStatus";
 import { TransferValueNote } from "../assets/TransferValueNote";
-import { accountLabel } from "@finance/shared";
 import { useState } from "react";
-import {
-  identityColour,
-  money,
-  type Snapshot,
-  type Transaction,
-} from "@finance/shared";
+import { money, type Snapshot, type Transaction } from "@finance/shared";
 import { useTransactionType } from "../../hooks/transaction-type";
 import { Select, SelectItem } from "../ui/select";
 import { Button } from "../ui/button";
@@ -69,7 +64,7 @@ export function TransactionType({
       <Select
         aria-label={`Type for ${row.description}`}
         chip={{
-          colour: identityColour("type:" + selectedKind),
+          colour: "#788493",
           label: kinds[selectedKind],
         }}
         value={selectedKind}
@@ -121,7 +116,10 @@ export function TransactionType({
                     )
                     .map((account) => (
                       <SelectItem key={account.id} value={account.id}>
-                        {accountLabel(account)}
+                        <AccountIdentity
+                          account={account}
+                          institutions={data.institutions}
+                        />
                       </SelectItem>
                     ))}
                 </Select>

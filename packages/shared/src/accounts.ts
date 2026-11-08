@@ -1,4 +1,16 @@
-import type { Account } from "./types.js";
+import type { Account, Transaction } from "./types.js";
+
+/** Ledger dates, independent of upload order, opening balances and schedules. */
+export function latestTransactionDates(
+  transactions: Pick<Transaction, "accountId" | "date">[],
+) {
+  const dates = new Map<string, string>();
+  for (const transaction of transactions) {
+    if (transaction.date > (dates.get(transaction.accountId) ?? ""))
+      dates.set(transaction.accountId, transaction.date);
+  }
+  return dates;
+}
 
 /** Assets and long-term debts contribute to net worth, not available cash. */
 export const isCashAccount = (

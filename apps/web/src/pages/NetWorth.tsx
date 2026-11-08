@@ -1,3 +1,6 @@
+import { SummaryCard } from "../components/common/SummaryCard";
+import { AccountIdentity } from "../components/accounts/AccountIdentity";
+import { AssetIdentity } from "../components/assets/AssetIdentity";
 import { VisualTitle } from "../components/common/VisualTitle";
 import { useSearchParams, Link } from "react-router-dom";
 import {
@@ -92,19 +95,29 @@ export function NetWorth() {
           </Button>
         }
       />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          ["Net worth", total],
-          ["Total assets", assets],
-          ["Total liabilities", debt],
-        ].map(([label, value]) => (
-          <Card key={label}>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="mt-3 text-3xl font-semibold tracking-tight tabular-nums">
-              {money(Number(value))}
-            </p>
-          </Card>
-        ))}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-[1.5fr_1fr_1fr]">
+        <SummaryCard
+          label="Net worth"
+          amount={total}
+          featured
+          color="#608ba6"
+          icon="trending-up"
+          detail="Current assets less liabilities"
+        />
+        <SummaryCard
+          label="Total assets"
+          amount={assets}
+          color="#62947c"
+          icon="home"
+          detail="Accounts, property and investments"
+        />
+        <SummaryCard
+          label="Total liabilities"
+          amount={debt}
+          color="#ad7a68"
+          icon="landmark"
+          detail="Outstanding debts and credit owed"
+        />
       </div>
       <Card className="mb-6">
         <VisualTitle
@@ -165,10 +178,17 @@ export function NetWorth() {
                       className="flex items-center justify-between gap-3 rounded-lg py-3 hover:bg-muted"
                     >
                       <span className="min-w-0 break-words text-sm">
-                        {e.name}
-                        <span className="block text-xs text-muted-foreground">
-                          {e.type}
-                        </span>
+                        {e.type === "Account" ? (
+                          <AccountIdentity
+                            account={data.accounts.find((a) => a.id === e.id)}
+                            institutions={data.institutions}
+                          />
+                        ) : (
+                          <AssetIdentity
+                            asset={data.assets.find((a) => a.id === e.id)!}
+                            small
+                          />
+                        )}
                       </span>
                       <span className="shrink-0 text-sm tabular-nums">
                         {money(e.value)}

@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 import request from "supertest";
 import { prisma } from "../lib/db.js";
 import { app } from "../app.js";
-import { account, memberCookie, origin, post } from "./fixtures.js";
+import { account, memberCookie, origin, post, put } from "./fixtures.js";
 import { statementPdf } from "./statement-fixture.js";
 import {
   claimStatement,
@@ -39,10 +39,66 @@ const corrections = [
   { rowNumber: 2, date: "2026-10-13" },
 ];
 
+it("refreshes saved unimported reviews from current rules without rewriting committed transactions", async () => {
+  const p = await preview(["12 Oct 2026 Local shop -20.00"]);
+  expect(p.rows[0]?.categoryId).toBeNull();
+  const groceries = await prisma.category.findFirstOrThrow({
+    where: { name: "Groceries" },
+  });
+  const dining = await prisma.category.findFirstOrThrow({
+    where: { name: "Dining" },
+  });
+  const rule = await post("/rules", {
+    pattern: "Local shop",
+    categoryId: groceries.id,
+  });
+  expect(rule.status).toBe(200);
+  expect(
+    ((await statementPreview(p.id)) as StatementPreview).rows[0],
+  ).toMatchObject({ categoryId: groceries.id, categorySource: "rule" });
+  expect(
+    (
+      await put("/rules/" + rule.body.id, {
+        ...rule.body,
+        categoryId: dining.id,
+      })
+    ).status,
+  ).toBe(200);
+  const current = (await statementPreview(p.id)) as StatementPreview;
+  expect(current.rows[0]?.categoryId).toBe(dining.id);
+  expect(
+    (
+      await post(`/statements/${p.id}/commit`, {
+        rows: current.rows,
+        reviewed: true,
+        applyOpening: false,
+        opening: null,
+        schedules: [],
+      })
+    ).status,
+  ).toBe(200);
+  expect(
+    (
+      await put("/rules/" + rule.body.id, {
+        ...rule.body,
+        categoryId: groceries.id,
+      })
+    ).status,
+  ).toBe(200);
+  await statementPreview(p.id);
+  expect(
+    (await prisma.transaction.findMany()).map((r) => r.categoryId),
+  ).toEqual([dining.id]);
+});
+
 it("repairs missing PDF years durably, flags duplicates and still enforces source amounts on commit", async () => {
   const p = await preview();
   expect(p.rows).toHaveLength(2);
   expect(p.rows.every((row) => !row.date && row.error)).toBe(true);
+  const category = await prisma.category.findFirstOrThrow({
+    where: { name: "Groceries" },
+  });
+  await post("/rules", { pattern: "Shop", categoryId: category.id });
   await post("/transactions", {
     accountId: p.accountId,
     kind: "expense",
@@ -58,6 +114,8 @@ it("repairs missing PDF years durably, flags duplicates and still enforces sourc
     amountCents: -2000,
     include: true,
     error: null,
+    categoryId: category.id,
+    categorySource: "rule",
   });
   expect(repaired.rows[1]).toMatchObject({
     date: "2026-10-13",

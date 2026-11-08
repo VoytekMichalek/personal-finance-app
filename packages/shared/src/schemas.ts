@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { accountAppearanceSchema, institutionPresets } from "./institutions.js";
+import { visualIcons } from "./visuals.js";
 export const id = z.string().uuid({ error: "Choose a valid record." });
 export const cents = z.number().int().safe();
 export const positiveCents = cents.positive();
@@ -16,12 +18,20 @@ export const accountSchema = z.object({
   name: z.string().trim().min(1, "Enter a name.").max(80),
   type: z.enum(["bank", "cash", "credit"]),
   institution: z.string().trim().max(80).default(""),
+  institutionPreset: z
+    .enum(institutionPresets.map((p) => p.id))
+    .nullable()
+    .optional(),
+  customInstitutionId: id.nullable().optional(),
+  appearance: accountAppearanceSchema.nullable().optional(),
+  saveInstitution: z.boolean().optional(),
   owner,
   openingDate: date,
   openingBalanceCents: cents,
   archived: z.boolean().default(false),
 });
 export const categorySchema = z.object({
+  icon: z.enum(visualIcons).nullable().optional(),
   parentId: id.nullable().default(null),
   name: z.string().trim().min(1).max(60),
   kind: z.enum(["income", "expense"]),
@@ -126,6 +136,12 @@ export const budgetSchema = budgetOverrideSchema.extend({
 });
 export const scheduleSchema = z
   .object({
+    icon: z.enum(visualIcons).nullable().optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .nullable()
+      .optional(),
     name: z.string().trim().min(1).max(100),
     accountId: id,
     kind: z.enum(["income", "expense", "transfer"]),

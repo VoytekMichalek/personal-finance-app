@@ -1,5 +1,5 @@
 // Small deterministic PDF fixture; keeps test data synthetic and auditable.
-export function statementPdf(pages: string[][]): Buffer {
+export function statementPdf(pages: string[][], fontSize = 10): Buffer {
   const objects: string[] = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     "",
@@ -11,7 +11,7 @@ export function statementPdf(pages: string[][]): Buffer {
       streamId = pageId + 1;
     kids.push(pageId);
     const content =
-      "BT /F1 10 Tf 40 790 Td 15 TL " +
+      `BT /F1 ${fontSize} Tf 40 790 Td 15 TL ` +
       lines
         .map(
           (line, i) =>

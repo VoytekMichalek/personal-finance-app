@@ -87,7 +87,7 @@ beforeAll(() => {
 });
 beforeEach(async () => {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE "AuditEvent","RegistrationGrant","Passkey","Session","AuthAccount","Verification","User","Receipt","Transaction","ImportBatch","Account","Budget","Rule","Schedule","Valuation","Asset","ImportMapping","Setup","Category" RESTART IDENTITY CASCADE',
+    'TRUNCATE "Institution", "AuditEvent","RegistrationGrant","Passkey","Session","AuthAccount","Verification","User","Receipt","Transaction","ImportBatch","Account","Budget","Rule","Schedule","Valuation","Asset","ImportMapping","Setup","Category" RESTART IDENTITY CASCADE',
   );
   // Category edits must not leak into subsequent tests or repeated local runs.
   const categorySeed = readFileSync(

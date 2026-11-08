@@ -1,5 +1,26 @@
 import type { Account, Category, ImportRow, Rule } from "./types.js";
 
+/** Use the same eligibility and precedence in imports and saved transactions. */
+export function categoryRuleMatcher(categories: Category[], rules: Rule[]) {
+  const kinds = new Map(
+    categories.filter((c) => !c.archived).map((c) => [c.id, c.kind]),
+  );
+  const eligible = rules
+    .filter(
+      (r) => r.enabled && r.kind !== "transfer" && kinds.has(r.categoryId!),
+    )
+    .sort(compareRules);
+  return (row: Pick<ImportRow, "description" | "kind">) =>
+    row.kind === "transfer"
+      ? undefined
+      : eligible.find(
+          (rule) =>
+            kinds.get(rule.categoryId!) ===
+              (row.kind === "income" ? "income" : "expense") &&
+            matchesRule(row.description, rule),
+        );
+}
+
 export const normaliseDescription = (value: string) =>
   value.trim().replace(/\s+/g, " ").toLowerCase();
 export const matchesRule = (
@@ -72,6 +93,7 @@ export function categorise(
   rules: Rule[],
   history: Pick<ImportRow, "description" | "categoryId">[] = [],
 ) {
+  const matchingRule = categoryRuleMatcher(categories, rules);
   for (const row of rows) {
     if (row.error || row.kind === "transfer") continue;
     const eligible = categories.filter(
@@ -79,14 +101,7 @@ export function categorise(
         !c.archived &&
         c.kind === (row.kind === "income" ? "income" : "expense"),
     );
-    const rule = [...rules]
-      .sort(compareRules)
-      .find(
-        (r) =>
-          r.enabled &&
-          matchesRule(row.description, r) &&
-          eligible.some((c) => c.id === r.categoryId),
-      );
+    const rule = matchingRule(row);
     const previous = history.find(
       (r) =>
         r.description.toLowerCase() === row.description.toLowerCase() &&
